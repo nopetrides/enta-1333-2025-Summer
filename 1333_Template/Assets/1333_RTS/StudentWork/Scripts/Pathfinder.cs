@@ -151,8 +151,15 @@ public class Pathfinder : MonoBehaviour
     private float GetMovementCost(Vector2Int from, Vector2Int to)
     {
         // Get the movement cost of the destination node
-        // This is where terrain weights come into play
-        return gridManager.GetNode(to.x, to.y).Weight;
+        float baseCost = gridManager.GetNode(to.x, to.y).Weight;
+        
+        // If this is a diagonal move, multiply by sqrt(2) to account for longer distance
+        if (from.x != to.x && from.y != to.y)
+        {
+            return baseCost * 1.41421356237f; // sqrt(2)
+        }
+        
+        return baseCost;
     }
     #endregion
 
@@ -329,10 +336,14 @@ public class Pathfinder : MonoBehaviour
         List<Vector2Int> neighbors = new List<Vector2Int>();
         Vector2Int[] directions = new Vector2Int[]
         {
-            new Vector2Int(0, 1),  // North
-            new Vector2Int(1, 0),  // East
-            new Vector2Int(0, -1), // South
-            new Vector2Int(-1, 0)  // West
+            new Vector2Int(0, 1),   // North
+            new Vector2Int(1, 1),   // Northeast
+            new Vector2Int(1, 0),   // East
+            new Vector2Int(1, -1),  // Southeast
+            new Vector2Int(0, -1),  // South
+            new Vector2Int(-1, -1), // Southwest
+            new Vector2Int(-1, 0),  // West
+            new Vector2Int(-1, 1)   // Northwest
         };
 
         foreach (Vector2Int dir in directions)
@@ -340,6 +351,19 @@ public class Pathfinder : MonoBehaviour
             Vector2Int neighbor = coord + dir;
             if (IsValidCoordinate(neighbor) && gridManager.GetNode(neighbor.x, neighbor.y).Walkable)
             {
+                // For diagonal moves, check if the adjacent cardinal directions are walkable
+                // This prevents cutting corners through walls
+                if (dir.x != 0 && dir.y != 0) // If this is a diagonal move
+                {
+                    Vector2Int horizontalCheck = coord + new Vector2Int(dir.x, 0);
+                    Vector2Int verticalCheck = coord + new Vector2Int(0, dir.y);
+                    
+                    if (!IsValidCoordinate(horizontalCheck) || !gridManager.GetNode(horizontalCheck.x, horizontalCheck.y).Walkable ||
+                        !IsValidCoordinate(verticalCheck) || !gridManager.GetNode(verticalCheck.x, verticalCheck.y).Walkable)
+                    {
+                        continue; // Skip this diagonal move if we can't move through the corner
+                    }
+                }
                 neighbors.Add(neighbor);
             }
         }
