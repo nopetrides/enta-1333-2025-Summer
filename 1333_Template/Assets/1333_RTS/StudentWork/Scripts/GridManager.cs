@@ -13,6 +13,8 @@ public class GridManager : MonoBehaviour
 #if UNITY_EDITOR
     [Header("Debug for editor playmode only")]
     [SerializeField] private List<GridNode> AllNodes = new();
+    [SerializeField] private bool showGrid = true;
+    [SerializeField] private bool showNodeInfo = false;
 #endif
 
     public bool IsInitialized { get; private set; } = false;
@@ -31,10 +33,9 @@ public class GridManager : MonoBehaviour
 
                 GridNode node = new GridNode
                 {
-                    Name = $"Cell_{(x + gridSettings.GridSizeX * x + y)}",
+                    Name = $"Cell_{x}_{y}",
                     WorldPosition = worldPos,
-                    Walkable = true, // Default all nodes walkable, modified later
-                    Weight = 1 // Default weight, useful for varied terrain costs
+                    TerrainType = TerrainTypes.Grass // Default to grass
                 };
                 gridNodes[x, y] = node;
             }
@@ -42,6 +43,19 @@ public class GridManager : MonoBehaviour
         IsInitialized = true;
     }
 
+    public void SetTerrainType(int x, int y, TerrainType terrainType)
+    {
+        if (!IsValidCoordinate(x, y)) return;
+        
+        GridNode node = gridNodes[x, y];
+        node.TerrainType = terrainType;
+        gridNodes[x, y] = node;
+    }
+
+    private bool IsValidCoordinate(int x, int y)
+    {
+        return x >= 0 && x < gridSettings.GridSizeX && y >= 0 && y < gridSettings.GridSizeY;
+    }
 
 #if UNITY_EDITOR
     private void PopulateDebugList()
@@ -51,14 +65,7 @@ public class GridManager : MonoBehaviour
         {
             for (int y = 0; y < gridSettings.GridSizeY; y++)
             {
-                GridNode node = gridNodes[x, y];
-                AllNodes.Add(new GridNode
-                {
-                    Name = $"Cell_{x}_{y}",
-                    WorldPosition = node.WorldPosition,
-                    Walkable = node.Walkable,
-                    Weight = node.Weight
-                });
+                AllNodes.Add(gridNodes[x, y]);
             }
         }
     }
@@ -67,32 +74,31 @@ public class GridManager : MonoBehaviour
     // Retrieve node data efficiently
     public GridNode GetNode(int x, int y)
     {
-        if (x < 0 || x >= gridSettings.GridSizeX || y < 0 || y >= gridSettings.GridSizeY)
+        if (!IsValidCoordinate(x, y))
             throw new System.IndexOutOfRangeException("Grid node indices out of range.");
 
         return gridNodes[x, y];
     }
 
-    // Example setter for walkability, expandable for future logic
-    public void SetWalkable(int x, int y, bool walkable)
-    {
-        gridNodes[x, y].Walkable = walkable;
-    }
-
     // Efficient visualization using Gizmos, toggleable through Unity editor
     private void OnDrawGizmos()
     {
-        if (gridNodes == null || gridSettings == null) return;
-
-        Gizmos.color = Color.green;
+        if (!showGrid || gridNodes == null || gridSettings == null) return;
 
         for (int x = 0; x < gridSettings.GridSizeX; x++)
         {
             for (int y = 0; y < gridSettings.GridSizeY; y++)
             {
                 GridNode node = gridNodes[x, y];
-                Gizmos.color = node.Walkable ? Color.green : Color.red;
+                Gizmos.color = node.GizmoColor;
                 Gizmos.DrawWireCube(node.WorldPosition, Vector3.one * gridSettings.NodeSize * 0.9f);
+
+#if UNITY_EDITOR
+                if (showNodeInfo)
+                {
+                    Handles.Label(node.WorldPosition + Vector3.up * 0.1f, $"{x},{y}");
+                }
+#endif
             }
         }
     }

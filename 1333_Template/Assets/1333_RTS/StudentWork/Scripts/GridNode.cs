@@ -6,8 +6,11 @@ public struct GridNode
 {
     public string Name; // Grid Index
     public Vector3 WorldPosition;
-    public bool Walkable;
-    public int Weight;
+    public TerrainType TerrainType;
+
+    public bool Walkable => TerrainType != null && TerrainType.Walkable;
+    public int Weight => TerrainType != null ? TerrainType.MovementCost : 1;
+    public Color GizmoColor => TerrainType != null ? TerrainType.GizmoColor : Color.gray;
 
     // Future-proof: Add faction-based walkability or additional node metadata here
 }
