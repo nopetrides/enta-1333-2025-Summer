@@ -16,3 +16,4 @@ MonoBehaviour:
   gridSizeY: 10
   nodeSize: 1
   useXZPlane: 1
+  allowDiagonal: 0

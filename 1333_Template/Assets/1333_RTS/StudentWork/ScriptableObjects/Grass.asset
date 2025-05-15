@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Grass
   m_EditorClassIdentifier: 
   terrainName: Default
-  gizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  gizmoColor: {r: 0.09668086, g: 0.5377358, b: 0.017755438, a: 1}
   walkable: 1
   movementCost: 1
   terrainTexture: {fileID: 2800000, guid: d8f7f02629a623841bbf16fc83b816ec, type: 3}

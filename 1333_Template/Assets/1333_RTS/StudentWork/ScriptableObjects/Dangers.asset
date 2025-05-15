@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dangers
   m_EditorClassIdentifier: 
   terrainName: Dangers
-  gizmoColor: {r: 1, g: 0.4031586, b: 0, a: 1}
+  gizmoColor: {r: 0.6037736, g: 0.011838699, b: 0, a: 1}
   walkable: 1
   movementCost: 99
   terrainTexture: {fileID: 2800000, guid: e6651830492f50947a534fb8ae872e55, type: 3}

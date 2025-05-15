@@ -8,6 +8,8 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GridSettings gridSettings;
     public GridSettings GridSettings => gridSettings;
 
+    [SerializeField] private TerrainType defaultTerrainType; // Default terrain type to use for new nodes
+
     private GridNode[,] gridNodes;
 
 #if UNITY_EDITOR
@@ -21,6 +23,12 @@ public class GridManager : MonoBehaviour
 
     public void InitializeGrid()
     {
+        if (defaultTerrainType == null)
+        {
+            Debug.LogError("Default terrain type not assigned in GridManager!");
+            return;
+        }
+
         gridNodes = new GridNode[gridSettings.GridSizeX, gridSettings.GridSizeY];
 
         for (int x = 0; x < gridSettings.GridSizeX; x++)
@@ -35,7 +43,7 @@ public class GridManager : MonoBehaviour
                 {
                     Name = $"Cell_{x}_{y}",
                     WorldPosition = worldPos,
-                    TerrainType = TerrainTypes.Grass // Default to grass
+                    TerrainType = defaultTerrainType // Use the serialized default terrain type
                 };
                 gridNodes[x, y] = node;
             }
@@ -55,6 +63,18 @@ public class GridManager : MonoBehaviour
     private bool IsValidCoordinate(int x, int y)
     {
         return x >= 0 && x < gridSettings.GridSizeX && y >= 0 && y < gridSettings.GridSizeY;
+    }
+
+    public bool IsWalkable(Vector2Int coord)
+    {
+        if (!IsValidCoordinate(coord.x, coord.y)) return false;
+        return gridNodes[coord.x, coord.y].Walkable;
+    }
+
+    public float GetNodeWeight(Vector2Int coord)
+    {
+        if (!IsValidCoordinate(coord.x, coord.y)) return float.MaxValue;
+        return gridNodes[coord.x, coord.y].Weight;
     }
 
 #if UNITY_EDITOR

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 public class Pathfinder : MonoBehaviour
 {
@@ -11,11 +12,181 @@ public class Pathfinder : MonoBehaviour
         Naive          // "Draws" a line to target - Common beginner mistake
     }
 
+    public enum VisualizationState
+    {
+        Idle,
+        Exploring,
+        Reconstructing,
+        Paused
+    }
+
     [Header("Required References")]
     [SerializeField] private GridManager gridManager;
 
     [Header("Pathfinding Settings")]
     [SerializeField] private PathfindingType pathfindingType = PathfindingType.Unweighted;
+    [SerializeField, Range(0, 100)] private int framesPerStep = 10;
+    [SerializeField] private bool visualizePathfinding = true;
+
+    [Header("Visualization Colors")]
+    [SerializeField] private Color startNodeColor = Color.green;
+    [SerializeField] private Color endNodeColor = Color.red;
+    [SerializeField] private Color currentPathColor = Color.yellow;
+    [SerializeField] private Color visitedNodeColor = new Color(0.5f, 0.5f, 1f, 0.5f);
+    [SerializeField] private Color unvisitedNodeColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
+    [SerializeField] private Color finalPathColor = Color.cyan;
+    [SerializeField] private Color currentNodeColor = Color.magenta;
+    [SerializeField] private Color currentNeighborColor = new Color(1f, 0.5f, 0f, 0.5f); // Orange
+    [SerializeField] private Color explorationLineColor = new Color(1f, 1f, 0f, 0.3f); // Semi-transparent yellow
+
+    [Header("Visualization Settings")]
+    [SerializeField] private int currentSeed = 0;
+    [SerializeField] private bool useSeededRandom = true;
+    [SerializeField] private float minWeight = 1f;
+    [SerializeField] private float maxWeight = 10f;
+
+    // Pathfinder instances
+    private UnweightedPathfinder unweightedPathfinder;
+    private WeightedPathfinder weightedPathfinder;
+    private BruteForcePathfinder bruteForcePathfinder;
+    private NaivePathfinder naivePathfinder;
+
+    // Visualizer instances
+    private UnweightedPathVisualizer unweightedVisualizer;
+    private WeightedPathVisualizer weightedVisualizer;
+    private BruteForcePathVisualizer bruteForceVisualizer;
+    private NaivePathVisualizer naiveVisualizer;
+
+    private System.Random seededRandom;
+
+    // Visualization state
+    private HashSet<Vector2Int> visitedNodes = new HashSet<Vector2Int>();
+    private Dictionary<Vector2Int, int> nodeDistances = new Dictionary<Vector2Int, int>();  // Track distances from start
+    private List<Vector2Int> currentPath = new List<Vector2Int>();
+    private List<Vector2Int> reconstructionPath = new List<Vector2Int>();
+    private Vector2Int? startNode;
+    private Vector2Int? endNode;
+    private VisualizationState visualizationState = VisualizationState.Idle;
+    private Coroutine currentVisualization;
+    private List<Vector3> finalPath;
+    private bool shouldPause;
+    private bool isStepMode;
+    private List<Vector2Int> explorationOrder;
+    private Vector2Int? currentNode;
+    private List<Vector2Int> currentNeighbors;
+
+    private void Update()
+    {
+        if (!visualizePathfinding) return;
+
+        // Space to pause/resume
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (visualizationState == VisualizationState.Paused)
+            {
+                visualizationState = VisualizationState.Exploring;
+                shouldPause = false;
+                isStepMode = false;
+            }
+            else if (visualizationState == VisualizationState.Exploring || 
+                     visualizationState == VisualizationState.Reconstructing)
+            {
+                visualizationState = VisualizationState.Paused;
+                shouldPause = true;
+                isStepMode = false;
+            }
+        }
+
+        // Right arrow for next step
+        if (Input.GetKeyDown(KeyCode.RightArrow) && visualizationState == VisualizationState.Paused)
+        {
+            isStepMode = true;
+            shouldPause = false;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!visualizePathfinding || !Application.isPlaying) return;
+
+        float nodeSize = gridManager.GridSettings.NodeSize;
+
+        // Draw exploration history line
+        if (explorationOrder != null && explorationOrder.Count > 1)
+        {
+            Gizmos.color = explorationLineColor;
+            for (int i = 0; i < explorationOrder.Count - 1; i++)
+            {
+                Vector3 start = GridToWorld(explorationOrder[i]);
+                Vector3 end = GridToWorld(explorationOrder[i + 1]);
+                Gizmos.DrawLine(start, end);
+            }
+        }
+
+        // Draw visited nodes
+        Gizmos.color = visitedNodeColor;
+        foreach (Vector2Int node in visitedNodes)
+        {
+            Vector3 worldPos = GridToWorld(node);
+            Gizmos.DrawCube(worldPos, Vector3.one * nodeSize * 0.8f);
+            
+            // Draw distance number if available
+            if (nodeDistances.TryGetValue(node, out int distance))
+            {
+                UnityEditor.Handles.Label(worldPos + Vector3.up * nodeSize * 0.5f, distance.ToString());
+            }
+        }
+
+        // Draw current node being evaluated
+        if (currentNode.HasValue)
+        {
+            Gizmos.color = currentNodeColor;
+            Vector3 currentPos = GridToWorld(currentNode.Value);
+            Gizmos.DrawCube(currentPos, Vector3.one * nodeSize * 0.9f);
+        }
+
+        // Draw current neighbors being evaluated
+        if (currentNeighbors != null)
+        {
+            Gizmos.color = currentNeighborColor;
+            foreach (Vector2Int neighbor in currentNeighbors)
+            {
+                Vector3 neighborPos = GridToWorld(neighbor);
+                Gizmos.DrawCube(neighborPos, Vector3.one * nodeSize * 0.7f);
+            }
+        }
+
+        // Draw current path
+        Gizmos.color = currentPathColor;
+        for (int i = 0; i < currentPath.Count - 1; i++)
+        {
+            Vector3 start = GridToWorld(currentPath[i]);
+            Vector3 end = GridToWorld(currentPath[i + 1]);
+            Gizmos.DrawLine(start, end);
+        }
+
+        // Draw final path
+        if (finalPath != null && finalPath.Count > 1)
+        {
+            Gizmos.color = finalPathColor;
+            for (int i = 0; i < finalPath.Count - 1; i++)
+            {
+                Gizmos.DrawLine(finalPath[i], finalPath[i + 1]);
+            }
+        }
+
+        // Draw start and end nodes
+        if (startNode.HasValue)
+        {
+            Gizmos.color = startNodeColor;
+            Gizmos.DrawCube(GridToWorld(startNode.Value), Vector3.one * nodeSize);
+        }
+        if (endNode.HasValue)
+        {
+            Gizmos.color = endNodeColor;
+            Gizmos.DrawCube(GridToWorld(endNode.Value), Vector3.one * nodeSize);
+        }
+    }
 
     private void Awake()
     {
@@ -23,207 +194,201 @@ public class Pathfinder : MonoBehaviour
         {
             Debug.LogError("Pathfinder: GridManager reference is missing. Please assign it in the inspector.");
             enabled = false;
+            return;
+        }
+
+        // Initialize pathfinders
+        unweightedPathfinder = new UnweightedPathfinder(GetNeighbors, WaitForNextStep);
+        weightedPathfinder = new WeightedPathfinder(GetNeighbors, GetMovementCost);
+        bruteForcePathfinder = new BruteForcePathfinder(GetNeighbors);
+        naivePathfinder = new NaivePathfinder(GetNeighbors, gridManager.GridSettings.AllowDiagonal);
+
+        // Initialize visualizers
+        unweightedVisualizer = new UnweightedPathVisualizer(
+            unweightedPathfinder, gridManager, StartCoroutine);
+        weightedVisualizer = new WeightedPathVisualizer(
+            weightedPathfinder, gridManager, WaitForNextStep, StartCoroutine);
+        bruteForceVisualizer = new BruteForcePathVisualizer(
+            bruteForcePathfinder, gridManager, WaitForNextStep, StartCoroutine);
+        naiveVisualizer = new NaivePathVisualizer(
+            naivePathfinder, gridManager, WaitForNextStep, StartCoroutine);
+    }
+
+    private void Start()
+    {
+        if (useSeededRandom)
+        {
+            seededRandom = new System.Random(currentSeed);
         }
     }
 
-    public List<Vector3> FindPath(Vector3 startPos, Vector3 endPos)
+    public void SetSeed(int seed)
     {
-        if (!enabled) return new List<Vector3>();
+        currentSeed = seed;
+        if (useSeededRandom)
+        {
+            seededRandom = new System.Random(currentSeed);
+        }
+    }
+
+    private float GetRandomWeight()
+    {
+        if (useSeededRandom)
+        {
+            return (float)seededRandom.NextDouble() * (maxWeight - minWeight) + minWeight;
+        }
+        return Random.Range(minWeight, maxWeight);
+    }
+
+    public IEnumerator FindPath(Vector3 startPos, Vector3 endPos)
+    {
+        if (!enabled) yield break;
+
+        // Stop any existing visualization
+        if (currentVisualization != null)
+        {
+            StopCoroutine(currentVisualization);
+        }
+
+        // Reset visualization state
+        visitedNodes.Clear();
+        nodeDistances.Clear();  // Clear distances
+        currentPath.Clear();
+        reconstructionPath.Clear(); // Clear previous final path
+        finalPath = null; // Clear previous world path
+        explorationOrder = null;
+        currentNode = null;
+        currentNeighbors = null;
+        startNode = WorldToGrid(startPos);
+        endNode = WorldToGrid(endPos);
+        visualizationState = VisualizationState.Exploring;
+        shouldPause = false;
 
         // Convert world positions to grid coordinates
-        Vector2Int startCoord = WorldToGrid(startPos);
-        Vector2Int endCoord = WorldToGrid(endPos);
+        Vector2Int startCoord = startNode.Value;
+        Vector2Int endCoord = endNode.Value;
 
         // Validate coordinates
         if (!IsValidCoordinate(startCoord) || !IsValidCoordinate(endCoord))
         {
             Debug.LogWarning("Invalid start or end coordinates for pathfinding");
-            return new List<Vector3>();
+            yield break;
         }
 
-        return pathfindingType switch
+        // Set initial distance for start node
+        nodeDistances[startCoord] = 0;
+
+        if (visualizePathfinding)
         {
-            PathfindingType.Unweighted => FindUnweightedPath(startCoord, endCoord),
-            PathfindingType.Weighted => FindWeightedPath(startCoord, endCoord),
-            PathfindingType.BruteForce => FindBruteForcePath(startCoord, endCoord),
-            PathfindingType.Naive => FindNaivePath(startCoord, endCoord),
-            _ => FindUnweightedPath(startCoord, endCoord)
-        };
+            currentVisualization = StartCoroutine(VisualizePathfinding(startCoord, endCoord));
+            yield break;
+        }
+        else
+        {
+            switch (pathfindingType)
+            {
+                case PathfindingType.Unweighted:
+                    List<Vector2Int> finalUnweightedPath = null;
+                    yield return StartCoroutine(unweightedPathfinder.FindPath(startCoord, endCoord, (path, cameFrom, visited, order, current, neighbors, distances) =>
+                    {
+                        visitedNodes = visited;
+                        reconstructionPath = path;
+                        explorationOrder = order;
+                        currentNode = current;
+                        currentNeighbors = neighbors;
+                        nodeDistances = distances;
+                        if (path.Count > 0 && path[0] == startCoord && path[path.Count - 1] == endCoord)
+                        {
+                            finalUnweightedPath = path;
+                        }
+                    }));
+                    if (finalUnweightedPath != null)
+                    {
+                        finalPath = ConvertPathToWorldPositions(finalUnweightedPath);
+                    }
+                    break;
+                case PathfindingType.Weighted:
+                    var (weightedPath, _, _) = weightedPathfinder.FindPath(startCoord, endCoord);
+                    finalPath = ConvertPathToWorldPositions(weightedPath);
+                    break;
+                case PathfindingType.BruteForce:
+                    var (bruteForcePath, _) = bruteForcePathfinder.FindPath(startCoord, endCoord);
+                    finalPath = ConvertPathToWorldPositions(bruteForcePath);
+                    break;
+                case PathfindingType.Naive:
+                    var (naivePath, _) = naivePathfinder.FindPath(startCoord, endCoord);
+                    finalPath = ConvertPathToWorldPositions(naivePath);
+                    break;
+            }
+        }
     }
 
-    #region Unweighted Pathfinding (BFS)
-    private List<Vector3> FindUnweightedPath(Vector2Int start, Vector2Int end)
+    private IEnumerator VisualizePathfinding(Vector2Int start, Vector2Int end)
     {
-        // Standard BFS implementation
-        // Uses a simple queue and only considers walkability
-        // Guarantees shortest path in terms of number of steps
-        // Time Complexity: O(V + E) where V is vertices and E is edges
-        // Space Complexity: O(V) for the queue and visited set
-
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
-        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
-        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
-
-        queue.Enqueue(start);
-        visited.Add(start);
-
-        while (queue.Count > 0)
+        switch (pathfindingType)
         {
-            Vector2Int current = queue.Dequeue();
-
-            if (current == end)
-            {
-                return ReconstructPath(cameFrom, start, end);
-            }
-
-            foreach (Vector2Int neighbor in GetNeighbors(current))
-            {
-                if (!visited.Contains(neighbor))
+            case PathfindingType.Unweighted:
+                yield return StartCoroutine(unweightedPathfinder.FindPath(start, end, (path, cameFrom, visited, order, current, neighbors, distances) =>
                 {
-                    visited.Add(neighbor);
-                    cameFrom[neighbor] = current;
-                    queue.Enqueue(neighbor);
-                }
-            }
+                    visitedNodes = visited;
+                    reconstructionPath = path;
+                    explorationOrder = order;
+                    currentNode = current;
+                    currentNeighbors = neighbors;
+                    nodeDistances = distances;
+                    if (path.Count > 0 && path[0] == start && path[path.Count - 1] == end)
+                    {
+                        finalPath = ConvertPathToWorldPositions(path);
+                    }
+                }));
+                break;
+            case PathfindingType.Weighted:
+                yield return StartCoroutine(weightedVisualizer.VisualizePath(
+                    start, end, visitedNodes, currentPath, OnPathFound));
+                break;
+            case PathfindingType.BruteForce:
+                yield return StartCoroutine(bruteForceVisualizer.VisualizePath(
+                    start, end, visitedNodes, currentPath, OnPathFound));
+                break;
+            case PathfindingType.Naive:
+                yield return StartCoroutine(naiveVisualizer.VisualizePath(
+                    start, end, visitedNodes, currentPath, OnPathFound));
+                break;
         }
-
-        Debug.LogWarning("No valid path found");
-        return new List<Vector3>();
-    }
-    #endregion
-
-    #region Weighted Pathfinding (Dijkstra's)
-    private List<Vector3> FindWeightedPath(Vector2Int start, Vector2Int end)
-    {
-        // Dijkstra's algorithm implementation
-        // Uses a priority queue to consider movement costs
-        // Guarantees shortest path in terms of total movement cost
-        // Time Complexity: O((V + E)logV) with binary heap
-        // Space Complexity: O(V) for the priority queue and visited set
-
-        // Priority queue implementation using a sorted list
-        // Key: total cost to reach node, Value: node coordinates
-        SortedList<float, Vector2Int> openSet = new SortedList<float, Vector2Int>();
-        Dictionary<Vector2Int, float> costSoFar = new Dictionary<Vector2Int, float>();
-        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
-        HashSet<Vector2Int> closedSet = new HashSet<Vector2Int>();
-
-        // Initialize start node
-        openSet.Add(0, start);
-        costSoFar[start] = 0;
-
-        while (openSet.Count > 0)
-        {
-            // Get node with lowest cost
-            var current = openSet.Values[0];
-            openSet.RemoveAt(0);
-
-            if (current == end)
-            {
-                return ReconstructPath(cameFrom, start, end);
-            }
-
-            closedSet.Add(current);
-
-            foreach (Vector2Int neighbor in GetNeighbors(current))
-            {
-                if (closedSet.Contains(neighbor)) continue;
-
-                float newCost = costSoFar[current] + GetMovementCost(current, neighbor);
-
-                if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor])
-                {
-                    costSoFar[neighbor] = newCost;
-                    cameFrom[neighbor] = current;
-
-                    // Add to open set with total cost as priority
-                    // Add small offset to handle duplicate costs
-                    float priority = newCost + (openSet.Count * 0.0001f);
-                    openSet.Add(priority, neighbor);
-                }
-            }
-        }
-
-        Debug.LogWarning("No valid path found");
-        return new List<Vector3>();
     }
 
-    private float GetMovementCost(Vector2Int from, Vector2Int to)
+    private void OnPathFound(List<Vector3> path)
     {
-        // Get the movement cost of the destination node
-        float baseCost = gridManager.GetNode(to.x, to.y).Weight;
-        
-        // If this is a diagonal move, multiply by sqrt(2) to account for longer distance
-        if (from.x != to.x && from.y != to.y)
+        finalPath = path;
+        reconstructionPath.Clear();
+        foreach (var pos in path)
         {
-            return baseCost * 1.41421356237f; // sqrt(2)
+            reconstructionPath.Add(WorldToGrid(pos));
         }
-        
-        return baseCost;
+        visualizationState = VisualizationState.Idle;
     }
-    #endregion
 
-    #region Brute Force Pathfinding
-    private List<Vector3> FindBruteForcePath(Vector2Int start, Vector2Int end)
+    private IEnumerator WaitForNextStep()
     {
-        // Brute force implementation that explores ALL possible paths
-        // This is intentionally inefficient to demonstrate why we use proper algorithms
-        // Time Complexity: O(b^d) where b is branching factor (4 for grid) and d is depth
-        // Space Complexity: O(b^d) for the recursion stack and path storage
-        // This is exponentially worse than both BFS and Dijkstra's!
-
-        List<Vector2Int> bestPath = null;
-        float bestCost = float.MaxValue;
-        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
-        List<Vector2Int> currentPath = new List<Vector2Int>();
-
-        void ExplorePath(Vector2Int current, float currentCost)
+        if (isStepMode)
         {
-            // If we've found a better path to this node before, stop exploring
-            if (currentCost >= bestCost) return;
-
-            // If we've reached the end, check if this is the best path
-            if (current == end)
+            // In step mode, wait for the next step
+            shouldPause = true;
+            isStepMode = false;
+            yield return new WaitUntil(() => !shouldPause);
+        }
+        else
+        {
+            // Normal mode, wait for frames
+            for (int i = 0; i < framesPerStep; i++)
             {
-                if (currentCost < bestCost)
+                if (shouldPause)
                 {
-                    bestCost = currentCost;
-                    bestPath = new List<Vector2Int>(currentPath);
+                    yield return new WaitUntil(() => !shouldPause);
                 }
-                return;
-            }
-
-            // Try all possible neighbors
-            foreach (Vector2Int neighbor in GetNeighbors(current))
-            {
-                if (!visited.Contains(neighbor))
-                {
-                    visited.Add(neighbor);
-                    currentPath.Add(neighbor);
-                    
-                    // Recursively explore this path
-                    float newCost = currentCost + GetMovementCost(current, neighbor);
-                    ExplorePath(neighbor, newCost);
-                    
-                    // Backtrack
-                    currentPath.RemoveAt(currentPath.Count - 1);
-                    visited.Remove(neighbor);
-                }
+                yield return null;
             }
         }
-
-        // Start the exploration
-        visited.Add(start);
-        currentPath.Add(start);
-        ExplorePath(start, 0);
-
-        if (bestPath != null)
-        {
-            return ConvertPathToWorldPositions(bestPath);
-        }
-
-        Debug.LogWarning("No valid path found");
-        return new List<Vector3>();
     }
 
     private List<Vector3> ConvertPathToWorldPositions(List<Vector2Int> path)
@@ -235,88 +400,14 @@ public class Pathfinder : MonoBehaviour
         }
         return worldPath;
     }
-    #endregion
-
-    #region Naive Pathfinding
-    private List<Vector3> FindNaivePath(Vector2Int start, Vector2Int end)
-    {
-        // A naive implementation that "draws" a line to the target
-        // This is a common beginner mistake - trying to go straight to the target
-        // without considering obstacles or weights
-        // Time Complexity: O(n) where n is the number of nodes in the path
-        // Space Complexity: O(n) for the path list
-        // This will often fail to find valid paths and ignore obstacles!
-
-        List<Vector2Int> path = new List<Vector2Int>();
-        Vector2Int current = start;
-        path.Add(current);
-
-        // Keep moving towards the target until we reach it or get stuck
-        while (current != end)
-        {
-            // Calculate direction to target
-            Vector2Int direction = new Vector2Int(
-                Mathf.Clamp(end.x - current.x, -1, 1),
-                Mathf.Clamp(end.y - current.y, -1, 1)
-            );
-
-            // Try to move in the direction of the target
-            Vector2Int next = current + direction;
-
-            // If we can't move in the preferred direction, try moving in just x or just y
-            if (!IsValidCoordinate(next) || !gridManager.GetNode(next.x, next.y).Walkable)
-            {
-                // Try moving in x direction only
-                next = current + new Vector2Int(direction.x, 0);
-                if (!IsValidCoordinate(next) || !gridManager.GetNode(next.x, next.y).Walkable)
-                {
-                    // Try moving in y direction only
-                    next = current + new Vector2Int(0, direction.y);
-                    if (!IsValidCoordinate(next) || !gridManager.GetNode(next.x, next.y).Walkable)
-                    {
-                        // If we can't move at all, we're stuck
-                        Debug.LogWarning("Naive pathfinding got stuck!");
-                        return new List<Vector3>();
-                    }
-                }
-            }
-
-            current = next;
-            path.Add(current);
-
-            // Safety check to prevent infinite loops
-            if (path.Count > gridManager.GridSettings.GridSizeX * gridManager.GridSettings.GridSizeY)
-            {
-                Debug.LogWarning("Naive pathfinding exceeded maximum path length!");
-                return new List<Vector3>();
-            }
-        }
-
-        return ConvertPathToWorldPositions(path);
-    }
-    #endregion
-
-    private List<Vector3> ReconstructPath(Dictionary<Vector2Int, Vector2Int> cameFrom, Vector2Int start, Vector2Int end)
-    {
-        List<Vector3> path = new List<Vector3>();
-        Vector2Int current = end;
-
-        while (current != start)
-        {
-            path.Add(GridToWorld(current));
-            current = cameFrom[current];
-        }
-        path.Add(GridToWorld(start));
-        path.Reverse();
-        return path;
-    }
 
     private Vector2Int WorldToGrid(Vector3 worldPos)
     {
         float nodeSize = gridManager.GridSettings.NodeSize;
-        int x = Mathf.RoundToInt(worldPos.x / nodeSize);
-        int y = Mathf.RoundToInt(worldPos.z / nodeSize);
-        return new Vector2Int(x, y);
+        return new Vector2Int(
+            Mathf.RoundToInt(worldPos.x / nodeSize),
+            Mathf.RoundToInt(worldPos.z / nodeSize)
+        );
     }
 
     private Vector3 GridToWorld(Vector2Int gridPos)
@@ -334,40 +425,45 @@ public class Pathfinder : MonoBehaviour
     private List<Vector2Int> GetNeighbors(Vector2Int coord)
     {
         List<Vector2Int> neighbors = new List<Vector2Int>();
-        Vector2Int[] directions = new Vector2Int[]
-        {
-            new Vector2Int(0, 1),   // North
-            new Vector2Int(1, 1),   // Northeast
-            new Vector2Int(1, 0),   // East
-            new Vector2Int(1, -1),  // Southeast
-            new Vector2Int(0, -1),  // South
-            new Vector2Int(-1, -1), // Southwest
-            new Vector2Int(-1, 0),  // West
-            new Vector2Int(-1, 1)   // Northwest
-        };
+        int[] dx = { -1, 0, 1, 0, -1, -1, 1, 1 };
+        int[] dy = { 0, 1, 0, -1, -1, 1, -1, 1 };
 
-        foreach (Vector2Int dir in directions)
+        // Check cardinal directions first
+        for (int i = 0; i < 4; i++)
         {
-            Vector2Int neighbor = coord + dir;
-            if (IsValidCoordinate(neighbor) && gridManager.GetNode(neighbor.x, neighbor.y).Walkable)
+            Vector2Int neighbor = new Vector2Int(coord.x + dx[i], coord.y + dy[i]);
+            if (IsValidCoordinate(neighbor) && gridManager.IsWalkable(neighbor))
             {
-                // For diagonal moves, check if the adjacent cardinal directions are walkable
-                // This prevents cutting corners through walls
-                if (dir.x != 0 && dir.y != 0) // If this is a diagonal move
-                {
-                    Vector2Int horizontalCheck = coord + new Vector2Int(dir.x, 0);
-                    Vector2Int verticalCheck = coord + new Vector2Int(0, dir.y);
-                    
-                    if (!IsValidCoordinate(horizontalCheck) || !gridManager.GetNode(horizontalCheck.x, horizontalCheck.y).Walkable ||
-                        !IsValidCoordinate(verticalCheck) || !gridManager.GetNode(verticalCheck.x, verticalCheck.y).Walkable)
-                    {
-                        continue; // Skip this diagonal move if we can't move through the corner
-                    }
-                }
                 neighbors.Add(neighbor);
             }
         }
 
+        // Check diagonal directions if allowed
+        if (gridManager.GridSettings.AllowDiagonal)
+        {
+            for (int i = 4; i < 8; i++)
+            {
+                Vector2Int neighbor = new Vector2Int(coord.x + dx[i], coord.y + dy[i]);
+                if (IsValidCoordinate(neighbor) && gridManager.IsWalkable(neighbor))
+                {
+                    // Check if we can cut corners
+                    Vector2Int cardinal1 = new Vector2Int(coord.x + dx[i - 4], coord.y + dy[i - 4]);
+                    Vector2Int cardinal2 = new Vector2Int(coord.x + dx[(i - 3) % 4], coord.y + dy[(i - 3) % 4]);
+                    if (gridManager.IsWalkable(cardinal1) && gridManager.IsWalkable(cardinal2))
+                    {
+                        neighbors.Add(neighbor);
+                    }
+                }
+            }
+        }
+
         return neighbors;
+    }
+
+    private float GetMovementCost(Vector2Int from, Vector2Int to)
+    {
+        float baseCost = Vector2Int.Distance(from, to);
+        float weight = gridManager.GetNodeWeight(to);
+        return baseCost * weight;
     }
 } 

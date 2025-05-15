@@ -1,4 +1,7 @@
 using UnityEngine;
+using System.Collections;
+using UnityEngine.UI;
+using TMPro;
 
 public class GridTest : MonoBehaviour
 {
@@ -12,6 +15,12 @@ public class GridTest : MonoBehaviour
     [Header("Randomization Settings")]
     [SerializeField] private float markerHeight = 0.5f;
     [SerializeField] private TerrainType[] availableTerrainTypes;
+    [SerializeField] private int currentSeed = 0;
+
+    [Header("UI References")]
+    [SerializeField] private TextMeshProUGUI controlsText;
+
+    private System.Random seededRandom;
 
     private void Start()
     {
@@ -23,7 +32,39 @@ public class GridTest : MonoBehaviour
         }
         
         gridManager.InitializeGrid();
-        RandomizeAndPathFind();
+        GenerateNewSeed();
+        StartCoroutine(RandomizeAndPathFind());
+        UpdateControlsText();
+    }
+
+    private void UpdateControlsText()
+    {
+        if (controlsText != null)
+        {
+            controlsText.text = "Controls:\n" +
+                              "R - Generate new random seed and reset\n" +
+                              "T - Reset using current seed\n" +
+                              "Space - Pause/Resume pathfinding\n" +
+                              "Right Arrow - Step forward (when paused)\n" +
+                              $"Current Seed: {currentSeed}";
+        }
+    }
+
+    private void GenerateNewSeed()
+    {
+        currentSeed = Random.Range(int.MinValue, int.MaxValue);
+        seededRandom = new System.Random(currentSeed);
+        pathfinder.SetSeed(currentSeed);
+        Debug.Log($"Generated new seed: {currentSeed}");
+        UpdateControlsText();
+    }
+
+    private void ResetWithCurrentSeed()
+    {
+        seededRandom = new System.Random(currentSeed);
+        pathfinder.SetSeed(currentSeed);
+        StartCoroutine(RandomizeAndPathFind());
+        Debug.Log($"Reset with seed: {currentSeed}");
     }
 
     private bool ValidateReferences()
@@ -39,23 +80,25 @@ public class GridTest : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.R))
         {
-            RandomizeAndPathFind();
+            GenerateNewSeed();
+            StartCoroutine(RandomizeAndPathFind());
+        }
+        else if (Input.GetKeyDown(KeyCode.T))
+        {
+            ResetWithCurrentSeed();
         }
     }
     
-    private void RandomizeAndPathFind()
+    private IEnumerator RandomizeAndPathFind()
     {
         RandomizeAll();
         // Find and visualize path
-        var path = pathfinder.FindPath(startMarker.position, endMarker.position);
+        yield return StartCoroutine(pathfinder.FindPath(startMarker.position, endMarker.position));
         
-        if (path != null && path.Count > 0)
-        {
-            pathLine.positionCount = path.Count;
-            pathLine.SetPositions(path.ToArray());
-        }
+        // The pathfinder will update the path visualization internally
+        // We don't need to manually set the line renderer positions anymore
     }
 
     private void RandomizeAll()
@@ -73,7 +116,7 @@ public class GridTest : MonoBehaviour
         {
             for (int y = 0; y < gridSizeY; y++)
             {
-                TerrainType randomTerrain = availableTerrainTypes[Random.Range(0, availableTerrainTypes.Length)];
+                TerrainType randomTerrain = availableTerrainTypes[seededRandom.Next(0, availableTerrainTypes.Length)];
                 gridManager.SetTerrainType(x, y, randomTerrain);
             }
         }
@@ -86,16 +129,16 @@ public class GridTest : MonoBehaviour
         float nodeSize = gridManager.GridSettings.NodeSize;
 
         // Randomize start marker
-        int startX = Random.Range(0, gridSizeX);
-        int startY = Random.Range(0, gridSizeY);
+        int startX = seededRandom.Next(0, gridSizeX);
+        int startY = seededRandom.Next(0, gridSizeY);
         startMarker.position = new Vector3(startX * nodeSize, markerHeight, startY * nodeSize);
 
         // Randomize end marker (ensuring it's different from start)
         int endX, endY;
         do
         {
-            endX = Random.Range(0, gridSizeX);
-            endY = Random.Range(0, gridSizeY);
+            endX = seededRandom.Next(0, gridSizeX);
+            endY = seededRandom.Next(0, gridSizeY);
         } while (endX == startX && endY == startY);
         
         endMarker.position = new Vector3(endX * nodeSize, markerHeight, endY * nodeSize);
