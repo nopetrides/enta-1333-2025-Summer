@@ -170,10 +170,10 @@ namespace RTS_1333
 			RandomizeAll();
 			// Find and visualize path
 			var path = _pathfinder.FindPath(_startMarker.position, _endMarker.position);
-			string msg = $"Path found: {path.Count} steps. Start at {_startMarker.position}, end at {_endMarker.position}.";
+			string msg = $"Path found: {path.Count} steps. Start at {_startMarker.position}, end at {_endMarker.position}.\nStart at";
 			foreach (var p in path)
 			{
-				msg += $" > {p.WorldPosition}";
+				msg += $"\n> {p.WorldPosition}";
 			}
 
 			msg += $" > end at {_endMarker.position}.";

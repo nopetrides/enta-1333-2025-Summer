@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace RTS_1333
 {
@@ -26,5 +27,36 @@ namespace RTS_1333
 		/// List of all buildings in this army. Uses BuildingBase for polymorphism.
 		/// </summary>
 		public List<BuildingBase> Buildings = new List<BuildingBase>();
+
+		/// <summary>
+		/// Reference to the grid manager for node lookups.
+		/// </summary>
+		public GridManager GridManager;
+
+		/// <summary>
+		/// Commands all units in the army to move to a target world position.
+		/// </summary>
+		public void MoveAllUnitsTo(Vector3 worldPosition)
+		{
+			// Loop through all units in the army.
+			foreach (var unit in Units)
+			{
+				// Command each unit to move to the target position.
+				unit.MoveTo(GridManager.GetNodeFromWorldPosition(worldPosition));
+			}
+		}
+
+		/// <summary>
+		/// Commands all units in the army to move to a target grid node.
+		/// </summary>
+		public void MoveAllUnitsTo(GridNode node)
+		{
+			// Loop through all units in the army.
+			foreach (var unit in Units)
+			{
+				// Command each unit to move to the target node.
+				unit.MoveTo(node);
+			}
+		}
 	}
 }

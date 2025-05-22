@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d04e6a016381bbd419fdb7d933ed40cc, type: 3}
+  m_Name: A_NPC
+  m_EditorClassIdentifier: 
+  units:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: aa5683cd63fad1143888570046b15afd, type: 2}
+      prefab: {fileID: 4176176975939733581, guid: 6668a9a4397ade04e9afe504f3b3335b, type: 3}
+    count: 2
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: ca3ff9c31e21c024fac2aff493ef6200, type: 2}
+      prefab: {fileID: 2903582494157673995, guid: 1cec3970da8c95e4a990892a256786c6, type: 3}
+    count: 2

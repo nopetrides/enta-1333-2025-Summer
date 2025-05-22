@@ -97,6 +97,7 @@ namespace RTS_1333
 					GridNode node = new GridNode
 					{
 						Name = $"Cell_{(x + _gridSettings.GridSizeX * x + y)}", // Create a unique name for the node.
+						Coordinates = Vector2Int.RoundToInt(new Vector2(worldPos.x, worldPos.z)), // Calculate coordinates based on world position.
 						WorldPosition = worldPos, // Assign calculated world position.
 						Walkable = _gridSettings.DefaultTerrainType.Walkable, // Default value: node is walkable.
 						Weight = _gridSettings.DefaultTerrainType
@@ -135,6 +136,7 @@ namespace RTS_1333
 						new GridNode
 						{
 							Name = $"Cell_{x}_{y}", // Name the node based on its position.
+							Coordinates = node.Coordinates, // Copy coordinates.
 							WorldPosition = node.WorldPosition, // Copy world position.
 							Walkable = node.Walkable, // Copy walkability status.
 							Weight = node.Weight, // Copy weight value.

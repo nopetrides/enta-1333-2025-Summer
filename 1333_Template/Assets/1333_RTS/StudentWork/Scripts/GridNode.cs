@@ -36,6 +36,16 @@ namespace RTS_1333
 		public string Name;
 
 		/// <summary>
+		/// Represents the grid position of a node using a pair of X and Y coordinates.
+		/// </summary>
+		/// <remarks>
+		/// Used to identify the specific location of a node on the grid. `Coordinates` are defined as
+		/// a `Vector2Int`, ensuring integer precision for grid-based systems. Commonly utilized
+		/// in pathfinding, grid rendering, and spatial operations.
+		/// </remarks>
+		public Vector2Int Coordinates;
+
+		/// <summary>
 		/// Represents the world position of a grid node in a 3D space.
 		/// </summary>
 		/// <remarks>
