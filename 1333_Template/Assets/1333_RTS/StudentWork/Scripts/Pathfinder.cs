@@ -73,18 +73,11 @@ namespace RTS_1333
 
 		[Header("Grid Reference")]
 		[SerializeField] private GridManager gridManager;
-
-		[Header("Visualization")]
-		[SerializeField] private bool drawLastPathGizmos = true; // Toggle for drawing path gizmos.
-		[SerializeField] private Color pathGizmoColor = Color.cyan; // Color for path gizmos.
 		
 		private readonly DijkstraReadablePathfinder _dijkstraReadable = new();
 		private readonly DijkstraCondensedPathfinder _dijkstraCondensed = new();
 		private readonly AStarReadablePathfinder _aStarReadable = new();
 		private readonly AStarCondensedPathfinder _aStarCondensed = new();
-		
-		// Stores the last calculated path for visualization.
-		private List<GridNode> _lastPath = new();
 
 		/// <summary>
 		/// Finds a path between two nodes, considering unit size.
@@ -112,9 +105,6 @@ namespace RTS_1333
 					path = new List<GridNode>();
 					break;
 			}
-			// Store the path for gizmo drawing if enabled.
-			if (drawLastPathGizmos)
-				_lastPath = path;
 			return path;
 		}
 
@@ -130,23 +120,6 @@ namespace RTS_1333
 			GridNode endNode = gridManager.GetNodeFromWorldPosition(end);
 			// Use node-based overload for pathfinding.
 			return FindPath(startNode, endNode, unitWidth, unitHeight);
-		}
-
-		/// <summary>
-		/// Draws the last calculated path using Gizmos for visualization.
-		/// </summary>
-		private void OnDrawGizmos()
-		{
-			// Only draw if enabled and path exists.
-			if (!drawLastPathGizmos || _lastPath == null || _lastPath.Count < 2)
-				return;
-			// Set gizmo color.
-			Gizmos.color = pathGizmoColor;
-			// Draw lines between each node in the path.
-			for (int i = 0; i < _lastPath.Count - 1; i++)
-			{
-				Gizmos.DrawLine(_lastPath[i].WorldPosition, _lastPath[i + 1].WorldPosition);
-			}
 		}
 	}
 }

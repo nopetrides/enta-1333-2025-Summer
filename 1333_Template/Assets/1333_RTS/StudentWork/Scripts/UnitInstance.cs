@@ -20,6 +20,9 @@ namespace RTS_1333
 		// Public property to check if the unit is currently moving.
 		public bool IsMoving => _isMoving;
 
+		// Public property to expose the current path for visualization.
+		public List<GridNode> CurrentPath => _currentPath;
+
 		public void Initialize(Pathfinder pathfinder, UnitType unitType)
 		{
 			_pathfinder = pathfinder;

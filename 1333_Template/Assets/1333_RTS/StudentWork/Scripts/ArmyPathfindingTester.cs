@@ -35,6 +35,12 @@ namespace RTS_1333
         // Dictionary to track last known enemy position for follow path recalculation.
         private readonly Dictionary<UnitInstance, Vector3> _lastKnownEnemyPos = new();
 
+        // Color palette for armies (expand as needed).
+        private static readonly Color[] ArmyColors = new Color[]
+        {
+            Color.cyan, Color.red, Color.yellow, Color.green, Color.magenta, Color.blue, Color.white, Color.black
+        };
+
         // Called once at the start.
         private void Start()
         {
@@ -240,6 +246,31 @@ namespace RTS_1333
                 }
             }
             return nearest;
+        }
+
+        // Draws each unit's current path as a gizmo in a unique color per army.
+        private void OnDrawGizmos()
+        {
+            // Loop through all armies.
+            for (int armyIdx = 0; armyIdx < _armies.Count; armyIdx++)
+            {
+                ArmyManager army = _armies[armyIdx];
+                // Pick a color for this army.
+                Color color = ArmyColors[armyIdx % ArmyColors.Length];
+                // Loop through all units in the army.
+                foreach (UnitInstance unit in army.Units)
+                {
+                    if (unit == null || unit.CurrentPath == null || unit.CurrentPath.Count < 2)
+                        continue;
+                    // Set gizmo color for this army.
+                    Gizmos.color = color;
+                    // Draw lines between each node in the path.
+                    for (int i = 0; i < unit.CurrentPath.Count - 1; i++)
+                    {
+                        Gizmos.DrawLine(unit.CurrentPath[i].WorldPosition, unit.CurrentPath[i + 1].WorldPosition);
+                    }
+                }
+            }
         }
     }
 }

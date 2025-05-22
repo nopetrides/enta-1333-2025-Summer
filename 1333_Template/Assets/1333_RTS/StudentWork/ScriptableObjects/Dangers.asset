@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Dangers
   m_EditorClassIdentifier: 
   _terrainName: Default
-  _gizmoColor: {r: 0.5, g: 0.0023584962, b: 0.03748607, a: 1}
+  _gizmoColor: {r: 0, g: 0, b: 0, a: 1}
   _walkable: 1
   _movementCost: 99
