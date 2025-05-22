@@ -12,7 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef7c3cfafc9a1cf40a1ba2b57cfb5418, type: 3}
   m_Name: GridSettingsSO
   m_EditorClassIdentifier: 
-  gridSizeX: 10
-  gridSizeY: 10
-  nodeSize: 1
-  useXZPlane: 1
+  _gridSizeX: 10
+  _gridSizeY: 10
+  _nodeSize: 1
+  _useXZPlane: 1
+  _defaultTerrainType: {fileID: 11400000, guid: afb2f503c94cd0f45b5d05b5754a1a1b, type: 2}
+  _terrainTypes:
+  - {fileID: 11400000, guid: afb2f503c94cd0f45b5d05b5754a1a1b, type: 2}
+  - {fileID: 11400000, guid: 00fa9d58fe5fe1348ba73eab6a28866b, type: 2}
+  - {fileID: 11400000, guid: a1b429a7f63713e45bc23ec1cf214d57, type: 2}
