@@ -22,20 +22,20 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float maxRotation = 90f;  // Maximum angle (straight down)
     [SerializeField] private float rotationSmoothness = 10f;
 
-    private Camera cam;
-    private float targetZoom;
-    private float targetRotation;
-    private Vector3 lastMousePosition;
-    private bool isRotating;
-    private Vector3 targetPosition;
+    private Camera _cam;
+    private float _targetZoom;
+    private float _targetRotation;
+    private Vector3 _lastMousePosition;
+    private bool _isRotating;
+    private Vector3 _targetPosition;
 
     private void Awake()
     {
-        cam = GetComponent<Camera>();
+        _cam = GetComponent<Camera>();
         // Initialize target zoom based on camera's current position
-        targetZoom = transform.position.y;
-        targetPosition = transform.position;
-        targetRotation = transform.eulerAngles.x;
+        _targetZoom = transform.position.y;
+        _targetPosition = transform.position;
+        _targetRotation = transform.eulerAngles.x;
     }
 
     private void Update()
@@ -57,9 +57,9 @@ public class CameraController : MonoBehaviour
 
     private void HandleMovement()
     {
-        if (isRotating) return;
+        if (_isRotating) return;
 
-        Vector3 pos = targetPosition;
+        Vector3 pos = _targetPosition;
 
         // Keyboard input
         if (Input.GetKey("w") || (IsMouseInViewport() && Input.mousePosition.y >= Screen.height - panBorderThickness))
@@ -83,7 +83,7 @@ public class CameraController : MonoBehaviour
         pos.x = Mathf.Clamp(pos.x, panLimitMin.x, panLimitMax.x);
         pos.z = Mathf.Clamp(pos.z, panLimitMin.y, panLimitMax.y);
 
-        targetPosition = pos;
+        _targetPosition = pos;
     }
 
     private void HandleZoom()
@@ -92,11 +92,11 @@ public class CameraController : MonoBehaviour
         if (scroll != 0)
         {
             // Adjust zoom speed based on current height for more natural feel
-            float heightFactor = Mathf.Clamp01((targetZoom - minZoom) / (maxZoom - minZoom));
+            float heightFactor = Mathf.Clamp01((_targetZoom - minZoom) / (maxZoom - minZoom));
             float currentZoomSpeed = zoomSpeed * (1f + heightFactor * zoomHeightMultiplier);
             
-            targetZoom -= scroll * currentZoomSpeed;
-            targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
+            _targetZoom -= scroll * currentZoomSpeed;
+            _targetZoom = Mathf.Clamp(_targetZoom, minZoom, maxZoom);
         }
     }
 
@@ -105,35 +105,35 @@ public class CameraController : MonoBehaviour
         // Start rotation on right mouse button down
         if (Input.GetMouseButtonDown(1))
         {
-            isRotating = true;
-            lastMousePosition = Input.mousePosition;
+            _isRotating = true;
+            _lastMousePosition = Input.mousePosition;
         }
         // End rotation on right mouse button up
         else if (Input.GetMouseButtonUp(1))
         {
-            isRotating = false;
+            _isRotating = false;
         }
 
         // Handle rotation while right mouse button is held
-        if (isRotating)
+        if (_isRotating)
         {
-            Vector3 mouseDelta = Input.mousePosition - lastMousePosition;
-            targetRotation += mouseDelta.y * rotationSpeed * Time.deltaTime;
-            targetRotation = Mathf.Clamp(targetRotation, minRotation, maxRotation);
-            lastMousePosition = Input.mousePosition;
+            Vector3 mouseDelta = Input.mousePosition - _lastMousePosition;
+            _targetRotation += mouseDelta.y * rotationSpeed * Time.deltaTime;
+            _targetRotation = Mathf.Clamp(_targetRotation, minRotation, maxRotation);
+            _lastMousePosition = Input.mousePosition;
         }
 
         // Smoothly rotate to target angle
         Vector3 currentRotation = transform.eulerAngles;
-        float newRotation = Mathf.LerpAngle(currentRotation.x, targetRotation, Time.deltaTime * rotationSmoothness);
+        float newRotation = Mathf.LerpAngle(currentRotation.x, _targetRotation, Time.deltaTime * rotationSmoothness);
         transform.eulerAngles = new Vector3(newRotation, currentRotation.y, currentRotation.z);
     }
 
     private void UpdatePosition()
     {
         // Calculate the target position with the current zoom level
-        Vector3 newPosition = targetPosition;
-        newPosition.y = targetZoom;
+        Vector3 newPosition = _targetPosition;
+        newPosition.y = _targetZoom;
 
         // Smoothly move to the target position
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * zoomSmoothness);
