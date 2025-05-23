@@ -514,7 +514,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8a8ab18fba24a2da1a1f4c97cc1cd19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PathfindingToUse: 0
+  pathfindingToUse: 0
+  algorithmVariant: 0
+  gridManager: {fileID: 375532234}
+  drawLastPathGizmos: 1
+  pathGizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1 &507953955
 GameObject:
   m_ObjectHideFlags: 0
