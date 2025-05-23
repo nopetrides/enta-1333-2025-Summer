@@ -278,7 +278,7 @@ MonoBehaviour:
   maxZoom: 50
   zoomSmoothness: 10
   zoomHeightMultiplier: 0.5
-  rotationSpeed: 100
+  rotationSpeed: 3
   minRotation: 30
   maxRotation: 90
   rotationSmoothness: 10
@@ -543,8 +543,6 @@ MonoBehaviour:
   pathfindingToUse: 1
   algorithmVariant: 1
   gridManager: {fileID: 375532234}
-  drawLastPathGizmos: 1
-  pathGizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1 &507953955
 GameObject:
   m_ObjectHideFlags: 0
