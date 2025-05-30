@@ -91,6 +91,20 @@ public class GridManager : MonoBehaviour
 
         isInitialized = true;
     }
+    /// <summary>
+    /// Convert a world position to the nearest valid grid node.
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    public GridNode getNodeFromWorldPosition(Vector3 position)
+    {
+        int x = _gridSettings.UseXZPlane ? Mathf.RoundToInt(position.x / _gridSettings.NodeSize) : Mathf.RoundToInt(position.x / _gridSettings.NodeSize);
+        int y = _gridSettings.UseXZPlane ? Mathf.RoundToInt(position.z / _gridSettings.NodeSize) : Mathf.RoundToInt(position.y / _gridSettings.NodeSize);
+        x = Mathf.Clamp(x, 0, _gridSettings.GridSizeX - 1);
+        y = Mathf.Clamp(y, 0, _gridSettings.GridSizeY - 1);
+
+        return GetNode(x, y);
+    }
 
     public GridNode GetNode(int x, int y)
     {

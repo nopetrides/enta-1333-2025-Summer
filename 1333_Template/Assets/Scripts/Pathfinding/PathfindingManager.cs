@@ -16,13 +16,17 @@ public class PathfindingManager : MonoBehaviour
 
     private List<Vector2Int> path = new List<Vector2Int>();
     private GridManager gridManager;
-    private AStarPathfinder astar;      
+    private AStarPathfinder astar;
     private BruteForcePathfinder brute;
+
+    // New visualization data
+    private HashSet<GridNode> visited;
+    private List<GridNode> frontier;
 
     private void Awake()
     {
         gridManager = GetComponent<GridManager>();
-        astar = new AStarPathfinder(gridManager);  
+        astar = new AStarPathfinder(gridManager);
         brute = new BruteForcePathfinder(gridManager);
         RecalculatePath();
     }
@@ -57,9 +61,13 @@ public class PathfindingManager : MonoBehaviour
         {
             case PathfinderType.AStar:
                 path = astar.FindPath(startCoordinates, goalCoordinates);
+                visited = astar.VisitedNodes;
+                frontier = astar.FrontierNodes;
                 break;
             case PathfinderType.BruteForce:
                 path = brute.FindPath(startCoordinates, goalCoordinates);
+                visited = null;
+                frontier = null;
                 break;
         }
     }
@@ -74,9 +82,30 @@ public class PathfindingManager : MonoBehaviour
         if (!showPath || path == null || gridManager == null || !gridManager.isInitialized)
             return;
 
-        Gizmos.color = Color.red;
         float size = gridManager.GridSettings.NodeSize * 0.3f;
 
+        // Draw frontier (cyan spheres)
+        if (frontier != null)
+        {
+            Gizmos.color = Color.cyan;
+            foreach (var node in frontier)
+            {
+                Gizmos.DrawSphere(node.worldPosition + Vector3.up * 0.1f, size * 0.5f);
+            }
+        }
+
+        // Draw visited (yellow spheres)
+        if (visited != null)
+        {
+            Gizmos.color = Color.yellow;
+            foreach (var node in visited)
+            {
+                Gizmos.DrawSphere(node.worldPosition + Vector3.up * 0.1f, size * 0.4f);
+            }
+        }
+
+        // Draw path (red cubes) with lines
+        Gizmos.color = Color.red;
         for (int i = 0; i < path.Count; i++)
         {
             var coord = path[i];
@@ -91,5 +120,15 @@ public class PathfindingManager : MonoBehaviour
                                 node.worldPosition + Vector3.up * 0.1f);
             }
         }
+
+        // Highlight start node (magenta cube)
+        Gizmos.color = Color.magenta;
+        var startNode = gridManager.GetNode(startCoordinates.x, startCoordinates.y);
+        Gizmos.DrawCube(startNode.worldPosition + Vector3.up * 0.2f, Vector3.one * size * 1.2f);
+
+        // Highlight end node (blue cube)
+        Gizmos.color = Color.blue;
+        var endNode = gridManager.GetNode(goalCoordinates.x, goalCoordinates.y);
+        Gizmos.DrawCube(endNode.worldPosition + Vector3.up * 0.2f, Vector3.one * size * 1.2f);
     }
 }

@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Rocks
   m_EditorClassIdentifier: 
   _terrainName: Rocks
-  _gizmoColor: {r: 0.7735849, g: 0.47844705, b: 0.11311854, a: 1}
+  _gizmoColor: {r: 0.5283019, g: 0.19487634, b: 0, a: 1}
   _walkable: 1
   _movementCost: 8
