@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
+  m_Name: AC_SpearMan
+  m_EditorClassIdentifier: 
+  armyName: SpearMan
+  unitEntries:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
+      prefab: {fileID: 5929047711669387220, guid: 44478e378409b5a469654ca0453aa1b3, type: 3}
+    count: 4

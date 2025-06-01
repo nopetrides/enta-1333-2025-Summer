@@ -181,10 +181,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0082ee83ed703b4895a1a38c9832757, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  algorithm: 0
   startCoordinates: {x: 0, y: 0}
   goalCoordinates: {x: 5, y: 5}
   showPath: 1
+--- !u!1 &250037350
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 250037352}
+  - component: {fileID: 250037351}
+  m_Layer: 0
+  m_Name: ArmyManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &250037351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250037350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e18877d174efe244e95e4174a74c06d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _playerArmySO: {fileID: 11400000, guid: 31a93845c536e0f469f3b5d2c6015fd8, type: 2}
+  _enemyArmySO: {fileID: 11400000, guid: a435ee948640e0d498a90499f71f2087, type: 2}
+  _spearManArmyS0: {fileID: 11400000, guid: b0b24892315671347b40bd7e6ef11a9d, type: 2}
+--- !u!4 &250037352
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250037350}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &835524891
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,13 +435,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1161391201}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
-  m_LocalPosition: {x: 0, y: 200, z: -1.49}
+  m_LocalRotation: {x: 0.5735764, y: 0, z: 0, w: 0.8191521}
+  m_LocalPosition: {x: 0, y: 10, z: -1.49}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 70, y: 0, z: 0}
 --- !u!114 &1161391205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -454,14 +500,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useKeyboardPan: 1
   useMouseDragPan: 1
-  panSpeed: 50
-  dragSpeed: 5
-  scrollZoomSpeed: 200
+  panSpeed: 30
+  dragSpeed: 3
+  scrollZoomSpeed: 150
   verticalZoomSpeed: 40
-  minHeight: 50
-  maxHeight: 500
+  minHeight: 10
+  maxHeight: 100
   useKeyboardRotate: 1
-  initialFocusDistance: 200
+  initialFocusDistance: 10
   rotateSpeed: 100
 --- !u!1 &1274391300
 GameObject:
@@ -855,6 +901,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gridManager: {fileID: 98548992}
   _unitManager: {fileID: 1274391301}
+  _armyManager: {fileID: 250037351}
 --- !u!4 &2036225621
 Transform:
   m_ObjectHideFlags: 0
@@ -880,3 +927,4 @@ SceneRoots:
   - {fileID: 2036225621}
   - {fileID: 1274391302}
   - {fileID: 1752944295}
+  - {fileID: 250037352}

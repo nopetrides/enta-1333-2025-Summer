@@ -3,14 +3,11 @@ using UnityEngine;
 
 /// <summary>
 /// Optimized A* Pathfinder using a custom priority queue to ensure Unity compatibility.
+/// Tracking collections (VisitedNodes, FrontierNodes) have been removed.
 /// </summary>
 public class AStarPathfinder
 {
     private GridManager gridManager;
-
-    // For visualization
-    public HashSet<GridNode> VisitedNodes { get; private set; } = new HashSet<GridNode>();
-    public List<GridNode> FrontierNodes { get; private set; } = new List<GridNode>();
 
     public AStarPathfinder(GridManager gridManager)
     {
@@ -25,23 +22,14 @@ public class AStarPathfinder
         GridNode start = gridManager.GetNode(startCoords.x, startCoords.y);
         GridNode end = gridManager.GetNode(endCoords.x, endCoords.y);
 
-        List<GridNode> nodePath = FindPath(gridManager, start, end, unitWidth, unitHeight);
-
-        List<Vector2Int> path = new List<Vector2Int>();
-        foreach (GridNode node in nodePath)
-        {
-            int x = Mathf.RoundToInt(node.worldPosition.x / gridManager.GridSettings.NodeSize);
-            int y = Mathf.RoundToInt(node.worldPosition.z / gridManager.GridSettings.NodeSize);
-            path.Add(new Vector2Int(x, y));
-        }
-
-        return path;
+        return FindPathWithNodes(start, end, unitWidth, unitHeight);
     }
 
     /// <summary>
-    /// Core A* algorithm that returns a path as a list of GridNodes.
+    /// Runs the A* algorithm between two GridNodes, then converts the resulting node path
+    /// into a List<Vector2Int> of grid coordinates.
     /// </summary>
-    public List<GridNode> FindPath(GridManager gridManager, GridNode start, GridNode end, int unitWidth, int unitHeight)
+    public List<Vector2Int> FindPathWithNodes(GridNode start, GridNode end, int unitWidth, int unitHeight)
     {
         SimplePriorityQueue<GridNode> openSet = new SimplePriorityQueue<GridNode>();
         Dictionary<GridNode, int> costSoFar = new Dictionary<GridNode, int>();
@@ -51,14 +39,9 @@ public class AStarPathfinder
         costSoFar[start] = 0;
         cameFrom[start] = start;
 
-        VisitedNodes.Clear();
-        FrontierNodes.Clear();
-        FrontierNodes.Add(start);
-
         while (openSet.Count > 0)
         {
             GridNode current = openSet.Dequeue();
-            VisitedNodes.Add(current);
 
             if (current.Equals(end))
                 break;
@@ -69,32 +52,37 @@ public class AStarPathfinder
                     continue;
 
                 int newCost = costSoFar[current] + neighbor.weight;
-
                 if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor])
                 {
                     costSoFar[neighbor] = newCost;
                     int priority = newCost + Heuristic(neighbor, end);
                     openSet.Enqueue(neighbor, priority);
                     cameFrom[neighbor] = current;
-
-                    if (!FrontierNodes.Contains(neighbor))
-                        FrontierNodes.Add(neighbor);
                 }
             }
         }
 
-        List<GridNode> path = new List<GridNode>();
         if (!cameFrom.ContainsKey(end))
-            return path;
+            return new List<Vector2Int>();
 
+        List<GridNode> nodePath = new List<GridNode>();
         GridNode pathNode = end;
         while (!pathNode.Equals(start))
         {
-            path.Add(pathNode);
+            nodePath.Add(pathNode);
             pathNode = cameFrom[pathNode];
         }
-        path.Add(start);
-        path.Reverse();
+        nodePath.Add(start);
+        nodePath.Reverse();
+
+        List<Vector2Int> path = new List<Vector2Int>();
+        float nodeSize = gridManager.GridSettings.NodeSize;
+        foreach (GridNode node in nodePath)
+        {
+            int x = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
+            int y = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
+            path.Add(new Vector2Int(x, y));
+        }
 
         return path;
     }
@@ -110,9 +98,6 @@ public class AStarPathfinder
         if (x - 1 >= 0) yield return gm.GetNode(x - 1, y);
     }
 
-    /// <summary>
-    /// Checks a rectangle area of size (width x height) for walkability.
-    /// </summary>
     private bool IsAreaWalkable(GridManager gm, GridNode node, int width, int height)
     {
         float nodeSize = gm.GridSettings.NodeSize;
@@ -126,16 +111,15 @@ public class AStarPathfinder
                 int nx = baseX + dx;
                 int ny = baseY + dy;
 
-                // Out of bounds
                 if (nx < 0 || nx >= gm.GridSettings.GridSizeX ||
                     ny < 0 || ny >= gm.GridSettings.GridSizeY)
                     return false;
 
-                // Non-walkable
                 if (!gm.GetNode(nx, ny).walkable)
                     return false;
             }
         }
+
         return true;
     }
 

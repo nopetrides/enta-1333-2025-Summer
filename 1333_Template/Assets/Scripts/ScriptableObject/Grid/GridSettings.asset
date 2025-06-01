@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gridSizeX: 20
   _gridSizeY: 20
-  _nodeSize: 10
+  _nodeSize: 1
   _useXZPlane: 1
