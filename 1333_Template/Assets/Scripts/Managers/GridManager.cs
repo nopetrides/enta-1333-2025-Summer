@@ -10,27 +10,24 @@ public class GridManager : MonoBehaviour
     [SerializeField] private TerrainType[] _terrainTypes;
 
     private GridNode[,] _gridNodes;
-    private PathfindingManager _pathfindingManager;
     public bool isInitialized { get; private set; }
 
     /// <summary>
-    /// Exposes the GridSettings so other classes (e.g., AStarPathfinder) can access it.
+    /// Exposes the GridSettings so other classes can access it.
     /// </summary>
     public GridSettings GridSettings => _gridSettings;
 
     private void Awake()
     {
         InitializeGrid();
-        _pathfindingManager = GetComponent<PathfindingManager>();
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        // Reinitialize grid when pressing O
+        if (Input.GetKeyDown(KeyCode.O))
         {
             InitializeGrid();
-            if (_pathfindingManager != null)
-                _pathfindingManager.GridUpdated();
         }
     }
 
@@ -66,32 +63,6 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        // Assign random start/goal to PathfindingManager if available
-        if (_pathfindingManager != null)
-        {
-            var safeCoords = new List<Vector2Int>();
-            for (int x = 0; x < sizeX; x++)
-            {
-                for (int y = 0; y < sizeY; y++)
-                {
-                    if (_gridNodes[x, y].walkable)
-                        safeCoords.Add(new Vector2Int(x, y));
-                }
-            }
-
-            if (safeCoords.Count >= 2)
-            {
-                int idx = Random.Range(0, safeCoords.Count);
-                var start = safeCoords[idx];
-                safeCoords.RemoveAt(idx);
-                int idx2 = Random.Range(0, safeCoords.Count);
-                var goal = safeCoords[idx2];
-
-                _pathfindingManager.startCoordinates = start;
-                _pathfindingManager.goalCoordinates = goal;
-            }
-        }
-
         isInitialized = true;
     }
 
@@ -100,12 +71,12 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public GridNode getNodeFromWorldPosition(Vector3 position)
     {
-        int x = _gridSettings.UseXZPlane
-            ? Mathf.RoundToInt(position.x / _gridSettings.NodeSize)
-            : Mathf.RoundToInt(position.x / _gridSettings.NodeSize);
-        int y = _gridSettings.UseXZPlane
-            ? Mathf.RoundToInt(position.z / _gridSettings.NodeSize)
-            : Mathf.RoundToInt(position.y / _gridSettings.NodeSize);
+        int x = Mathf.RoundToInt(position.x / _gridSettings.NodeSize);
+        int y = Mathf.RoundToInt(
+            _gridSettings.UseXZPlane
+                ? position.z / _gridSettings.NodeSize
+                : position.y / _gridSettings.NodeSize
+        );
 
         x = Mathf.Clamp(x, 0, _gridSettings.GridSizeX - 1);
         y = Mathf.Clamp(y, 0, _gridSettings.GridSizeY - 1);

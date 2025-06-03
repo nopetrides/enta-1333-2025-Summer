@@ -55,8 +55,10 @@ public class RTSCameraController : MonoBehaviour
             }
         }
 
-        // Mouse-drag pan 
-        if (useMouseDragPan && Mouse.current.rightButton.isPressed)
+        // Mouse-drag pan: only when holding Spacebar AND right mouse button
+        if (useMouseDragPan
+            && Mouse.current.rightButton.isPressed
+            && Keyboard.current.spaceKey.isPressed)
         {
             Vector2 delta = Mouse.current.delta.ReadValue();
             Vector3 drag = (right * -delta.x + forward * -delta.y) * dragSpeed * Time.deltaTime;
