@@ -4,8 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Abstract base class for all units in the game. Implements ISelectable for selection.
-/// Holds common stats, state machine, grid-based movement logic, and gizmo drawing for the path,
-/// including colored squares at start and end points. Path gizmos only draw while unit is Moving.
+/// Holds common stats, state machine, grid-based movement logic (including smooth rotation),
+/// and gizmo drawing for the path (colored squares at start/end). Path gizmos only draw while Moving.
 /// </summary>
 public abstract class UnitBase : MonoBehaviour, ISelectable
 {
@@ -13,81 +13,50 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     [Tooltip("The UnitType ScriptableObject that defines this unit's stats.")]
     [SerializeField] protected UnitType _unitType = null;
 
-    // Current HP (initialized from _unitType.MaxHp)
+    [Tooltip("The helper class that handles animation for units.")]
+    [SerializeField] protected UnitAnimHandler _AnimHandler;
+
+    [Header("Movement Settings")]
+    [Tooltip("How fast (in units/sec) the unit moves along the path.")]
+    [SerializeField] protected float _moveSpeed = 5f;
+
+    [Tooltip("How fast (in degrees/sec) the unit rotates to face its next waypoint.")]
+    [SerializeField] protected float _rotationSpeed = 360f;
+
+    // Current HP
     protected float _currentHp;
 
-    // Movement speed (initialized from _unitType.MoveSpeed)
-    protected float _moveSpeed;
-
-    // Current path (list of grid coordinates) that this unit follows
+    // The path to follow (list of grid coordinates)
     protected List<Vector2Int> _currentPath = null;
 
-    // Index of the next node in _currentPath to move toward
+    // Index of the next node in _currentPath
     protected int _nextPathIndex = 0;
 
     // Unit's current state (Idle, Moving, etc.)
     protected UnitState _state = UnitState.Idle;
 
-    // Which team this unit belongs to (Player or Enemy)
+    // Which team (Player or Enemy)
     protected Team _team;
 
-    // Cached reference to GridManager (for world <-> grid conversions)
+    // Cached references
     protected GridManager _gridManager;
-
-    // Cached reference to AStarPathfinder (for pathfinding)
     protected AStarPathfinder _pathfinder;
 
     /// <summary>
     /// Static toggle that controls whether unit paths are drawn as gizmos.
-    /// Can be toggled in SelectionManager by pressing X.
     /// </summary>
     public static bool ShowPathGizmos = false;
 
-    /// <summary>
-    /// Width of this unit in grid cells (for multi-cell footprints). Defaults to 1 if _unitType is null.
-    /// </summary>
     public virtual int Width => (_unitType != null) ? _unitType.Width : 1;
-
-    /// <summary>
-    /// Height of this unit in grid cells (for multi-cell footprints). Defaults to 1 if _unitType is null.
-    /// </summary>
     public virtual int Height => (_unitType != null) ? _unitType.Height : 1;
-
-    /// <summary>
-    /// Current state of the unit (Idle, Moving, etc.).
-    /// </summary>
     public UnitState CurrentState => _state;
-
-    /// <summary>
-    /// Which team this unit belongs to.
-    /// </summary>
     public Team UnitTeam => _team;
-
-    /// <summary>
-    /// UnitType ScriptableObject containing this unit's stats.
-    /// </summary>
     public UnitType UnitType => _unitType;
 
     /// <summary>
-    /// Unity callback when this script instance is loaded. Initializes HP and move speed if unitType is set.
+    /// Initializes this unit with stats, GridManager, AStarPathfinder, and Team.
+    /// Call immediately after instantiation.
     /// </summary>
-    protected virtual void Awake()
-    {
-        if (_unitType != null)
-        {
-            _currentHp = _unitType.MaxHp;
-            _moveSpeed = _unitType.MoveSpeed;
-        }
-    }
-
-    /// <summary>
-    /// Initializes this unit with its stats, GridManager, AStarPathfinder, and Team.
-    /// Must be called immediately after instantiating this GameObject.
-    /// </summary>
-    /// <param name="unitType">The ScriptableObject containing this unit's stats.</param>
-    /// <param name="gridManager">Reference to the GridManager.</param>
-    /// <param name="pathfinder">Reference to the AStarPathfinder instance.</param>
-    /// <param name="team">Which Team (Player/Enemy) this unit belongs to.</param>
     public virtual void Initialize(UnitType unitType, GridManager gridManager, AStarPathfinder pathfinder, Team team)
     {
         _unitType = unitType;
@@ -97,7 +66,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         _pathfinder = pathfinder;
         _team = team;
 
-        // Apply the correct faction material based on team
+        // Apply faction material
         Material mat = unitType.GetArmyMaterial(team);
         if (mat != null)
         {
@@ -109,9 +78,6 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         }
     }
 
-    /// <summary>
-    /// Unity callback every frame; handles movement if in the Moving state.
-    /// </summary>
     protected virtual void Update()
     {
         if (_state == UnitState.Moving)
@@ -121,15 +87,52 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     }
 
     /// <summary>
-    /// Abstract method: move this unit to the specified target node (grid-based).
-    /// Subclasses must implement the actual pathfinding call and change _state to Moving,
-    /// as well as assign a new _currentPath and reset _nextPathIndex to zero.
+    /// Moves this unit to the specified target node.
+    /// Uses AStarPathfinder.FindPathWithNodes to compute a List<Vector2Int> path.
     /// </summary>
-    /// <param name="targetNode">GridNode that this unit should move toward.</param>
-    public abstract void MoveTo(GridNode targetNode);
+    /// <param name="targetNode">The destination node on the grid.</param>
+    public virtual void MoveTo(GridNode targetNode)
+    {
+        // Ensure GridManager and AStarPathfinder are available
+        if (_gridManager == null || _pathfinder == null)
+        {
+            Debug.LogWarning($"SpearMan.MoveTo: Missing GridManager or AStarPathfinder on {name}.");
+            return;
+        }
+
+        // 1) Determine the current grid node based on world position
+        GridNode currentNode = _gridManager.getNodeFromWorldPosition(transform.position);
+        if (currentNode.Equals(default(GridNode)))
+        {
+            Debug.LogWarning($"SpearMan.MoveTo: Could not identify current GridNode for {name}.");
+            return;
+        }
+
+        // 2) Use AStarPathfinder.FindPathWithNodes to get a List<Vector2Int>
+        List<Vector2Int> path = _pathfinder.FindPathWithNodes(
+            currentNode,
+            targetNode,
+            Width,
+            Height
+        );
+
+        // 3) If no path is found, log and return
+        if (path == null || path.Count == 0)
+        {
+            Debug.Log($"SpearMan.MoveTo: No path found for {name} from {currentNode.name} to {targetNode.name}.");
+            return;
+        }
+
+        // 4) Assign the new path and set state to Moving
+        _currentPath = path;
+        _nextPathIndex = 0;
+        _state = UnitState.Moving;
+        _AnimHandler.OnStateChanged(_state);
+    }
+    
 
     /// <summary>
-    /// Shared movement logic: moves along the _currentPath until destination is reached.
+    /// Shared movement + rotation logic: each frame, rotate toward the next waypoint and move forward.
     /// </summary>
     protected virtual void HandleMovement()
     {
@@ -138,78 +141,92 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
             return;
         }
 
-        // Determine next target world position from the grid node
+        // 1) Determine the next target node & its world position
         Vector2Int nextCoords = _currentPath[_nextPathIndex];
         GridNode nextNode = _gridManager.GetNode(nextCoords.x, nextCoords.y);
         Vector3 nextWorldPos = nextNode.worldPosition + Vector3.up * 0.1f;
 
-        // Move toward that position
+        // 2) Compute horizontal direction toward the next waypoint
+        Vector3 direction = nextWorldPos - transform.position;
+        direction.y = 0f; // zero out vertical component
+        if (direction.sqrMagnitude > Mathf.Epsilon)
+        {
+            // 3) Compute target rotation
+            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            // 4) Smoothly rotate toward that direction
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation,
+                targetRotation,
+                _rotationSpeed * Time.deltaTime
+            );
+        }
+
+        // 5) Once facing roughly toward the waypoint, move forward
+        //    We can either always MoveTowards or check angle difference:
+        float angleDifference = Vector3.Angle(transform.forward, direction);
+        // If you want to wait until almost facing the correct way, uncomment below:
+        // if (angleDifference > 10f) return;
+
         transform.position = Vector3.MoveTowards(
             transform.position,
             nextWorldPos,
             _moveSpeed * Time.deltaTime
         );
 
-        // If nearly reached, advance to the next node
+        // 6) Check if we've reached that waypoint
         if (Vector3.Distance(transform.position, nextWorldPos) < 0.01f)
         {
             _nextPathIndex++;
             if (_nextPathIndex >= _currentPath.Count)
             {
-                // Arrived at the final destination
+                // Arrived at final destination
                 _state = UnitState.Idle;
-                OnArrivedAtDestination();
+                OnArrivedAtDestination(_state);
             }
         }
     }
 
+
+
     /// <summary>
-    /// Called when the unit arrives at its final destination.
-    /// Subclasses can override to perform arrival logic (e.g., attack or patrol).
+    /// Called when the unit reaches the final node. Notify animation handler.
     /// </summary>
-    protected virtual void OnArrivedAtDestination()
+    protected virtual void OnArrivedAtDestination(UnitState unitState)
     {
-        // Default: remain idle
+        if (_AnimHandler != null)
+            _AnimHandler.OnStateChanged(unitState);
     }
 
     /// <summary>
-    /// Draws the computed path as cyan lines in the Scene or Game view if ShowPathGizmos is enabled,
-    /// but only while the unit is Moving. Also draws a small red square at the start node and
-    /// a green square at the end node.
+    /// Draw path gizmos (cyan lines, red/green squares) while Moving.
     /// </summary>
     private void OnDrawGizmos()
     {
         if (!ShowPathGizmos || _currentPath == null || _gridManager == null)
             return;
-
-        // Only draw gizmos while the unit is still moving along its path.
         if (_state != UnitState.Moving)
             return;
 
-        // Draw lines between consecutive nodes
         Gizmos.color = Color.cyan;
         for (int i = 0; i < _currentPath.Count - 1; i++)
         {
             Vector2Int aCoords = _currentPath[i];
             Vector2Int bCoords = _currentPath[i + 1];
-
             GridNode aNode = _gridManager.GetNode(aCoords.x, aCoords.y);
             GridNode bNode = _gridManager.GetNode(bCoords.x, bCoords.y);
-
             Vector3 aPos = aNode.worldPosition + Vector3.up * 0.1f;
             Vector3 bPos = bNode.worldPosition + Vector3.up * 0.1f;
-
             Gizmos.DrawLine(aPos, bPos);
         }
 
-        // Draw red square at the start node
+        // Red square at start node
         Vector2Int startCoords = _currentPath[0];
         GridNode startNode = _gridManager.GetNode(startCoords.x, startCoords.y);
         Vector3 startCenter = startNode.worldPosition + Vector3.up * 0.1f;
         Gizmos.color = Color.red;
         Gizmos.DrawCube(startCenter, Vector3.one * (_gridManager.GridSettings.NodeSize * 0.8f));
 
-        // Draw green square at the end node
+        // Green square at end node
         Vector2Int endCoords = _currentPath[_currentPath.Count - 1];
         GridNode endNode = _gridManager.GetNode(endCoords.x, endCoords.y);
         Vector3 endCenter = endNode.worldPosition + Vector3.up * 0.1f;
@@ -218,9 +235,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     }
 }
 
-/// <summary>
-/// States for a unit's state machine.
-/// </summary>
+// UnitState enum remains unchanged
 public enum UnitState
 {
     Idle,

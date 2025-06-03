@@ -12,5 +12,5 @@ public class UnitTypePrefab
     public UnitType unitType = null;
 
     [Tooltip("The actual prefab (GameObject) to instantiate for this unit type.")]
-    public GameObject prefab = null;
+    public GameObject unitPrefab = null;
 }

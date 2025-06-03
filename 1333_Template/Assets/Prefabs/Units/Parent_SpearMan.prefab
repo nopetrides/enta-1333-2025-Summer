@@ -60,6 +60,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
+  _AnimHandler: {fileID: 3241130454884643051}
 --- !u!1001 &4814522396574721784
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -112,6 +113,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9500222, guid: f5b1cdf131841c44e96e902bef4305af, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: a9740b17c9471dd46b0d4fa6f3e5f765, type: 2}
+    - target: {fileID: 9500222, guid: f5b1cdf131841c44e96e902bef4305af, type: 3}
+      propertyPath: m_WarningMessage
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -119,6 +128,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 123088, guid: f5b1cdf131841c44e96e902bef4305af, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8095984278520077298}
+    - targetCorrespondingSourceObject: {fileID: 123088, guid: f5b1cdf131841c44e96e902bef4305af, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3241130454884643051}
   m_SourcePrefab: {fileID: 100100000, guid: f5b1cdf131841c44e96e902bef4305af, type: 3}
 --- !u!23 &4814522396572381314 stripped
 MeshRenderer:
@@ -158,3 +170,15 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.8, z: 0}
+--- !u!114 &3241130454884643051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4814522396574631464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09bc67cf03a5aed4fbfed20015a47dca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

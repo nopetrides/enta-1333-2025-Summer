@@ -87,7 +87,7 @@ public class ArmyManager : MonoBehaviour
         foreach (UnitEntry entry in composition.unitEntries)
         {
             UnitType stats = entry.unitTypePrefab.unitType;
-            GameObject prefab = entry.unitTypePrefab.prefab;
+            GameObject prefab = entry.unitTypePrefab.unitPrefab;
 
             if (stats == null || prefab == null)
             {
@@ -98,15 +98,15 @@ public class ArmyManager : MonoBehaviour
             for (int i = 0; i < entry.count; i++)
             {
                 // 1) Choose a random spawn position on a walkable node
-                GridNode? randomNodeNullable = _gridManager.GetRandomWalkableNode();
-                if (!randomNodeNullable.HasValue)
+                GridNode? randomWalkableNode = _gridManager.GetRandomWalkableNode();
+                if (!randomWalkableNode.HasValue)
                 {
                     Debug.LogWarning("ArmyManager: No walkable nodes available to spawn units.");
                     return;
                 }
 
-                GridNode randomNode = randomNodeNullable.Value;
-                Vector3 spawnPosition = randomNode.worldPosition + Vector3.up * 0.5f;
+                GridNode randomNode = randomWalkableNode.Value;
+                Vector3 spawnPosition = randomNode.worldPosition;
 
                 // 2) Instantiate the unit prefab at that position
                 GameObject unitGO = Instantiate(prefab, spawnPosition, Quaternion.identity);
