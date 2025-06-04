@@ -20,7 +20,7 @@ MonoBehaviour:
   _moveSpeed: 3
   _damage: 5
   _defense: 2
-  _attackType: 0
+  _attackType: 2
   _attackRange: 1
   _armyMaterials:
   - {fileID: 2100000, guid: 39e4c6d4cccc71a409be745df949a036, type: 2}

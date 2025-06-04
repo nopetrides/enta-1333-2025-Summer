@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
-  m_Name: AC_MountedKnight
+  m_Name: AC_Worker
   m_EditorClassIdentifier: 
-  armyName: MountedKnight Army Composition
+  armyName: Worker Army Composition
   unitEntries:
   - unitTypePrefab:
-      unitType: {fileID: 11400000, guid: 42d6e2468c19e944da87670b18f400e1, type: 2}
-      unitPrefab: {fileID: 2330823002029844089, guid: b5b457e5ec4edd14981bf709e4db33a6, type: 3}
-    count: 2
+      unitType: {fileID: 11400000, guid: 60aa132810108f044bf4dab560b9bd9d, type: 2}
+      unitPrefab: {fileID: 5409656197019943514, guid: 94124174bc108aa4b98843b3f0ba5b67, type: 3}
+    count: 4

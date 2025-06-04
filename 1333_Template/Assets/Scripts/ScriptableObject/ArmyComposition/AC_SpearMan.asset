@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
   m_Name: AC_SpearMan
   m_EditorClassIdentifier: 
-  armyName: SpearMan
+  armyName: SpearMan Army Composition
   unitEntries:
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}

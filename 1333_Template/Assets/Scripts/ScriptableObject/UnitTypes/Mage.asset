@@ -17,10 +17,10 @@ MonoBehaviour:
   _height: 1
   _maxHp: 30
   _currentHp: 30
-  _moveSpeed: 3
+  _moveSpeed: 2
   _damage: 5
   _defense: 2
-  _attackType: 0
+  _attackType: 2
   _attackRange: 1
   _armyMaterials:
   - {fileID: 2100000, guid: 39e4c6d4cccc71a409be745df949a036, type: 2}

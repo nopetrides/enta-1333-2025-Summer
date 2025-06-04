@@ -20,8 +20,14 @@ public class ArmyManager : MonoBehaviour
     [Tooltip("ScriptableObject defining the spearman army composition.")]
     [SerializeField] private ArmyComposition _spearManArmySO = null;
 
-    [Tooltip("ScriptableObject defining the spearman army composition.")]
-    [SerializeField] private ArmyComposition _mountedKnightS0 = null;
+    [Tooltip("ScriptableObject defining the mounted knight army composition.")]
+    [SerializeField] private ArmyComposition _mountedKnightArmyS0 = null;
+
+    [Tooltip("ScriptableObject defining the worker army composition.")]
+    [SerializeField] private ArmyComposition _workerArmyS0 = null;
+
+    [Tooltip("ScriptableObject defining the mounted high mage army composition.")]
+    [SerializeField] private ArmyComposition _mountedHighMageArmyS0 = null;
 
     private GridManager _gridManager;
     private UnitManager _unitManager;
@@ -71,12 +77,30 @@ public class ArmyManager : MonoBehaviour
             }
         }
 
-        // Press 3 to spawn Enemy Spearman army
+        // Press 3 to spawn Player MountedKnight Army
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             if (_spearManArmySO != null)
             {
-                SpawnArmy(_mountedKnightS0, Team.Player);
+                SpawnArmy(_mountedKnightArmyS0, Team.Player);
+            }
+        }
+
+        // Press 4 to spawn Player Worker Army
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            if (_spearManArmySO != null)
+            {
+                SpawnArmy(_workerArmyS0, Team.Player);
+            }
+        }
+
+        // Press 5 to spawn Player Mounted HighMage Army
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            if (_spearManArmySO != null)
+            {
+                SpawnArmy(_mountedHighMageArmyS0, Team.Player);
             }
         }
     }

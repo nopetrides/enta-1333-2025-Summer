@@ -237,7 +237,9 @@ MonoBehaviour:
   _playerArmySO: {fileID: 11400000, guid: 31a93845c536e0f469f3b5d2c6015fd8, type: 2}
   _enemyArmySO: {fileID: 11400000, guid: a435ee948640e0d498a90499f71f2087, type: 2}
   _spearManArmySO: {fileID: 11400000, guid: b0b24892315671347b40bd7e6ef11a9d, type: 2}
-  _mountedKnightS0: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
+  _mountedKnightArmyS0: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
+  _workerArmyS0: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
+  _mountedHighMageArmyS0: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
 --- !u!4 &250037352
 Transform:
   m_ObjectHideFlags: 0

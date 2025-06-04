@@ -12,41 +12,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
   m_Name: AC_Enemy
   m_EditorClassIdentifier: 
-  armyName: Enemy
+  armyName: Enemy Army Composition
   unitEntries:
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 60aa132810108f044bf4dab560b9bd9d, type: 2}
-      prefab: {fileID: 5409656197019943514, guid: 94124174bc108aa4b98843b3f0ba5b67, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
-      prefab: {fileID: 5929047711669387220, guid: 44478e378409b5a469654ca0453aa1b3, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 5d9452b30d2d0214d93a048225072758, type: 2}
-      prefab: {fileID: 8673963469282243158, guid: 6adf3926c761796489e36c8e61d94576, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 2827deca50a8fc346a38d6148bd26ed4, type: 2}
-      prefab: {fileID: 5611116250641804688, guid: b9b4c07d2d59e274bae3b251cecef265, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: ec5ecacaf7fa0ee44a6b5823f3cd6743, type: 2}
-      prefab: {fileID: 1173969504950306958, guid: 18b2dfd3d580faf4193d97b567b81646, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: d21521f264fe5374d88419c7e4ef4241, type: 2}
-      prefab: {fileID: 9126553609748573969, guid: 09acb8748ac4bb2499e93e69a83888fb, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: c32c7167b6234be4d8e82436aca420d6, type: 2}
-      prefab: {fileID: 1643975294449979136, guid: 3f15b0e3f9315d84692012b1a3d56896, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 42d6e2468c19e944da87670b18f400e1, type: 2}
-      prefab: {fileID: 2330823002029844089, guid: b5b457e5ec4edd14981bf709e4db33a6, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 1e37e25f0766d81488d5747f15337336, type: 2}
-      prefab: {fileID: 4360395742704428186, guid: 5e41cdb18c142a0459fd6203d7196927, type: 3}
+      unitPrefab: {fileID: 0}
     count: 1
