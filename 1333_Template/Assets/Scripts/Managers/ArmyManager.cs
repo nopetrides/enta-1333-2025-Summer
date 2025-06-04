@@ -20,6 +20,9 @@ public class ArmyManager : MonoBehaviour
     [Tooltip("ScriptableObject defining the spearman army composition.")]
     [SerializeField] private ArmyComposition _spearManArmySO = null;
 
+    [Tooltip("ScriptableObject defining the spearman army composition.")]
+    [SerializeField] private ArmyComposition _mountedKnightS0 = null;
+
     private GridManager _gridManager;
     private UnitManager _unitManager;
     private AStarPathfinder _pathfinder;
@@ -50,8 +53,8 @@ public class ArmyManager : MonoBehaviour
 
     private void Update()
     {
-        // Press N to spawn Player Spearman army
-        if (Input.GetKeyDown(KeyCode.N))
+        // Press 1 to spawn Player Spearman army
+        if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             if (_spearManArmySO != null)
             {
@@ -59,12 +62,21 @@ public class ArmyManager : MonoBehaviour
             }
         }
 
-        // Press M to spawn Enemy Spearman army
-        if (Input.GetKeyDown(KeyCode.M))
+        // Press 2 to spawn Enemy Spearman army
+        if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             if (_spearManArmySO != null)
             {
                 SpawnArmy(_spearManArmySO, Team.Enemy);
+            }
+        }
+
+        // Press 3 to spawn Enemy Spearman army
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            if (_spearManArmySO != null)
+            {
+                SpawnArmy(_mountedKnightS0, Team.Player);
             }
         }
     }
