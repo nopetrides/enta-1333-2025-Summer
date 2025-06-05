@@ -146,17 +146,23 @@ public class ArmyManager : MonoBehaviour
         ArmyComposition composition = null;
         Team team = Team.Player;
 
+        if (Input.GetKeyDown(KeyCode.BackQuote))
+        {
+            // Spawn All Enemy army
+            composition = _playerArmySO;
+            team = Team.Enemy;
+        }
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            // Spawn Player Spearman army
-            composition = _spearManArmySO;
+            // Spawn All Player army
+            composition = _playerArmySO;
             team = Team.Player;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            // Spawn Enemy Spearman army
+            // Spawn Player Spearman army
             composition = _spearManArmySO;
-            team = Team.Enemy;
+            team = Team.Player;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
