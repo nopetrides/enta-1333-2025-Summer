@@ -120,16 +120,20 @@ public class SelectionManager : MonoBehaviour
         if (_selectedUnits.Contains(unit)) return;
 
         _selectedUnits.Add(unit);
-        if (unit.TryGetComponent(out UnitHeadRef head) && head.headRenderer != null)
-            head.headRenderer.material.color = Color.yellow;
+        if (unit.TryGetComponent(out UnitHeadRef headRef))
+        {
+            headRef.ShowSelectionIndicator();
+        }
     }
 
     private void ClearSelection()
     {
         foreach (var unit in _selectedUnits)
         {
-            if (unit.TryGetComponent(out UnitHeadRef head) && head.headRenderer != null)
-                head.headRenderer.material = unit.UnitType.GetArmyMaterial(unit.UnitTeam);
+            if (unit.TryGetComponent(out UnitHeadRef headRef))
+            {
+                headRef.HideSelectionIndicator();
+            }
         }
 
         _selectedUnits.Clear();

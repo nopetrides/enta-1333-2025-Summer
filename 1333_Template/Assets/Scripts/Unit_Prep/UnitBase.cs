@@ -99,14 +99,14 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         _pathfinder = pathfinder;
         _team = team;
 
-        // Apply the correct material based on team color
+        // Apply the correct material based on team color and mount status
         Material teamMaterial = unitType.GetArmyMaterial(team);
         if (teamMaterial != null)
         {
             UnitHeadRef headRef = GetComponent<UnitHeadRef>();
-            if (headRef != null && headRef.headRenderer != null)
+            if (headRef != null)
             {
-                headRef.headRenderer.material = teamMaterial;
+                headRef.ApplyTeamMaterial(teamMaterial, unitType.IsMounted);
             }
         }
     }

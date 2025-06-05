@@ -149,7 +149,7 @@ public class ArmyManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.BackQuote))
         {
             // Spawn All Enemy army
-            composition = _playerArmySO;
+            composition = _enemyArmySO;
             team = Team.Enemy;
         }
         if (Input.GetKeyDown(KeyCode.Alpha1))

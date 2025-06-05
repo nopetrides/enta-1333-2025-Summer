@@ -1,3 +1,4 @@
+// UnitType.cs
 using UnityEngine;
 
 /// <summary>
@@ -37,6 +38,10 @@ public class UnitType : ScriptableObject
     [Header("Faction Materials")]
     [Tooltip("Array of Materials, indexed by Team enum. e.g. [0] = Player, [1] = Enemy.")]
     [SerializeField] private Material[] _armyMaterials = null;
+
+    [Header("Mount Settings")]
+    [Tooltip("Whether this unit rides a mount (horse).")]
+    [SerializeField] private bool _isMounted = false;
 
     /// <summary>
     /// The display name of this unit type.
@@ -87,6 +92,11 @@ public class UnitType : ScriptableObject
     /// Maximum attack range in grid cells.
     /// </summary>
     public int AttackRange => _attackRange;
+
+    /// <summary>
+    /// Whether this unit rides a mount (horse).
+    /// </summary>
+    public bool IsMounted => _isMounted;
 
     /// <summary>
     /// Returns the Material corresponding to the given team.
