@@ -1,4 +1,4 @@
-Grid base pathfinding with units DEMO
+# Grid base pathfinding with units DEMO
 
 # Key features
 
@@ -83,26 +83,26 @@ Spawn Player High Mage army (uses _highMageArmySO, Team = Player)
 # ScriptableObjects
 1. ArmyComposition
 
-AC_Archer
-AC_Commander
-AC_CrossbowMan
-AC_Enemy
-AC_HighMage
-AC_Mage
-AC_MountedHighMage
-AC_MountedKnight
-AC_Player
-AC_SpearMan
-AC_Worker
+- AC_Archer
+- AC_Commander
+- AC_CrossbowMan
+- AC_Enemy
+- AC_HighMage
+- AC_Mage
+- AC_MountedHighMage
+- AC_MountedKnight
+- AC_Player
+- AC_SpearMan
+- AC_Worker
 
 2. UnitTypes
 
-Archer
-Commander
-CrossbowMan
-HighMage
-Mage
-Mounted_HighMage
-Mounted_Knight
-SpearMan
-Worker
+- Archer
+- Commander
+- CrossbowMan
+- HighMage
+- Mage
+- Mounted_HighMage
+- Mounted_Knight
+- SpearMan
+- Worker
