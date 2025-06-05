@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
+  m_Name: AC_HighMage
+  m_EditorClassIdentifier: 
+  armyName: HighMage Army Composition
+  unitEntries:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: c32c7167b6234be4d8e82436aca420d6, type: 2}
+      unitPrefab: {fileID: 1643975294449979136, guid: 3f15b0e3f9315d84692012b1a3d56896, type: 3}
+    count: 4

@@ -240,6 +240,11 @@ MonoBehaviour:
   _mountedKnightArmyS0: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
   _workerArmyS0: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
   _mountedHighMageArmyS0: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
+  _archerArmySO: {fileID: 11400000, guid: 4fcbd005d39c676428f8640beeed2f28, type: 2}
+  _crossbowManArmySO: {fileID: 11400000, guid: 98d4de793532b1e40b1e931d9373f31e, type: 2}
+  _commanderArmySO: {fileID: 11400000, guid: aece804b78393c94193d5b8b54e90b36, type: 2}
+  _mageArmySO: {fileID: 11400000, guid: 27e52478459deff40b99ed1b6086eee6, type: 2}
+  _highMageArmySO: {fileID: 11400000, guid: e4f79c9d2faf478409e8460f299b2950, type: 2}
 --- !u!4 &250037352
 Transform:
   m_ObjectHideFlags: 0

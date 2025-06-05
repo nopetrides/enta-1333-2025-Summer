@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Serializable entry used in ArmyComposition.
-/// One entry represents: “이 UnitTypePrefab을 count만큼 스폰한다.”
+/// One entry represents: “Spawn this unit type for this count units.”
 /// </summary>
 [Serializable]
 public class UnitEntry

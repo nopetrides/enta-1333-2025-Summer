@@ -1,68 +1,61 @@
-// SpearManAnimHandler.cs
+// UnitAnimHandler.cs
 using UnityEngine;
 
 /// <summary>
-/// Handles all animation transitions for a SpearMan unit. Currently only
-/// walking (moving) and idle animations are implemented. Stubs for
-/// attacking, dying, and other future states are provided for easy extension.
+/// Handles animation transitions for a unit. 
+/// Current states include Idle, Moving, and Dead. Additional states (Attacking, Patrolling) can be added.
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class UnitAnimHandler : MonoBehaviour
 {
     private Animator _animator;
 
+    // Animator parameter hashes
     private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
-    //private static readonly int AttackTriggerHash = Animator.StringToHash("Attack");
-    //private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
-    // Add additional Animator parameter hashes here, e.g.:
-    // private static readonly int IsAttackingHash = Animator.StringToHash("IsAttacking");
+    private static readonly int DeadTriggerHash = Animator.StringToHash("DeadTrigger");
 
     private void Awake()
     {
         _animator = GetComponent<Animator>();
         if (_animator == null)
         {
-            Debug.LogError("SpearManAnimHandler: No Animator component found on " + name);
+            Debug.LogError("UnitAnimHandler: No Animator component found on " + name);
         }
     }
 
     /// <summary>
-    /// Call this method whenever the SpearMan's state changes.
-    /// Only Walking (Moving) vs. Idle is implemented for now. Future states
-    /// such as Attacking, Dying, or Patrolling can be added in their cases.
+    /// Called when the unit's state changes. Switches the Animator parameters accordingly.
     /// </summary>
-    /// <param name="newState">The new UnitState of the SpearMan.</param>
+    /// <param name="newState">The new UnitState to transition into.</param>
     public void OnStateChanged(UnitState newState)
     {
         switch (newState)
         {
             case UnitState.Idle:
-                // Stop walking animation
+                // Stop moving animation
                 _animator.SetBool(IsMovingHash, false);
                 break;
 
             case UnitState.Moving:
-                // Play walking animation
+                // Play moving animation
                 _animator.SetBool(IsMovingHash, true);
                 break;
 
+            case UnitState.Dead:
+                // Play death animation once by setting DeadTrigger
+                _animator.SetTrigger(DeadTriggerHash);
+                break;
+
             case UnitState.Attacking:
-                // Stub: future attacking animation
-                // _animator.SetTrigger(AttackTriggerHash);
+                // Future: trigger attack animation (e.g., _animator.SetTrigger("AttackTrigger"))
                 break;
 
             case UnitState.Patrolling:
-                // Stub: might be same as moving or a unique animation
-                // _animator.SetBool(IsMovingHash, true);
-                break;
-
-            case UnitState.Dead:
-                // Stub: future death animation
-                // _animator.SetBool(IsDeadHash, true);
+                // Future: use same moving animation or a separate patrol animation
+                _animator.SetBool(IsMovingHash, true);
                 break;
 
             default:
-                // Handle any other states if needed
                 break;
         }
     }

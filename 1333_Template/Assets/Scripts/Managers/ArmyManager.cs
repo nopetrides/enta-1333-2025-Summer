@@ -29,6 +29,21 @@ public class ArmyManager : MonoBehaviour
     [Tooltip("ScriptableObject defining the mounted high mage army composition.")]
     [SerializeField] private ArmyComposition _mountedHighMageArmyS0 = null;
 
+    [Tooltip("ScriptableObject defining the archer army composition.")]
+    [SerializeField] private ArmyComposition _archerArmySO = null;
+
+    [Tooltip("ScriptableObject defining the crossbowman army composition.")]
+    [SerializeField] private ArmyComposition _crossbowManArmySO = null;
+
+    [Tooltip("ScriptableObject defining the commander army composition.")]
+    [SerializeField] private ArmyComposition _commanderArmySO = null;
+
+    [Tooltip("ScriptableObject defining the mage army composition.")]
+    [SerializeField] private ArmyComposition _mageArmySO = null;
+
+    [Tooltip("ScriptableObject defining the high mage army composition.")]
+    [SerializeField] private ArmyComposition _highMageArmySO = null;
+
     private GridManager _gridManager;
     private UnitManager _unitManager;
     private AStarPathfinder _pathfinder;
@@ -59,50 +74,7 @@ public class ArmyManager : MonoBehaviour
 
     private void Update()
     {
-        // Press 1 to spawn Player Spearman army
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            if (_spearManArmySO != null)
-            {
-                SpawnArmy(_spearManArmySO, Team.Player);
-            }
-        }
-
-        // Press 2 to spawn Enemy Spearman army
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            if (_spearManArmySO != null)
-            {
-                SpawnArmy(_spearManArmySO, Team.Enemy);
-            }
-        }
-
-        // Press 3 to spawn Player MountedKnight Army
-        if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            if (_spearManArmySO != null)
-            {
-                SpawnArmy(_mountedKnightArmyS0, Team.Player);
-            }
-        }
-
-        // Press 4 to spawn Player Worker Army
-        if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            if (_spearManArmySO != null)
-            {
-                SpawnArmy(_workerArmyS0, Team.Player);
-            }
-        }
-
-        // Press 5 to spawn Player Mounted HighMage Army
-        if (Input.GetKeyDown(KeyCode.Alpha5))
-        {
-            if (_spearManArmySO != null)
-            {
-                SpawnArmy(_mountedHighMageArmyS0, Team.Player);
-            }
-        }
+        HandleSpawnInput();
     }
 
     /// <summary>
@@ -155,7 +127,7 @@ public class ArmyManager : MonoBehaviour
                     _unitManager.RegisterUnit(unitComponent);
 
                     // 4) Initialize the unit with its type, gridManager, pathfinder, and team
-                    unitComponent.Initialize(stats, _gridManager, _pathfinder, team);
+                    unitComponent.Initialize(stats, _gridManager, _unitManager,_pathfinder, team);
                 }
                 else
                 {
@@ -163,6 +135,81 @@ public class ArmyManager : MonoBehaviour
                     Destroy(unitGO);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Checks for key presses and calls SpawnArmy with the appropriate ArmyComposition and Team.
+    /// </summary>
+    private void HandleSpawnInput()
+    {
+        ArmyComposition composition = null;
+        Team team = Team.Player;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            // Spawn Player Spearman army
+            composition = _spearManArmySO;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            // Spawn Enemy Spearman army
+            composition = _spearManArmySO;
+            team = Team.Enemy;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            // Spawn Player Mounted Knight army
+            composition = _mountedKnightArmyS0;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            // Spawn Player Worker army
+            composition = _workerArmyS0;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            // Spawn Player Mounted High Mage army
+            composition = _mountedHighMageArmyS0;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha6))
+        {
+            // Spawn Player Archer army
+            composition = _archerArmySO;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha7))
+        {
+            // Spawn Player Crossbowman army
+            composition = _crossbowManArmySO;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha8))
+        {
+            // Spawn Player Commander army
+            composition = _commanderArmySO;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha9))
+        {
+            // Spawn Player Mage army
+            composition = _mageArmySO;
+            team = Team.Player;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            // Spawn Player High Mage army
+            composition = _highMageArmySO;
+            team = Team.Player;
+        }
+
+        if (composition != null)
+        {
+            SpawnArmy(composition, team);
         }
     }
 }

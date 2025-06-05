@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 221877842006511824}
   - component: {fileID: 8828129824524717803}
+  - component: {fileID: 6389222395922256974}
   m_Layer: 0
   m_Name: Parent_CrossbowMan
   m_TagString: Untagged
@@ -46,6 +47,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   headRenderer: {fileID: 5238948755774222394}
+--- !u!114 &6389222395922256974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9126553609748573969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22e60b4ccc5df0459204b9dd6f73c8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _unitType: {fileID: 11400000, guid: d21521f264fe5374d88419c7e4ef4241, type: 2}
+  _AnimHandler: {fileID: 6670371290653991637}
+  _moveSpeed: 5
+  _rotationSpeed: 360
 --- !u!1001 &5238948755771873150
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -98,11 +115,61 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9546602, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 5475a477cdaa39145ab49ca4f27abdf0, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 145858, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9025452431103731991}
+    - targetCorrespondingSourceObject: {fileID: 145858, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6670371290653991637}
   m_SourcePrefab: {fileID: 100100000, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}
+--- !u!1 &5238948755772010172 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 145858, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}
+  m_PrefabInstance: {fileID: 5238948755771873150}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &9025452431103731991
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238948755772010172}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1.8
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.84, z: 0}
+--- !u!114 &6670371290653991637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238948755772010172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09bc67cf03a5aed4fbfed20015a47dca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &5238948755772197592 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 466342, guid: 3b460bfcb46a91c429e5664c77836bbc, type: 3}

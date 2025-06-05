@@ -18,7 +18,7 @@ public class UnitManager : MonoBehaviour
     public IReadOnlyList<UnitBase> AllUnits => _allUnits;
 
     /// <summary>
-    /// Call this when a UnitBase becomes active in the scene.
+    /// Call this when new unit spawns in game scene.
     /// </summary>
     /// <param name="unit">The unit instance to register.</param>
     public void RegisterUnit(UnitBase unit)
@@ -30,7 +30,7 @@ public class UnitManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Call this when a UnitBase is destroyed or should be removed from play.
+    /// Call this when unit is dead and destroyed.
     /// </summary>
     /// <param name="unit">The unit instance to unregister.</param>
     public void UnregisterUnit(UnitBase unit)

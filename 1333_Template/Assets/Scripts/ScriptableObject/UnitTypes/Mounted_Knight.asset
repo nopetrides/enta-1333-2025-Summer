@@ -24,4 +24,4 @@ MonoBehaviour:
   _attackRange: 1
   _armyMaterials:
   - {fileID: 2100000, guid: 39e4c6d4cccc71a409be745df949a036, type: 2}
-  - {fileID: 2100000, guid: 334576fb6a9ee8441ac83d006bd7488a, type: 2}
+  - {fileID: 2100000, guid: 8af1c123c31c46544965fc4e0490bf05, type: 2}

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
   m_Name: AC_Player
   m_EditorClassIdentifier: 
-  armyName: Player Army Composition
+  armyName: ALL Player Army Composition
   unitEntries:
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: 60aa132810108f044bf4dab560b9bd9d, type: 2}

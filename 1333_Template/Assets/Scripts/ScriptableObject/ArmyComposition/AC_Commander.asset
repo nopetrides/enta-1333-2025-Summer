@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
+  m_Name: AC_Commander
+  m_EditorClassIdentifier: 
+  armyName: Commander Army Composition
+  unitEntries:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: ec5ecacaf7fa0ee44a6b5823f3cd6743, type: 2}
+      unitPrefab: {fileID: 1173969504950306958, guid: 18b2dfd3d580faf4193d97b567b81646, type: 3}
+    count: 4

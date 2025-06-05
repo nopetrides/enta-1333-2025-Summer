@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
+  m_Name: AC_Archer
+  m_EditorClassIdentifier: 
+  armyName: Archer Army Composition
+  unitEntries:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: 5d9452b30d2d0214d93a048225072758, type: 2}
+      unitPrefab: {fileID: 8673963469282243158, guid: 6adf3926c761796489e36c8e61d94576, type: 3}
+    count: 4
