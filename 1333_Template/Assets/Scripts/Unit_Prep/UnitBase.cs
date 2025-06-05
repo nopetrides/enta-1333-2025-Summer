@@ -103,7 +103,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         Material teamMaterial = unitType.GetArmyMaterial(team);
         if (teamMaterial != null)
         {
-            UnitHeadRef headRef = GetComponent<UnitHeadRef>();
+            UnitVisualController headRef = GetComponent<UnitVisualController>();
             if (headRef != null)
             {
                 headRef.ApplyTeamMaterial(teamMaterial, unitType.IsMounted);

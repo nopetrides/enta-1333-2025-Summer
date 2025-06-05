@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9023580210418073022}
-  - component: {fileID: 7477863963288468820}
   - component: {fileID: 5886207569797123519}
+  - component: {fileID: 1803335899663014089}
   m_Layer: 0
   m_Name: Parent_SpearMan
   m_TagString: Untagged
@@ -35,22 +35,6 @@ Transform:
   - {fileID: 2260196195158736675}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7477863963288468820
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5929047711669387220}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1daa1d574cf636541a5f1ea4019f7289, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  headRenderer: {fileID: 4814522396572381314}
-  bodyRenderer: {fileID: 4814522396560930698}
-  horseRenderer: {fileID: 0}
-  selectionIndicator: {fileID: 7797520680328108246}
 --- !u!114 &5886207569797123519
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +51,22 @@ MonoBehaviour:
   _AnimHandler: {fileID: 3241130454884643051}
   _moveSpeed: 5
   _rotationSpeed: 360
+--- !u!114 &1803335899663014089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929047711669387220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41d0ec133e3b254f956724e66528152, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headRenderer: {fileID: 4814522396572381314}
+  bodyRenderer: {fileID: 4814522396560930698}
+  horseRenderer: {fileID: 0}
+  selectionIndicator: {fileID: 7797520680328108246}
 --- !u!1 &7797520680328108246
 GameObject:
   m_ObjectHideFlags: 0

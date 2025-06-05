@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1391347904307848289}
-  - component: {fileID: 5162142680268556374}
   - component: {fileID: 9072291048038302735}
+  - component: {fileID: 7122588483464382025}
   m_Layer: 0
   m_Name: Parent_Worker
   m_TagString: Untagged
@@ -35,22 +35,6 @@ Transform:
   - {fileID: 4929301420651576336}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5162142680268556374
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5409656197019943514}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1daa1d574cf636541a5f1ea4019f7289, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  headRenderer: {fileID: 68109253007547390}
-  bodyRenderer: {fileID: 68109253010323268}
-  horseRenderer: {fileID: 0}
-  selectionIndicator: {fileID: 7776870273053088899}
 --- !u!114 &9072291048038302735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +51,22 @@ MonoBehaviour:
   _AnimHandler: {fileID: 3193981410581704953}
   _moveSpeed: 5
   _rotationSpeed: 360
+--- !u!114 &7122588483464382025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5409656197019943514}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41d0ec133e3b254f956724e66528152, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headRenderer: {fileID: 68109253007547390}
+  bodyRenderer: {fileID: 68109253010323268}
+  horseRenderer: {fileID: 0}
+  selectionIndicator: {fileID: 7776870273053088899}
 --- !u!1 &7776870273053088899
 GameObject:
   m_ObjectHideFlags: 0

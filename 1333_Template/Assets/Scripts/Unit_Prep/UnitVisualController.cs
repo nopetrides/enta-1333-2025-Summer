@@ -5,7 +5,7 @@ using UnityEngine;
 /// Holds references to the head, body, horse renderers, and a selection indicator GameObject.
 /// Provides a method to apply a team material and to show/hide the selection indicator.
 /// </summary>
-public class UnitHeadRef : MonoBehaviour
+public class UnitVisualController : MonoBehaviour
 {
     [Tooltip("Drag the head's Renderer (child GameObject) here.")]
     public Renderer headRenderer = null;

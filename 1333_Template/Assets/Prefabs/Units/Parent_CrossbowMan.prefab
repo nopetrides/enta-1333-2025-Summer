@@ -116,8 +116,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 221877842006511824}
-  - component: {fileID: 8828129824524717803}
   - component: {fileID: 6389222395922256974}
+  - component: {fileID: 7774118913342098103}
   m_Layer: 0
   m_Name: Parent_CrossbowMan
   m_TagString: Untagged
@@ -142,22 +142,6 @@ Transform:
   - {fileID: 1327962237998204386}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8828129824524717803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9126553609748573969}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1daa1d574cf636541a5f1ea4019f7289, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  headRenderer: {fileID: 5238948755774222394}
-  bodyRenderer: {fileID: 5238948755776998608}
-  horseRenderer: {fileID: 0}
-  selectionIndicator: {fileID: 4660011183770332267}
 --- !u!114 &6389222395922256974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,6 +158,22 @@ MonoBehaviour:
   _AnimHandler: {fileID: 6670371290653991637}
   _moveSpeed: 5
   _rotationSpeed: 360
+--- !u!114 &7774118913342098103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9126553609748573969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41d0ec133e3b254f956724e66528152, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headRenderer: {fileID: 5238948755774222394}
+  bodyRenderer: {fileID: 5238948755776998608}
+  horseRenderer: {fileID: 0}
+  selectionIndicator: {fileID: 4660011183770332267}
 --- !u!1001 &5238948755771873150
 PrefabInstance:
   m_ObjectHideFlags: 0

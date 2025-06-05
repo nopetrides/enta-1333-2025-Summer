@@ -120,7 +120,7 @@ public class SelectionManager : MonoBehaviour
         if (_selectedUnits.Contains(unit)) return;
 
         _selectedUnits.Add(unit);
-        if (unit.TryGetComponent(out UnitHeadRef headRef))
+        if (unit.TryGetComponent(out UnitVisualController headRef))
         {
             headRef.ShowSelectionIndicator();
         }
@@ -130,7 +130,7 @@ public class SelectionManager : MonoBehaviour
     {
         foreach (var unit in _selectedUnits)
         {
-            if (unit.TryGetComponent(out UnitHeadRef headRef))
+            if (unit.TryGetComponent(out UnitVisualController headRef))
             {
                 headRef.HideSelectionIndicator();
             }
