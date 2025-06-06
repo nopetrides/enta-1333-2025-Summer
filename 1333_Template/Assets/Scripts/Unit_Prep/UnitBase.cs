@@ -13,7 +13,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 {
     [Header("References")]
     [Tooltip("The UnitType ScriptableObject that defines this unit's stats.")]
-    [SerializeField] protected UnitType _unitType = null;
+    [SerializeField] protected UnitTypeSO _unitType = null;
 
     [Tooltip("The helper class that handles animation for units.")]
     [SerializeField] protected UnitAnimHandler _AnimHandler;
@@ -73,7 +73,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     /// <summary>
     /// Exposes the UnitType ScriptableObject for this unit.
     /// </summary>
-    public UnitType UnitType => _unitType;
+    public UnitTypeSO UnitType => _unitType;
 
     /// <summary>
     /// Initializes this unit with its type, GridManager, UnitManager, AStarPathfinder, and team.
@@ -85,7 +85,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     /// <param name="pathfinder">Shared AStarPathfinder instance.</param>
     /// <param name="team">The team (Player or Enemy) this unit belongs to.</param>
     public virtual void Initialize(
-        UnitType unitType,
+        UnitTypeSO unitType,
         GridManager gridManager,
         UnitManager unitManager,
         AStarPathfinder pathfinder,

@@ -94,7 +94,7 @@ public class ArmyManager : MonoBehaviour
 
         foreach (UnitEntry entry in composition.unitEntries)
         {
-            UnitType unitStats = entry.unitTypePrefab.unitType;
+            UnitTypeSO unitStats = entry.unitTypePrefab.unitType;
             GameObject prefab = entry.unitTypePrefab.unitPrefab;
 
             if (unitStats == null || prefab == null)

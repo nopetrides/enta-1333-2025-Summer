@@ -5,7 +5,7 @@ using UnityEngine;
 /// Holds all the stats and references for a single unit type.
 /// </summary>
 [CreateAssetMenu(fileName = "UnitType", menuName = "Game/Unit Type")]
-public class UnitType : ScriptableObject
+public class UnitTypeSO : ScriptableObject
 {
     [Header("Basic Info")]
     [Tooltip("The display name of this unit type.")]

@@ -9,7 +9,7 @@ using UnityEngine;
 public class UnitTypePrefab
 {
     [Tooltip("The UnitType ScriptableObject defining stats for this unit.")]
-    public UnitType unitType = null;
+    public UnitTypeSO unitType = null;
 
     [Tooltip("The actual prefab (GameObject) to instantiate for this unit type.")]
     public GameObject unitPrefab = null;

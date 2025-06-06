@@ -23,4 +23,9 @@ public class GameManager : MonoBehaviour
 
         _unitSelectionManager.Initialize(_camera, _gridManager, _unitManager);
     }
+
+    public void StartGame(string name)
+    {
+        Debug.Log($"{name}");
+    }
 }
