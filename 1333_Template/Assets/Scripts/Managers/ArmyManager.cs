@@ -12,37 +12,37 @@ public class ArmyManager : MonoBehaviour
 {
     [Header("Army Compositions")]
     [Tooltip("ScriptableObject defining the player army composition.")]
-    [SerializeField] private ArmyComposition _playerArmySO = null;
+    [SerializeField] private ArmyCompositionSO _playerArmySO = null;
 
     [Tooltip("ScriptableObject defining the enemy army composition.")]
-    [SerializeField] private ArmyComposition _enemyArmySO = null;
+    [SerializeField] private ArmyCompositionSO _enemyArmySO = null;
 
     [Tooltip("ScriptableObject defining the spearman army composition.")]
-    [SerializeField] private ArmyComposition _spearManArmySO = null;
+    [SerializeField] private ArmyCompositionSO _spearManArmySO = null;
 
     [Tooltip("ScriptableObject defining the mounted knight army composition.")]
-    [SerializeField] private ArmyComposition _mountedKnightArmyS0 = null;
+    [SerializeField] private ArmyCompositionSO _mountedKnightArmyS0 = null;
 
     [Tooltip("ScriptableObject defining the worker army composition.")]
-    [SerializeField] private ArmyComposition _workerArmyS0 = null;
+    [SerializeField] private ArmyCompositionSO _workerArmyS0 = null;
 
     [Tooltip("ScriptableObject defining the mounted high mage army composition.")]
-    [SerializeField] private ArmyComposition _mountedHighMageArmyS0 = null;
+    [SerializeField] private ArmyCompositionSO _mountedHighMageArmyS0 = null;
 
     [Tooltip("ScriptableObject defining the archer army composition.")]
-    [SerializeField] private ArmyComposition _archerArmySO = null;
+    [SerializeField] private ArmyCompositionSO _archerArmySO = null;
 
     [Tooltip("ScriptableObject defining the crossbowman army composition.")]
-    [SerializeField] private ArmyComposition _crossbowManArmySO = null;
+    [SerializeField] private ArmyCompositionSO _crossbowManArmySO = null;
 
     [Tooltip("ScriptableObject defining the commander army composition.")]
-    [SerializeField] private ArmyComposition _commanderArmySO = null;
+    [SerializeField] private ArmyCompositionSO _commanderArmySO = null;
 
     [Tooltip("ScriptableObject defining the mage army composition.")]
-    [SerializeField] private ArmyComposition _mageArmySO = null;
+    [SerializeField] private ArmyCompositionSO _mageArmySO = null;
 
     [Tooltip("ScriptableObject defining the high mage army composition.")]
-    [SerializeField] private ArmyComposition _highMageArmySO = null;
+    [SerializeField] private ArmyCompositionSO _highMageArmySO = null;
 
     private GridManager _gridManager;
     private UnitManager _unitManager;
@@ -84,7 +84,7 @@ public class ArmyManager : MonoBehaviour
     /// </summary>
     /// <param name="composition">ArmyComposition SO containing unit entries.</param>
     /// <param name="team">Which team (Player or Enemy) these units belong to.</param>
-    private void SpawnArmy(ArmyComposition composition, Team team)
+    private void SpawnArmy(ArmyCompositionSO composition, Team team)
     {
         if (_gridManager == null || _unitManager == null)
         {
@@ -143,7 +143,7 @@ public class ArmyManager : MonoBehaviour
     /// </summary>
     private void HandleSpawnInput()
     {
-        ArmyComposition composition = null;
+        ArmyCompositionSO composition = null;
         Team team = Team.Player;
 
         if (Input.GetKeyDown(KeyCode.BackQuote))

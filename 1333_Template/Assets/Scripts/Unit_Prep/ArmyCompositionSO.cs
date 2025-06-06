@@ -7,7 +7,7 @@ using UnityEngine;
 /// Create new asset via: Assets → Create → Game → Army Composition
 /// </summary>
 [CreateAssetMenu(fileName = "ArmyComposition", menuName = "Game/Army Composition")]
-public class ArmyComposition : ScriptableObject
+public class ArmyCompositionSO : ScriptableObject
 {
     [Header("Army Info")]
     [Tooltip("Name of this army (e.g. Player, Enemy).")]
