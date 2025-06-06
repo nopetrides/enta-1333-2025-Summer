@@ -13,21 +13,21 @@ public class PathfindingManager : MonoBehaviour
     public bool showPath = true;
 
     // Stores the currently calculated path as a list of grid coordinates
-    private List<Vector2Int> path = new List<Vector2Int>();
+    private List<Vector2Int> _path = new List<Vector2Int>();
     // Reference to the GridManager component
-    private GridManager gridManager;
+    private GridManager _gridManager;
     // Reference to the A* pathfinder instance
-    private AStarPathfinder astar;
+    private AStarPathfinder _astar;
 
     // Flag to enable or disable drawing Gizmos at runtime
-    private bool drawGizmos = true;
+    private bool _drawGizmos = true;
 
     private void Awake()
     {
         // Cache the GridManager component
-        gridManager = GetComponent<GridManager>();
+        _gridManager = GetComponent<GridManager>();
         // Create a new A* pathfinder using the grid manager
-        astar = new AStarPathfinder(gridManager);
+        _astar = new AStarPathfinder(_gridManager);
         // Calculate initial path
         RecalculatePath();
     }
@@ -35,16 +35,16 @@ public class PathfindingManager : MonoBehaviour
     private void OnValidate()
     {
         // Ensure gridManager is assigned, especially when changing values in the Inspector
-        if (gridManager == null)
-            gridManager = GetComponent<GridManager>();
+        if (_gridManager == null)
+            _gridManager = GetComponent<GridManager>();
 
         // If the grid is not initialized yet, do not attempt to recalculate the path
-        if (gridManager == null || !gridManager.isInitialized)
+        if (_gridManager == null || !_gridManager.isInitialized)
             return;
 
         // If the A* pathfinder instance is null (e.g., after scripts recompile), recreate it
-        if (astar == null)
-            astar = new AStarPathfinder(gridManager);
+        if (_astar == null)
+            _astar = new AStarPathfinder(_gridManager);
 
         // Recalculate the path whenever Inspector values change
         RecalculatePath();
@@ -61,7 +61,7 @@ public class PathfindingManager : MonoBehaviour
         // Toggle the Gizmo drawing on/off when the player presses the G key
         if (Input.GetKeyDown(KeyCode.G))
         {
-            drawGizmos = !drawGizmos;
+            _drawGizmos = !_drawGizmos;
         }
     }
 
@@ -71,14 +71,14 @@ public class PathfindingManager : MonoBehaviour
     private void RecalculatePath()
     {
         // If showPath is disabled or the grid is not ready, clear any existing path
-        if (!showPath || gridManager == null || !gridManager.isInitialized)
+        if (!showPath || _gridManager == null || !_gridManager.isInitialized)
         {
-            path.Clear();
+            _path.Clear();
             return;
         }
 
         // Use A* algorithm to find a new path
-        path = astar.FindPath(startCoordinates, goalCoordinates);
+        _path = _astar.FindPath(startCoordinates, goalCoordinates);
     }
 
     /// <summary>
@@ -97,18 +97,18 @@ public class PathfindingManager : MonoBehaviour
         // - drawGizmos is false (user toggled off)
         // - path has not been calculated
         // - gridManager is not assigned or not initialized
-        if (!showPath || !drawGizmos || path == null || gridManager == null || !gridManager.isInitialized)
+        if (!showPath || !_drawGizmos || _path == null || _gridManager == null || !_gridManager.isInitialized)
             return;
 
         // Calculate a scaled size for the cubes/spheres based on node size
-        float size = gridManager.GridSettings.NodeSize * 0.3f;
+        float size = _gridManager.GridSettings.NodeSize * 0.3f;
 
         // Draw each node in the path as a red cube, and connect consecutive nodes with lines
         Gizmos.color = Color.red;
-        for (int i = 0; i < path.Count; i++)
+        for (int i = 0; i < _path.Count; i++)
         {
-            Vector2Int coord = path[i];
-            GridNode node = gridManager.GetNode(coord.x, coord.y);
+            Vector2Int coord = _path[i];
+            GridNode node = _gridManager.GetNode(coord.x, coord.y);
             // Slightly raise the wireframe above the grid to avoid Z-fighting
             Vector3 worldPos = node.worldPosition + Vector3.up * 0.1f;
             Gizmos.DrawCube(worldPos, Vector3.one * size);
@@ -116,27 +116,27 @@ public class PathfindingManager : MonoBehaviour
             // Draw a connecting line from the previous node to the current node
             if (i > 0)
             {
-                Vector2Int prev = path[i - 1];
-                GridNode prevNode = gridManager.GetNode(prev.x, prev.y);
+                Vector2Int prev = _path[i - 1];
+                GridNode prevNode = _gridManager.GetNode(prev.x, prev.y);
                 Vector3 prevWorldPos = prevNode.worldPosition + Vector3.up * 0.1f;
                 Gizmos.DrawLine(prevWorldPos, worldPos);
             }
         }
 
         // Highlight the start node with a larger magenta cube
-        if (path.Count > 0)
+        if (_path.Count > 0)
         {
             Gizmos.color = Color.magenta;
-            GridNode startNode = gridManager.GetNode(startCoordinates.x, startCoordinates.y);
+            GridNode startNode = _gridManager.GetNode(startCoordinates.x, startCoordinates.y);
             Vector3 startPos = startNode.worldPosition + Vector3.up * 0.2f;
             Gizmos.DrawCube(startPos, Vector3.one * size * 1.2f);
         }
 
         // Highlight the end node with a larger blue cube
-        if (path.Count > 0)
+        if (_path.Count > 0)
         {
             Gizmos.color = Color.blue;
-            GridNode endNode = gridManager.GetNode(goalCoordinates.x, goalCoordinates.y);
+            GridNode endNode = _gridManager.GetNode(goalCoordinates.x, goalCoordinates.y);
             Vector3 endPos = endNode.worldPosition + Vector3.up * 0.2f;
             Gizmos.DrawCube(endPos, Vector3.one * size * 1.2f);
         }

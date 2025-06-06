@@ -16,6 +16,10 @@ public class UnitSelectionBox : MonoBehaviour
 
     [NonSerialized] public float minDragSize;
 
+    /// <summary>
+    /// Called when the script instance is being loaded.
+    /// Initializes the static selection texture if it has not been created yet.
+    /// </summary>
     private void Awake()
     {
         if (_selectionTexture == null)
@@ -26,6 +30,10 @@ public class UnitSelectionBox : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts the drag operation by recording the starting screen position and enabling dragging.
+    /// </summary>
+    /// <param name="startPos">The screen position where the drag began.</param>
     public void BeginDrag(Vector2 startPos)
     {
         DragStart = startPos;
@@ -33,17 +41,32 @@ public class UnitSelectionBox : MonoBehaviour
         IsDragging = true;
     }
 
+    /// <summary>
+    /// Updates the drag operation by recording the current screen position as the drag end.
+    /// </summary>
+    /// <param name="currentPos">The current screen position of the mouse during dragging.</param>
     public void UpdateDrag(Vector2 currentPos)
     {
         DragEnd = currentPos;
     }
 
+    /// <summary>
+    /// Ends the drag operation by recording the final screen position and disabling dragging.
+    /// </summary>
+    /// <param name="endPos">The screen position where the drag ended.</param>
     public void EndDrag(Vector2 endPos)
     {
         DragEnd = endPos;
         IsDragging = false;
     }
 
+    /// <summary>
+    /// Calculates a Rect in GUI coordinates from two screen positions.
+    /// Converts screen-space coordinates (bottom-left origin) to GUI-space (top-left origin).
+    /// </summary>
+    /// <param name="start">The starting screen position of the drag.</param>
+    /// <param name="end">The ending screen position of the drag.</param>
+    /// <returns>A Rect representing the drag area in GUI coordinate space.</returns>
     public Rect GetScreenRect(Vector2 start, Vector2 end)
     {
         Vector2 p1 = new(start.x, Screen.height - start.y);
@@ -57,6 +80,10 @@ public class UnitSelectionBox : MonoBehaviour
         return new Rect(xMin, yMin, width, height);
     }
 
+    /// <summary>
+    /// Called for rendering and handling GUI events.
+    /// Draws the semi-transparent selection box and border while dragging.
+    /// </summary>
     private void OnGUI()
     {
         if (!IsDragging || DragDistance < minDragSize)

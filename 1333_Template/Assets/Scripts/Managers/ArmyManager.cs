@@ -94,10 +94,10 @@ public class ArmyManager : MonoBehaviour
 
         foreach (UnitEntry entry in composition.unitEntries)
         {
-            UnitType stats = entry.unitTypePrefab.unitType;
+            UnitType unitStats = entry.unitTypePrefab.unitType;
             GameObject prefab = entry.unitTypePrefab.unitPrefab;
 
-            if (stats == null || prefab == null)
+            if (unitStats == null || prefab == null)
             {
                 Debug.LogWarning($"ArmyManager: Null stats or prefab in ArmyComposition entry for team {team}.");
                 continue;
@@ -127,7 +127,7 @@ public class ArmyManager : MonoBehaviour
                     _unitManager.RegisterUnit(unitComponent);
 
                     // 4) Initialize the unit with its type, gridManager, pathfinder, and team
-                    unitComponent.Initialize(stats, _gridManager, _unitManager,_pathfinder, team);
+                    unitComponent.Initialize(unitStats, _gridManager, _unitManager,_pathfinder, team);
                 }
                 else
                 {

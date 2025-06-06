@@ -12,19 +12,28 @@ public class SelectionManager : MonoBehaviour
     private UnitManager _unitManager;
     private UnitSelectionBox _boxDrawer;
 
-    [SerializeField] private float minDragSize = 3f;
+    [SerializeField] private float _minDragSize = 3f;
 
     private readonly List<UnitBase> _selectedUnits = new();
 
+    /// <summary>
+    /// Initializes references for camera, grid manager, unit manager, and selection box.
+    /// </summary>
+    /// <param name="cam">The main camera used for raycasting.</param>
+    /// <param name="gm">The grid manager used to find grid nodes.</param>
+    /// <param name="um">The unit manager containing all units in the scene.</param>
     public void Initialize(Camera cam, GridManager gm, UnitManager um)
     {
         _mainCamera = cam;
         _gridManager = gm;
         _unitManager = um;
         _boxDrawer = GetComponent<UnitSelectionBox>();
-        _boxDrawer.minDragSize = minDragSize;
+        _boxDrawer.minDragSize = _minDragSize;
     }
 
+    /// <summary>
+    /// Called once per frame; toggles path gizmos and handles mouse input.
+    /// </summary>
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.X))
@@ -33,6 +42,9 @@ public class SelectionManager : MonoBehaviour
         HandleMouseInput();
     }
 
+    /// <summary>
+    /// Processes mouse button events for starting drag, updating drag, ending drag, and issuing move commands.
+    /// </summary>
     private void HandleMouseInput()
     {
         if (Input.GetMouseButtonDown(0))
@@ -44,7 +56,7 @@ public class SelectionManager : MonoBehaviour
         if (Input.GetMouseButtonUp(0) && _boxDrawer.IsDragging)
         {
             _boxDrawer.EndDrag(Mouse.current.position.ReadValue());
-            if (_boxDrawer.DragDistance < minDragSize)
+            if (_boxDrawer.DragDistance < _minDragSize)
                 SingleClickSelect(_boxDrawer.DragEnd);
             else
                 DragSelect(_boxDrawer.DragStart, _boxDrawer.DragEnd);
@@ -54,6 +66,10 @@ public class SelectionManager : MonoBehaviour
             CommandSelectedUnits();
     }
 
+    /// <summary>
+    /// Performs a single-click selection by raycasting from the clicked screen position to select a unit.
+    /// </summary>
+    /// <param name="screenPos">The screen coordinates where the click occurred.</param>
     private void SingleClickSelect(Vector2 screenPos)
     {
         if (_mainCamera == null) return;
@@ -73,6 +89,11 @@ public class SelectionManager : MonoBehaviour
         ClearSelection();
     }
 
+    /// <summary>
+    /// Performs a drag selection by creating a screen-space rectangle and selecting all units within it.
+    /// </summary>
+    /// <param name="start">Screen position where the drag started.</param>
+    /// <param name="end">Screen position where the drag ended.</param>
     private void DragSelect(Vector2 start, Vector2 end)
     {
         if (_mainCamera == null || _unitManager == null) return;
@@ -93,6 +114,9 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Issues move commands to all currently selected units by raycasting to the ground plane and obtaining the target grid node.
+    /// </summary>
     private void CommandSelectedUnits()
     {
         if (_mainCamera == null || _gridManager == null) return;
@@ -115,24 +139,31 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds a unit to the selection list and displays its selection indicator.
+    /// </summary>
+    /// <param name="unit">The UnitBase instance to add to selection.</param>
     private void AddToSelection(UnitBase unit)
     {
         if (_selectedUnits.Contains(unit)) return;
 
         _selectedUnits.Add(unit);
-        if (unit.TryGetComponent(out UnitVisualController headRef))
+        if (unit.TryGetComponent(out UnitVisualController unitVisualController))
         {
-            headRef.ShowSelectionIndicator();
+            unitVisualController.ShowSelectionIndicator();
         }
     }
 
+    /// <summary>
+    /// Clears the current selection by hiding all selection indicators and emptying the selected units list.
+    /// </summary>
     private void ClearSelection()
     {
         foreach (var unit in _selectedUnits)
         {
-            if (unit.TryGetComponent(out UnitVisualController headRef))
+            if (unit.TryGetComponent(out UnitVisualController unitVisualController))
             {
-                headRef.HideSelectionIndicator();
+                unitVisualController.HideSelectionIndicator();
             }
         }
 
