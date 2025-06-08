@@ -7,12 +7,12 @@ public class BuildingPlacementUI : MonoBehaviour
 
     [SerializeField] private RectTransform _layoutGroupParent;
     [SerializeField] private GameObject _buttonPrefab;
-    [SerializeField] private BuildingTypeSO _buildingData;
+    [SerializeField] private BuildingTypeSO _buildingType;
 
     // Start is called before the first frame update
     void Start()
     {
-        foreach(BuildingData t in _buildingData.Buildings)
+        foreach(BuildingDataSO t in _buildingType.Buildings)
         {
             GameObject button = Instantiate(_buttonPrefab, _layoutGroupParent);
         }

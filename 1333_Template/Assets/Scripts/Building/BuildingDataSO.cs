@@ -5,6 +5,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "BuildingData", menuName = "Game/Building Data")]
 public class BuildingDataSO : ScriptableObject
 {
-    public List<BuildingData> Buildings = new();
+    
 }
 
