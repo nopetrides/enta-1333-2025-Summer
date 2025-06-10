@@ -1,26 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BuildingPlacementUI : MonoBehaviour
 {
-
     [SerializeField] private RectTransform _layoutGroupParent;
     [SerializeField] private GameObject _buttonPrefab;
     [SerializeField] private BuildingTypeSO _buildingType;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        foreach(BuildingDataSO t in _buildingType.Buildings)
-        {
-            GameObject button = Instantiate(_buttonPrefab, _layoutGroupParent);
-        }
+        ShowBuildingPlacementUI();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void ShowBuildingPlacementUI()
     {
-        
+        foreach (var data in _buildingType.Buildings)
+        {
+            var go = Instantiate(_buttonPrefab, _layoutGroupParent);
+            var btn = go.GetComponent<BuildingButton>();
+            btn.Initialize(data);
+        }
     }
 }

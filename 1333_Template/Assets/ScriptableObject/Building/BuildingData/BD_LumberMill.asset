@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de4928df2c355e24b8bc50401df8fa1e, type: 3}
+  m_Name: BD_LumberMill
+  m_EditorClassIdentifier: 
+  _buildingName: LumberMill
+  _buttonImage: {fileID: 21300000, guid: e83a04643b10fbc4aa6238ebfdad19ac, type: 3}
+  _description: Example description
+  _buildingPrefab: {fileID: 6809940844390332904, guid: 1639110581d01e34eb2ec3e2de7688a3, type: 3}
+  _health: 100
+  _horizontalSize: 7
+  _verticalSize: 7

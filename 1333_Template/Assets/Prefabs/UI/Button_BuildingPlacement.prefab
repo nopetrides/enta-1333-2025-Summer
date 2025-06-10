@@ -224,9 +224,9 @@ GameObject:
   - component: {fileID: 3866232730242061064}
   - component: {fileID: 3512996197091757102}
   - component: {fileID: 998533002001839289}
-  - component: {fileID: 6357754821847346224}
+  - component: {fileID: 3145857082077389659}
   m_Layer: 5
-  m_Name: Button_PlacementPrefab
+  m_Name: Button_BuildingPlacement
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -354,8 +354,20 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3866232730242061064}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
---- !u!114 &6357754821847346224
+      m_Calls:
+      - m_Target: {fileID: 3145857082077389659}
+        m_TargetAssemblyTypeName: BuildingButton, Assembly-CSharp
+        m_MethodName: BuildingImageClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &3145857082077389659
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -364,6 +376,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 6028272153498507134}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2d8a3ac47bd0b04db45d0387a98c506, type: 3}
+  m_Script: {fileID: 11500000, guid: 229988a5cc578bb44976bfdc1ff1f657, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _iconImage: {fileID: 8593132010073240202}
+  _nameText: {fileID: 3389855771931486563}
