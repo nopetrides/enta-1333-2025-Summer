@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private TerrainType[] _terrainTypes;
 
     private GridNode[,] _gridNodes;
+    private bool _showGizmos = false; // Toggle flag for drawing gizmos
     public bool isInitialized { get; private set; }
 
     /// <summary>
@@ -36,7 +37,12 @@ public class GridManager : MonoBehaviour
         // Reinitialize grid when pressing O
         if (Input.GetKeyDown(KeyCode.O))
         {
-            InitializeGrid();
+            //InitializeGrid();
+        }
+        // Press 'X' to toggle grid gizmos on/off
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            _showGizmos = !_showGizmos;
         }
     }
 
@@ -176,15 +182,14 @@ public class GridManager : MonoBehaviour
 
     /// <summary>
     /// Draws gizmos in the editor to visualize the grid and node colors.
-    /// Only runs if the grid is initialized.
+    /// Only runs if the grid is initialized and showGizmos is true.
     /// </summary>
     private void OnDrawGizmos()
     {
-        if (!isInitialized || _gridNodes == null) return;
+        if (!isInitialized || _gridNodes == null || !_showGizmos) return;
 
         float half = _gridSettings.NodeSize * 0.5f;
 
-        // Draw a wire cube for each grid node using the node's GizmoColor
         for (int x = 0; x < _gridSettings.GridSizeX; x++)
         {
             for (int y = 0; y < _gridSettings.GridSizeY; y++)

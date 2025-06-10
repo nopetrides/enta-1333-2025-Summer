@@ -1,107 +1,142 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Manages building placement: preview follows mouse and final building snaps to grid.
+/// Supports rotation by middle mouse button and respects prefab's original rotation.
+/// </summary>
 public class BuildingPlacementManager : MonoBehaviour
 {
     [Header("Grid Reference")]
     [Tooltip("Drag your GridManager here")]
-    [SerializeField] private GridManager _gridManager;
+    [SerializeField] private GridManager _gridManager; // Reference to the GridManager used for placement validation
 
     [Header("Ghost Preview Materials")]
     [Tooltip("Semi-transparent green material for valid placement")]
-    [SerializeField] private Material ghostValidMaterial;
+    [SerializeField] private Material _ghostValidMaterial; // Material to show when placement is valid
     [Tooltip("Semi-transparent red material for invalid placement")]
-    [SerializeField] private Material ghostInvalidMaterial;
+    [SerializeField] private Material _ghostInvalidMaterial; // Material to show when placement is invalid
 
-    [Header("Ground Raycast")]
-    [Tooltip("LayerMask for your terrain/ground")]
-    [SerializeField] private LayerMask groundLayerMask;
-
-    private Camera _mainCamera;
-    private BuildingDataSO _currentData;
-    private BuildingInstance _previewInstance;
+    private Camera _mainCamera; // Main camera used to convert mouse position to world position
+    private BuildingDataSO _currentBuildingData; // Currently selected building data
+    private BuildingInstance _previewInstance; // Instance of the preview (ghost) building
+    private int _currentYRotation = 0; // Current Y-axis rotation in degrees
 
     private void Awake()
     {
+        // Cache main camera and validate references
         _mainCamera = Camera.main;
-        if (_gridManager == null) Debug.LogError("BuildingPlacementManager: GridManager is not assigned in the Inspector.");
-        if (_mainCamera == null) Debug.LogError("BuildingPlacementManager: MainCamera is not assigned.");
+        if (_gridManager == null)
+            Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
+        if (_mainCamera == null)
+            Debug.LogError("BuildingPlacementManager: MainCamera not found.");
     }
 
     private void Update()
     {
-        if (_previewInstance == null) return;
+        if (_previewInstance == null)
+            return;
 
-        // 1) Raycast from mouse into world
-        Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
-        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+        // Rotate preview on middle mouse click
+        if (Input.GetMouseButtonDown(2))
+        {
+            _currentYRotation = (_currentYRotation + 90) % 360;
+            _previewInstance.SetRotation(_currentYRotation);
+        }
 
-        if (!groundPlane.Raycast(ray, out float enter)) return;
+        // Get the world position where the mouse points
+        if (!TryGetMouseWorldPosition(out Vector3 hitPoint))
+            return;
 
-        Vector3 hitPoint = ray.GetPoint(enter);
-
-        // 2) Compute whether we *can* place here and get snapPos
+        // Check if placement is valid and get the snapped position
         bool canPlace = _previewInstance.CanPlaceAt(hitPoint, out Vector3 snapPos);
+        _previewInstance.transform.position = snapPos; // Move preview to snapped position
 
-        // 3) Move the ghost to that snapped position every frame
-        _previewInstance.transform.position = snapPos;
+        // Update ghost color based on validity
+        var renderer = _previewInstance.GetComponentInChildren<Renderer>();
+        renderer.material = canPlace ? _ghostValidMaterial : _ghostInvalidMaterial;
 
-        // 4) Tint ghost green or red
-        var rend = _previewInstance.GetComponentInChildren<Renderer>();
-        rend.material = canPlace ? ghostValidMaterial : ghostInvalidMaterial;
-
-        // 5) On left‐click, commit placement
+        // Confirm placement on left click
         if (canPlace && Input.GetMouseButtonDown(0))
             PlaceRealBuilding(hitPoint);
 
-        // 6) On right‐click, cancel placement
+        // Cancel placement on right click
         if (Input.GetMouseButtonDown(1))
             CancelPlacement();
     }
 
     /// <summary>
-    /// Begins a new placement: spawns the ghost and wires it up.
+    /// Starts placement preview with the selected building data.
     /// </summary>
-    public void StartPlacement(BuildingDataSO data)
+    public void StartPlacement(BuildingDataSO buildingData)
     {
-        // Destroy any existing ghost
+        // Destroy any existing preview instance
         if (_previewInstance != null)
             Destroy(_previewInstance.gameObject);
 
-        _currentData = data;
+        _currentBuildingData = buildingData;
+        _currentYRotation = 0;
 
-        // Instantiate a new ghost
-        _previewInstance = Instantiate(data.BuildingPrefab)
-            .GetComponent<BuildingInstance>();
+        // Create new preview instance and initialize rotation
+        _previewInstance = CreateInstance(buildingData);
+        _previewInstance.SetRotation(_currentYRotation);
 
-        // Assign building data of instance as passed building data
-        _previewInstance.buildingData = data;
-
-        // Give it the grid reference
-        _previewInstance.InitializePlacement(_gridManager);
-
-        // Start it tinted “invalid”
-        var rend = _previewInstance.GetComponentInChildren<Renderer>();
-        rend.material = ghostInvalidMaterial;
+        // Set initial material to invalid
+        var renderer = _previewInstance.GetComponentInChildren<Renderer>();
+        renderer.material = _ghostInvalidMaterial;
     }
 
-    private void PlaceRealBuilding(Vector3 placementWorldPos)
+    /// <summary>
+    /// Finalizes placement of the building at the specified world position.
+    /// </summary>
+    private void PlaceRealBuilding(Vector3 worldPosition)
     {
-        var real = Instantiate(_currentData.BuildingPrefab)
-            .GetComponent<BuildingInstance>();
+        // Instantiate a real building instance and apply rotation
+        var realInstance = CreateInstance(_currentBuildingData);
+        realInstance.SetRotation(_currentYRotation);
+        realInstance.TryPlaceAt(worldPosition, Team.Player);
 
-        real.buildingData = _currentData;
-        real.InitializePlacement(_gridManager);
-
-        real.TryPlaceAt(placementWorldPos, Team.Player);
-
+        // Remove the preview instance
         Destroy(_previewInstance.gameObject);
         _previewInstance = null;
     }
 
-
+    /// <summary>
+    /// Cancels the current placement preview.
+    /// </summary>
     private void CancelPlacement()
     {
         Destroy(_previewInstance.gameObject);
         _previewInstance = null;
+    }
+
+    /// <summary>
+    /// Instantiates and prepares a building instance from the prefab.
+    /// </summary>
+    private BuildingInstance CreateInstance(BuildingDataSO data)
+    {
+        GameObject go = Instantiate(data.BuildingPrefab);
+        var instance = go.GetComponent<BuildingInstance>();
+        instance.buildingData = data;
+        instance.InitializePlacement(_gridManager);
+        instance.SetBaseRotation(go.transform.rotation); // Store the prefab's original rotation
+        return instance;
+    }
+
+    /// <summary>
+    /// Converts mouse position to world space on a flat ground plane at Y = 0.
+    /// </summary>
+    private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
+    {
+        Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+        if (groundPlane.Raycast(ray, out float enter))
+        {
+            worldPosition = ray.GetPoint(enter);
+            return true;
+        }
+
+        worldPosition = Vector3.zero;
+        return false;
     }
 }

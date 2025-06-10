@@ -1,32 +1,34 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Abstract base class for all buildings, holding building data, handling team-based visuals,
-/// grid-snapped placement, occupancy marking, and selection integration.
+/// Abstract base class for all buildings: placement, occupancy, team visuals, and health.
+/// Handles rotated grid alignment without mutating the building data.
 /// </summary>
 [RequireComponent(typeof(Renderer))]
 public abstract class BuildingBase : MonoBehaviour, ISelectable
 {
-    public Team team;
-    public Material[] teamMaterials;
-    public BuildingDataSO buildingData;
+    public Team team;                    // Team affiliation for this building
+    public Material[] teamMaterials;     // Materials corresponding to each team
+    public BuildingDataSO buildingData;  // ScriptableObject containing building properties
 
-    private Renderer _renderer;
-    protected GridManager _gridManager;
-    protected bool _isPlaced;
+    private Renderer _renderer;         // Cached Renderer component
+    protected GridManager _gridManager;  // Reference to the GridManager
 
-    public int CurrentHealth { get; protected set; }
-    public int MaxHealth { get; protected set; }
-    public Vector2Int BuildingSize => new Vector2Int(buildingData.SizeX, buildingData.SizeZ);
+    private bool _isPlaced;             // Flag indicating if building is placed
+    private int _yRotation;             // Current Y-axis rotation in degrees
+    private Quaternion _baseRotation;   // Base rotation from the prefab
+
+    public int CurrentHealth { get; private set; }  // Current health of the building
+    public int MaxHealth { get; private set; }      // Maximum health of the building
 
     protected virtual void Awake()
     {
         _renderer = GetComponent<Renderer>();
-        InitializeHealth();
+        InitializeHealth(); // Setup health from buildingData
     }
 
     /// <summary>
-    /// Initializes the GridManager reference for placement logic.
+    /// Stores the GridManager reference for placement logic.
     /// </summary>
     public void InitializePlacement(GridManager gridManager)
     {
@@ -34,55 +36,41 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
     }
 
     /// <summary>
-    /// Checks if placement is valid at the given world position.
-    /// Calculates the snapped position without committing to grid occupancy.
+    /// Stores the prefab's original rotation for correct combined rotation application.
     /// </summary>
-    /// <param name="worldPosition">Desired world-space position.</param>
-    /// <param name="snapPosition">Output snapped center position of the footprint.</param>
-    /// <returns>True if placement is valid; false otherwise.</returns>
-    public bool CanPlaceAt(Vector3 worldPosition, out Vector3 snapPosition)
+    public void SetBaseRotation(Quaternion baseRotation)
     {
-        if (_gridManager == null || _isPlaced)
-        {
-            snapPosition = Vector3.zero;
-            return false;
-        }
-
-        GridNode baseNode = _gridManager.getNodeFromWorldPosition(worldPosition);
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        int baseX = Mathf.RoundToInt(baseNode.worldPosition.x / nodeSize);
-        int baseY = Mathf.RoundToInt(baseNode.worldPosition.z / nodeSize);
-
-        // Always calculate snap position first
-        float width = BuildingSize.x * nodeSize;
-        float depth = BuildingSize.y * nodeSize;
-        snapPosition = new Vector3(
-            (baseX * nodeSize) + width * 0.5f - nodeSize * 0.5f,
-            baseNode.worldPosition.y,
-            (baseY * nodeSize) + depth * 0.5f - nodeSize * 0.5f
-        );
-
-        // Validate all footprint cells
-        for (int dx = 0; dx < BuildingSize.x; dx++)
-        {
-            for (int dy = 0; dy < BuildingSize.y; dy++)
-            {
-                GridNode node = _gridManager.GetNode(baseX + dx, baseY + dy);
-                if (node == null || !node.walkable)
-                    return false;
-            }
-        }
-
-        return true;
+        _baseRotation = baseRotation;
     }
 
+    /// <summary>
+    /// Sets the Y-axis rotation and applies it combined with the base rotation.
+    /// </summary>
+    public void SetRotation(int yRotation)
+    {
+        _yRotation = yRotation % 360;
+        // Preserve original X/Z, add to Y
+        Vector3 baseEuler = _baseRotation.eulerAngles;
+        transform.rotation = Quaternion.Euler(baseEuler.x, baseEuler.y + _yRotation, baseEuler.z);
+    }
 
     /// <summary>
-    /// Attempts to place the building at the given world position. Uses CanPlaceAt validation.
-    /// On success, snaps to grid, marks occupancy, and becomes permanent.
+    /// Determines if the building can be placed at the world position and returns a snapped center position.
     /// </summary>
-    /// <param name="worldPosition">Desired world-space position.</param>
-    /// <returns>True if placement succeeded; false otherwise.</returns>
+    public bool CanPlaceAt(Vector3 worldPosition, out Vector3 snapPosition)
+    {
+        snapPosition = Vector3.zero;
+        if (_gridManager == null || _isPlaced)
+            return false;
+
+        Vector2Int baseIndices = GetBaseIndices(worldPosition);
+        snapPosition = CalculateSnapPosition(baseIndices);
+        return IsAreaWalkable(baseIndices);
+    }
+
+    /// <summary>
+    /// Attempts to place the building: snaps position, marks occupancy, sets team and material.
+    /// </summary>
     public bool TryPlaceAt(Vector3 worldPosition, Team teamToAssign)
     {
         if (_isPlaced || _gridManager == null)
@@ -92,39 +80,88 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
             return false;
 
         transform.position = snapPos;
-
-        // Mark cells as non-walkable
-        GridNode baseNode = _gridManager.getNodeFromWorldPosition(worldPosition);
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        int baseX = Mathf.RoundToInt(baseNode.worldPosition.x / nodeSize);
-        int baseY = Mathf.RoundToInt(baseNode.worldPosition.z / nodeSize);
-
-        for (int dx = 0; dx < BuildingSize.x; dx++)
-        {
-            for (int dy = 0; dy < BuildingSize.y; dy++)
-            {
-                _gridManager.SetWalkable(baseX + dx, baseY + dy, false);
-            }
-        }
+        MarkAreaOccupied(worldPosition, false);
 
         _isPlaced = true;
-
-        // Assign team and apply material
         team = teamToAssign;
         ApplyTeamMaterial();
 
         return true;
     }
 
-    protected void ApplyTeamMaterial()
+    /// <summary>
+    /// Returns the grid footprint size adjusted for current rotation.
+    /// </summary>
+    protected Vector2Int GetRotatedSize()
+    {
+        return (_yRotation % 180 == 0)
+            ? new Vector2Int(buildingData.SizeX, buildingData.SizeZ)
+            : new Vector2Int(buildingData.SizeZ, buildingData.SizeX);
+    }
+
+    private Vector2Int GetBaseIndices(Vector3 worldPosition)
+    {
+        GridNode node = _gridManager.getNodeFromWorldPosition(worldPosition);
+        float size = _gridManager.GridSettings.NodeSize;
+        int x = Mathf.RoundToInt(node.worldPosition.x / size);
+        int y = Mathf.RoundToInt(node.worldPosition.z / size);
+        return new Vector2Int(x, y);
+    }
+
+    private Vector3 CalculateSnapPosition(Vector2Int indices)
+    {
+        float size = _gridManager.GridSettings.NodeSize;
+        Vector2Int footprint = GetRotatedSize();
+
+        float width = footprint.x * size;
+        float depth = footprint.y * size;
+
+        return new Vector3(
+            (indices.x * size) + width * 0.5f - size * 0.5f,
+            _gridManager.getNodeFromWorldPosition(transform.position).worldPosition.y,
+            (indices.y * size) + depth * 0.5f - size * 0.5f
+        );
+    }
+
+    private bool IsAreaWalkable(Vector2Int baseIndices)
+    {
+        Vector2Int footprint = GetRotatedSize();
+        for (int dx = 0; dx < footprint.x; dx++)
+        {
+            for (int dy = 0; dy < footprint.y; dy++)
+            {
+                GridNode node = _gridManager.GetNode(baseIndices.x + dx, baseIndices.y + dy);
+                if (node == null || !node.walkable)
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    private void MarkAreaOccupied(Vector3 worldPosition, bool walkable)
+    {
+        Vector2Int baseIndices = GetBaseIndices(worldPosition);
+        Vector2Int footprint = GetRotatedSize();
+
+        for (int dx = 0; dx < footprint.x; dx++)
+        {
+            for (int dy = 0; dy < footprint.y; dy++)
+            {
+                _gridManager.SetWalkable(baseIndices.x + dx, baseIndices.y + dy, walkable);
+            }
+        }
+    }
+
+    private void ApplyTeamMaterial()
     {
         int index = (int)team;
-        if (teamMaterials == null || teamMaterials.Length == 0) return;
-        if (index < 0 || index >= teamMaterials.Length) return;
+        if (teamMaterials == null || index < 0 || index >= teamMaterials.Length)
+            return;
+
         _renderer.material = teamMaterials[index];
     }
 
-    protected void InitializeHealth()
+    private void InitializeHealth()
     {
         MaxHealth = buildingData.Health;
         CurrentHealth = MaxHealth;
