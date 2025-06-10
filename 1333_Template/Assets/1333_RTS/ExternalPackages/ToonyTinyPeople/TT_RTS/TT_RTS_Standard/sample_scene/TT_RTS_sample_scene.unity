@@ -5567,6 +5567,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 135870955}
     m_Modifications:
+    - target: {fileID: 6073670004233722225, guid: 7d4e682abf16fa8488eae6d54e194804, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7464343ccc792784e95cc547f0e36f8a, type: 2}
     - target: {fileID: 6073670004235650993, guid: 7d4e682abf16fa8488eae6d54e194804, type: 3}
       propertyPath: m_Name
       value: Stables

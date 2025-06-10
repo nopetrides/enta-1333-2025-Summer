@@ -1,38 +1,52 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using TMPro;  // If you’re using TextMeshPro; otherwise use UnityEngine.UI.Text
+using TMPro;
 
 /// <summary>
-/// Binds a BuildingDataSO to a UI Button: sets icon, text, and click behavior.
+/// UI button for a building type that initiates placement mode when clicked.
 /// </summary>
 [RequireComponent(typeof(Button))]
 public class BuildingButton : MonoBehaviour
 {
-    [SerializeField] private Image _iconImage;    // Reference to the Image component for the icon
-    [SerializeField] private TMP_Text _nameText;  // Reference to the TextMeshProUGUI for the label
+    [SerializeField] private Image iconImage;      // UI image for the building icon
+    [SerializeField] private TMP_Text nameText;    // UI text for the building name
 
-    private BuildingDataSO _data;
+    private BuildingDataSO _buildingData;
+    private BuildingPlacementManager _placementManager;
+    private Button _button;
 
     /// <summary>
-    /// Initializes this button with the given building data.
+    /// Initializes this button with its data and the placement manager.
+    /// Must be called after instantiating the button.
     /// </summary>
-    public void Initialize(BuildingDataSO data)
+    /// <param name="data">ScriptableObject containing building data.</param>
+    /// <param name="placementManager">Reference to the BuildingPlacementManager.</param>
+    public void Initialize(BuildingDataSO data, BuildingPlacementManager placementManager)
     {
-        _data = data;
+        _buildingData = data;
+        _placementManager = placementManager;
 
-        // populate UI
-        _iconImage.sprite = data.ButtonImage;
-        _nameText.text = data.BuildingName;
+        iconImage.sprite = data.ButtonImage;
+        nameText.text = data.BuildingName;
+
+        // Cache the Button component and wire up the click handler
+        _button = GetComponent<Button>();
+        _button.onClick.RemoveAllListeners();
+        _button.onClick.AddListener(OnPlaceButtonClicked);
     }
 
     /// <summary>
-    /// Called when this button is clicked.
+    /// Called by the Button component when clicked.
+    /// Starts placement mode for the assigned building type.
     /// </summary>
-    public void BuildingImageClicked()
+    public void OnPlaceButtonClicked()
     {
-        // e.g. start placement mode for this building:
-        // BuildingPlacementManager.Instance.StartPlacement(_data);
+        if (_buildingData == null || _placementManager == null)
+        {
+            Debug.LogWarning("BuildingButton: Data or PlacementManager is missing.");
+            return;
+        }
 
-        Debug.Log($"Clicked place-{_data.BuildingName}");
+        _placementManager.StartPlacement(_buildingData);
     }
 }

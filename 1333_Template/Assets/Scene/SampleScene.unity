@@ -151,7 +151,6 @@ MonoBehaviour:
   _gridSettings: {fileID: 11400000, guid: b1e1281df0544f7478b759f1071baeb4, type: 2}
   _terrainTypes:
   - {fileID: 11400000, guid: e56886e6bc497a54f9164e3bd06409ea, type: 2}
-  - {fileID: 11400000, guid: 64ae8d2149197af4b88510d591ef2e08, type: 2}
   - {fileID: 11400000, guid: 4f3a77f8614cd0249b388bb4a4795425, type: 2}
   - {fileID: 11400000, guid: 6d6e9d516618a1f44bfec20356ea10b6, type: 2}
 --- !u!4 &98548993
@@ -279,6 +278,7 @@ Transform:
   - {fileID: 1274391302}
   - {fileID: 250037352}
   - {fileID: 1255263805}
+  - {fileID: 588100087}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &250037350
@@ -336,6 +336,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 175193423}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &588100086
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 588100087}
+  - component: {fileID: 588100088}
+  m_Layer: 0
+  m_Name: BuildingPlacementManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &588100087
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588100086}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 175193423}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &588100088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588100086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0d3748976f17944aa1fd069ad9dd78b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _gridManager: {fileID: 98548992}
+  ghostValidMaterial: {fileID: 2100000, guid: b1c8d879d33bc38419b79b11b770f8d5, type: 2}
+  ghostInvalidMaterial: {fileID: 2100000, guid: dfbaf705a80b21a4d9115e26f42a8f89, type: 2}
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!1 &835524891
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,6 +899,7 @@ MonoBehaviour:
   _layoutGroupParent: {fileID: 1360935803}
   _buttonPrefab: {fileID: 6028272153498507134, guid: 8903a772d1b653d4b860acd89a080fa3, type: 3}
   _buildingType: {fileID: 11400000, guid: 537a7fb42f0fd8741839bbb21801f213, type: 2}
+  _placementManager: {fileID: 588100088}
 --- !u!1 &1433302145
 GameObject:
   m_ObjectHideFlags: 0

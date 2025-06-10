@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de4928df2c355e24b8bc50401df8fa1e, type: 3}
-  m_Name: BD_BlackSmith
+  m_Name: BD_Castle
   m_EditorClassIdentifier: 
-  _buildingName: BlackSmith
-  _buttonImage: {fileID: 21300000, guid: 614447bd20e3bfa43bb751fe8976fcad, type: 3}
-  _description: Example description
-  _buildingPrefab: {fileID: 124789148671233775, guid: bf1844ae5159226498ea6804f2c8180c, type: 3}
-  _health: 100
-  _sizeX: 7
-  _sizeZ: 7
+  _buildingName: Castle
+  _buttonImage: {fileID: 21300000, guid: b3905a73a6672d9449647aaf036e23fc, type: 3}
+  _description: Main Castle
+  _buildingPrefab: {fileID: 5749487885418382731, guid: 8500698ee8568af46b45208403bf8844, type: 3}
+  _health: 1000
+  _sizeX: 10
+  _sizeZ: 10

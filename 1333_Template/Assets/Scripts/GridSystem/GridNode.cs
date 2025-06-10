@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [System.Serializable]
-public struct GridNode
+public class GridNode
 {
     public string name;
     public Vector3 worldPosition;
@@ -13,5 +13,3 @@ public struct GridNode
                                 ? terrainType.GizmoColor
                                 : Color.white;
 }
-
-

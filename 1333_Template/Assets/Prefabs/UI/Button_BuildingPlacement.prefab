@@ -357,7 +357,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 3145857082077389659}
         m_TargetAssemblyTypeName: BuildingButton, Assembly-CSharp
-        m_MethodName: BuildingImageClicked
+        m_MethodName: OnPlaceButtonClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -379,5 +379,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 229988a5cc578bb44976bfdc1ff1f657, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _iconImage: {fileID: 8593132010073240202}
-  _nameText: {fileID: 3389855771931486563}
+  iconImage: {fileID: 8593132010073240202}
+  nameText: {fileID: 3389855771931486563}

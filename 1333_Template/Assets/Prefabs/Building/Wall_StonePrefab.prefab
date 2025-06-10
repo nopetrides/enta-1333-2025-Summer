@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
       propertyPath: m_Name
-      value: Wall_Stone
+      value: Wall_StonePrefab
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
       propertyPath: m_RootOrder
@@ -47,5 +47,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1941134575525320466}
   m_SourcePrefab: {fileID: 100100000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
+--- !u!1 &3507440762593469833 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
+  m_PrefabInstance: {fileID: 3507440762593370921}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1941134575525320466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3507440762593469833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190976c1817d0564fb252999faada5fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  team: 0
+  teamMaterials:
+  - {fileID: 2100000, guid: 7464343ccc792784e95cc547f0e36f8a, type: 2}
+  - {fileID: 2100000, guid: 24f50c58f94ce9d478fd8eedcdd1644d, type: 2}
+  buildingData: {fileID: 11400000, guid: be35c1492732c034cbfbd1d1e0bb3b3e, type: 2}

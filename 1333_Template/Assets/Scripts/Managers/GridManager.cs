@@ -112,12 +112,30 @@ public class GridManager : MonoBehaviour
     /// <returns>The GridNode located at (x, y).</returns>
     public GridNode GetNode(int x, int y)
     {
-        if (!isInitialized)
-        {
-            InitializeGrid();
-        }
+        if (!isInitialized) InitializeGrid();
+
+        if (x < 0 || x >= _gridSettings.GridSizeX || y < 0 || y >= _gridSettings.GridSizeY)
+            return null;
 
         return _gridNodes[x, y];
+    }
+
+    /// <summary>
+    /// Marks a given cell as walkable or not. 
+    /// </summary>
+    public void SetWalkable(int x, int y, bool isWalkable)
+    {
+        if (!isInitialized) InitializeGrid();
+
+        // guard against out of bound
+        if (x < 0 || x >= _gridSettings.GridSizeX ||
+            y < 0 || y >= _gridSettings.GridSizeY)
+        {
+            Debug.LogWarning($"SetWalkable: ({x},{y}) is outside grid bounds.");
+            return;
+        }
+
+        _gridNodes[x, y].walkable = isWalkable;
     }
 
     /// <summary>
@@ -125,7 +143,7 @@ public class GridManager : MonoBehaviour
     /// Returns null if no walkable nodes are available.
     /// </summary>
     /// <returns>A randomly selected walkable GridNode, or null if none are walkable.</returns>
-    public GridNode? GetRandomWalkableNode()
+    public GridNode GetRandomWalkableNode()
     {
         int gridWidth = _gridSettings.GridSizeX;
         int gridHeight = _gridSettings.GridSizeY;

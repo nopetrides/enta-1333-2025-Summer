@@ -17,5 +17,5 @@ MonoBehaviour:
   _description: Example description
   _buildingPrefab: {fileID: 6480700884520099020, guid: 2e87a0b29e084854b8927c99642d8644, type: 3}
   _health: 100
-  _horizontalSize: 7
-  _verticalSize: 7
+  _sizeX: 7
+  _sizeZ: 7

@@ -106,15 +106,14 @@ public class ArmyManager : MonoBehaviour
             for (int i = 0; i < entry.count; i++)
             {
                 // 1) Choose a random spawn position on a walkable node
-                GridNode? randomWalkableNode = _gridManager.GetRandomWalkableNode();
-                if (!randomWalkableNode.HasValue)
+                GridNode randomWalkableNode = _gridManager.GetRandomWalkableNode();
+                if (randomWalkableNode == null)
                 {
                     Debug.LogWarning("ArmyManager: No walkable nodes available to spawn units.");
                     return;
                 }
 
-                GridNode randomNode = randomWalkableNode.Value;
-                Vector3 spawnPosition = randomNode.worldPosition;
+                Vector3 spawnPosition = randomWalkableNode.worldPosition;
 
                 // 2) Instantiate the unit prefab at that position
                 GameObject unitGO = Instantiate(prefab, spawnPosition, Quaternion.identity);

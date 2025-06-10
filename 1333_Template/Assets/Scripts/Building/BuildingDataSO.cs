@@ -15,8 +15,8 @@ public class BuildingDataSO : ScriptableObject
     [SerializeField] private int _health;                       // Building health
 
     [Header("Grid Size")]
-    [SerializeField] private int _horizontalSize;                // Width in grid cells
-    [SerializeField] private int _verticalSize;                  // Height in grid cells
+    [SerializeField] private int _sizeX;                // Width in grid cells
+    [SerializeField] private int _sizeZ;                  // Height in grid cells
 
 
     /// <summary>
@@ -47,10 +47,10 @@ public class BuildingDataSO : ScriptableObject
     /// <summary>
     /// Gets how many cells wide this building occupies.
     /// </summary>
-    public int HorizontalSize => _horizontalSize;
+    public int SizeX => _sizeX;
 
     /// <summary>
     /// Gets how many cells tall this building occupies.
     /// </summary>
-    public int VerticalSize => _verticalSize;
+    public int SizeZ => _sizeZ;
 }

@@ -20,7 +20,6 @@ public class GameManager : MonoBehaviour
     {
         _gridManager.InitializeGrid();
         _armyManager.Initialize(_gridManager, _unitManager);
-
         _unitSelectionManager.Initialize(_camera, _gridManager, _unitManager);
     }
 

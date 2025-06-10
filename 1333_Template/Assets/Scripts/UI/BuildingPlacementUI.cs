@@ -5,6 +5,7 @@ public class BuildingPlacementUI : MonoBehaviour
     [SerializeField] private RectTransform _layoutGroupParent;
     [SerializeField] private GameObject _buttonPrefab;
     [SerializeField] private BuildingTypeSO _buildingType;
+    [SerializeField] private BuildingPlacementManager _placementManager;
 
     private void Start()
     {
@@ -15,9 +16,9 @@ public class BuildingPlacementUI : MonoBehaviour
     {
         foreach (var data in _buildingType.Buildings)
         {
-            var go = Instantiate(_buttonPrefab, _layoutGroupParent);
-            var btn = go.GetComponent<BuildingButton>();
-            btn.Initialize(data);
+            var buttonPrefab = Instantiate(_buttonPrefab, _layoutGroupParent);
+            var button = buttonPrefab.GetComponent<BuildingButton>();
+            button.Initialize(data, _placementManager);
         }
     }
 }
