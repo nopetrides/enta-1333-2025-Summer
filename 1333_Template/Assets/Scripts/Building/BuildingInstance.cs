@@ -1,35 +1,35 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Represents a runtime instance of a building in the scene.
-/// Inherits grid-snapped placement, occupancy, and selection functionality from BuildingBase.
+/// Represents a placed building; handles selection coloring on specified renderers.
 /// </summary>
 public class BuildingInstance : BuildingBase
 {
-    /// <summary>
-    /// Instance-specific initialization after base setup.
-    /// </summary>
+    [Header("Renderers for Selection")]
+    [Tooltip("Assign specific mesh renderers to tint on selection")]
+    [SerializeField] private Renderer[] _selectionRenderers;
+
     protected override void Awake()
     {
         base.Awake();
-        // TODO: Add any additional initialization logic for instances here.
+        // Auto-populate if not assigned
+        if (_selectionRenderers == null || _selectionRenderers.Length == 0)
+            _selectionRenderers = GetComponentsInChildren<Renderer>();
     }
 
-    /// <summary>
-    /// Called when this building is selected via the selection system.
-    /// Override to show selection indicators (e.g., outline, UI panel).
-    /// </summary>
     public override void OnSelected()
     {
-        // TODO: Enable selection highlight or UI
+        // Change only specified mesh renderers to blue
+        foreach (var r in _selectionRenderers)
+        {
+            if (r != null)
+                r.material.color = Color.gray;
+        }
     }
 
-    /// <summary>
-    /// Called when this building is deselected.
-    /// Override to hide selection indicators.
-    /// </summary>
     public override void OnDeselected()
     {
-        // TODO: Disable selection highlight or UI
+        // Revert to original team material
+        ApplyTeamMaterial();
     }
 }
