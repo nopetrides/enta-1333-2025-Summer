@@ -1,84 +1,55 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Abstract base class for all buildings.
-/// Manages team, health, material, and selection logic.
-/// Does not handle placement or grid logic.
+/// Abstract base class for all buildings: handles team visuals and health.
 /// </summary>
 [RequireComponent(typeof(Renderer))]
 public abstract class BuildingBase : MonoBehaviour, ISelectable
 {
-    public Team team { get; private set; }
-    public Material[] teamMaterials;
-    public BuildingDataSO buildingData;
+    public Team team;                    // Team affiliation for this building
+    public Material[] teamMaterials;     // Materials corresponding to each team
+    public BuildingDataSO buildingData;  // Data object containing building properties
 
-    private Renderer _renderer;
-    private Vector3 _baseEulerAngles;
+    private Renderer _renderer;          // Cached Renderer component
 
+    /// <summary>
+    /// Current health of the building.
+    /// </summary>
     public int CurrentHealth { get; private set; }
+
+    /// <summary>
+    /// Maximum health of the building.
+    /// </summary>
     public int MaxHealth { get; private set; }
 
+    /// <summary>
+    /// Initialize renderer and health.
+    /// </summary>
     protected virtual void Awake()
     {
         _renderer = GetComponent<Renderer>();
+        InitializeHealth();
     }
 
     /// <summary>
-    /// Initializes building state after placement.
+    /// Sets up health based on buildingData.
     /// </summary>
-    /// <param name="data">Building data ScriptableObject.</param>
-    /// <param name="team">Team to assign.</param>
-    public virtual void Initialize(BuildingDataSO data, Team team)
+    private void InitializeHealth()
     {
-        buildingData = data;
-        this.team = team;
-        MaxHealth = data.Health;
+        MaxHealth = buildingData.Health;
         CurrentHealth = MaxHealth;
-        ApplyTeamMaterial();
     }
 
     /// <summary>
-    /// Changes the team and updates visuals.
+    /// Applies the material corresponding to the building's team.
     /// </summary>
-    /// <param name="team">Team to assign.</param>
-    public void SetTeam(Team team)
-    {
-        this.team = team;
-        ApplyTeamMaterial();
-    }
-
-    /// <summary>
-    /// Applies the team material to the building renderer.
-    /// </summary>
-    private void ApplyTeamMaterial()
+    public void ApplyTeamMaterial()
     {
         int index = (int)team;
-        if (teamMaterials != null && index >= 0 && index < teamMaterials.Length)
-            _renderer.material = teamMaterials[index];
-    }
+        if (teamMaterials == null || index < 0 || index >= teamMaterials.Length)
+            return;
 
-    public void StoreBaseRotation(Quaternion baseRotation)
-    {
-        _baseEulerAngles = baseRotation.eulerAngles;
-    }
-
-    public Vector3 GetBaseEulerAngles()
-    {
-        return _baseEulerAngles;
-    }
-
-    /// <summary>
-    /// Receives damage, updates health, destroys on zero.
-    /// </summary>
-    /// <param name="amount">Damage amount.</param>
-    public void TakeDamage(int amount)
-    {
-        CurrentHealth -= amount;
-        if (CurrentHealth <= 0)
-        {
-            CurrentHealth = 0;
-            Destroy(gameObject);
-        }
+        _renderer.material = teamMaterials[index];
     }
 
     public abstract void OnSelected();
