@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de4928df2c355e24b8bc50401df8fa1e, type: 3}
+  m_Name: BD_WoodGate
+  m_EditorClassIdentifier: 
+  _buildingName: WoodGate
+  _buttonImage: {fileID: 21300000, guid: 35dc123621e0d38479dafafa60f46593, type: 3}
+  _description: Example description
+  _buildingPrefab: {fileID: 2914146287354670151, guid: 796b2e70c718a174b9dd53a56f0edfaa, type: 3}
+  _health: 300
+  _sizeX: 6
+  _sizeZ: 3

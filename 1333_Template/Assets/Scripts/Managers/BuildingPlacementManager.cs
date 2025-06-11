@@ -39,42 +39,29 @@ public class BuildingPlacementManager : MonoBehaviour
         }
 
         // Get world position under mouse cursor
-        if (!TryGetMouseWorldPosition(out Vector3 hitPoint))
-            return;
+        if (!TryGetMouseWorldPosition(out Vector3 hitPoint)) return;
 
         // Determine if placement is valid and get snapped position
         bool canPlace = CanPlace(_currentBuildingData, hitPoint, _currentYRotation, out Vector3 snapPos);
         _previewInstance.transform.position = snapPos;
 
-        // Update ghost preview material
-        var previewRenderer = _previewInstance.GetComponentInChildren<Renderer>();
-        previewRenderer.material = canPlace ? _ghostValidMaterial : _ghostInvalidMaterial;
+        // Update ghost preview materials (supporting gates)
+        ApplyGhostMaterial(_previewInstance, canPlace ? _ghostValidMaterial : _ghostInvalidMaterial);
 
         // Confirm placement on left click
-        if (canPlace && Input.GetMouseButtonDown(0))
-        {
-            PlaceRealBuilding(hitPoint);
-        }
+        if (canPlace && Input.GetMouseButtonDown(0)) PlaceRealBuilding(hitPoint);
 
         // Cancel placement on right click
-        if (Input.GetMouseButtonDown(1))
-        {
-            CancelPlacement();
-        }
+        if (Input.GetMouseButtonDown(1)) CancelPlacement();
     }
 
-    /// <summary>
-    /// Starts placement preview using the specified building data.
-    /// </summary>
     public void StartPlacement(BuildingDataSO buildingData)
     {
-        if (_previewInstance != null)
-            Destroy(_previewInstance.gameObject);
+        if (_previewInstance != null) Destroy(_previewInstance.gameObject);
 
         _currentBuildingData = buildingData;
         _currentYRotation = 0;
 
-        // Instantiate preview
         var previewGO = Instantiate(buildingData.BuildingPrefab);
         _previewInstance = previewGO.GetComponent<BuildingInstance>();
         _previewInstance.buildingData = buildingData;
@@ -82,29 +69,21 @@ public class BuildingPlacementManager : MonoBehaviour
         _previewBaseRotation = previewGO.transform.rotation;
         ApplyRotation(previewGO.transform, _previewBaseRotation, _currentYRotation);
 
-        // Set initial preview material to invalid
-        var previewRenderer = _previewInstance.GetComponentInChildren<Renderer>();
-        previewRenderer.material = _ghostInvalidMaterial;
+        // Set initial ghost material
+        ApplyGhostMaterial(_previewInstance, _ghostInvalidMaterial);
     }
 
-    /// <summary>
-    /// Finalizes placement of the building at the specified world position.
-    /// </summary>
     private void PlaceRealBuilding(Vector3 worldPosition)
     {
-        // Instantiate the real building
         var realGO = Instantiate(_currentBuildingData.BuildingPrefab);
         var realInstance = realGO.GetComponent<BuildingInstance>();
         realInstance.buildingData = _currentBuildingData;
 
-        // Apply rotation
         var realBaseRotation = realGO.transform.rotation;
         ApplyRotation(realGO.transform, realBaseRotation, _currentYRotation);
 
-        // Compute placement and occupancy
         FinalizePlacement(realInstance, worldPosition);
 
-        // Remove preview
         Destroy(_previewInstance.gameObject);
         _previewInstance = null;
     }
@@ -115,13 +94,27 @@ public class BuildingPlacementManager : MonoBehaviour
         _previewInstance = null;
     }
 
-    /// <summary>
-    /// Applies rotation around the Y-axis while preserving base X/Z orientation.
-    /// </summary>
     private void ApplyRotation(Transform target, Quaternion baseRotation, int yRotation)
     {
         Vector3 baseEuler = baseRotation.eulerAngles;
         target.rotation = Quaternion.Euler(baseEuler.x, baseEuler.y + yRotation, baseEuler.z);
+    }
+
+    private void ApplyGhostMaterial(BuildingInstance instance, Material ghostMaterial)
+    {
+        // Apply to standard mesh renderer
+        var meshRenderer = instance.GetComponentInChildren<Renderer>();
+        if (meshRenderer != null)
+            meshRenderer.material = ghostMaterial;
+
+        // If gate, also apply to skinned mesh renderers
+        if (instance is BuildingGate gate)
+        {
+            foreach (var smr in gate.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                smr.material = ghostMaterial;
+            }
+        }
     }
 
     private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
@@ -154,10 +147,7 @@ public class BuildingPlacementManager : MonoBehaviour
             Vector2Int baseIndices = GetBaseIndices(worldPosition);
             Vector2Int footprint = GetRotatedSize(_currentBuildingData, _currentYRotation);
 
-            // Mark grid cells as occupied (not walkable)
             MarkAreaOccupied(baseIndices, footprint, false);
-
-            // Assign team and apply material
             instance.team = Team.Player;
             instance.ApplyTeamMaterial();
         }

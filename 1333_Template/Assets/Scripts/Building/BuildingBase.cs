@@ -42,8 +42,9 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
 
     /// <summary>
     /// Applies the material corresponding to the building's team.
+    /// Made virtual to allow subclasses (e.g., gates) to override.
     /// </summary>
-    public void ApplyTeamMaterial()
+    public virtual void ApplyTeamMaterial()
     {
         int index = (int)team;
         if (teamMaterials == null || index < 0 || index >= teamMaterials.Length)
