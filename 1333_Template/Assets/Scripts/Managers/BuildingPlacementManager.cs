@@ -25,7 +25,7 @@ public class BuildingPlacementManager : MonoBehaviour
     private int _currentYRotation = 0;
 
     /// <summary>
-    /// Called when the script instance is loaded. Sets up main camera and grid manager references.
+    /// Sets up main camera and grid manager references.
     /// </summary>
     private void Awake()
     {
@@ -37,7 +37,7 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called every frame. Updates preview, rotation, placement, and cancellation logic.
+    /// Updates preview, rotation, placement, and cancellation logic.
     /// </summary>
     private void Update()
     {
@@ -74,7 +74,6 @@ public class BuildingPlacementManager : MonoBehaviour
     /// <summary>
     /// Starts the building placement process for a selected building.
     /// </summary>
-    /// <param name="buildingData">The building data to be placed.</param>
     public void StartPlacement(BuildingDataSO buildingData)
     {
         if (_previewInstance != null)
@@ -104,9 +103,9 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Instantiates the real building at the specified world position and finalizes placement.
+    /// Instantiates the real building, applies rotation from preview,
+    /// snaps to grid, initializes gate data, and marks grid area occupied.
     /// </summary>
-    /// <param name="worldPosition">The desired world position for placement.</param>
     private void PlaceRealBuilding(Vector3 worldPosition)
     {
         // Instantiate prefab
@@ -117,6 +116,9 @@ public class BuildingPlacementManager : MonoBehaviour
         realBase.buildingData = _currentBuildingData;
         realBase.team = Team.Player;
         realBase.ApplyTeamMaterial();
+
+        // Apply same rotation as preview
+        realGO.transform.rotation = _previewInstance.transform.rotation;
 
         // Compute placement data
         Vector2Int baseIndices = GetBaseIndices(worldPosition);
@@ -136,11 +138,8 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Applies rotation to a transform based on base rotation and current Y rotation.
+    /// Applies rotation based on base quaternion and current Y rotation.
     /// </summary>
-    /// <param name="target">The transform to rotate.</param>
-    /// <param name="baseRotation">The base rotation quaternion.</param>
-    /// <param name="yRotation">The additional rotation in degrees around the Y axis.</param>
     private void ApplyRotation(Transform target, Quaternion baseRotation, int yRotation)
     {
         Vector3 baseEuler = baseRotation.eulerAngles;
@@ -148,11 +147,8 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Applies the ghost material to all mesh renderers on the preview instance.
-    /// Supports both standard and skinned mesh renderers for gates.
+    /// Applies a ghost material to all mesh renderers on the preview.
     /// </summary>
-    /// <param name="instance">The preview building instance.</param>
-    /// <param name="ghostMaterial">The material to apply.</param>
     private void ApplyGhostMaterial(BuildingBase instance, Material ghostMaterial)
     {
         var meshRenderer = instance.GetComponentInChildren<Renderer>();
@@ -160,17 +156,13 @@ public class BuildingPlacementManager : MonoBehaviour
             meshRenderer.material = ghostMaterial;
 
         if (instance is BuildingGate gate)
-        {
             foreach (var smr in gate.GetComponentsInChildren<SkinnedMeshRenderer>())
                 smr.material = ghostMaterial;
-        }
     }
 
     /// <summary>
-    /// Gets the world position under the mouse cursor projected onto the ground plane.
+    /// Gets the world position under the mouse projected onto the ground plane.
     /// </summary>
-    /// <param name="worldPosition">The resulting world position.</param>
-    /// <returns>True if a position was found; otherwise false.</returns>
     private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
     {
         Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -185,7 +177,7 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks if the building can be placed at the given position and calculates the snapped position.
+    /// Validates placement, computing snapped position for grid alignment.
     /// </summary>
     private bool CanPlace(BuildingDataSO data, Vector3 worldPosition, int rotation, out Vector3 snapPosition)
     {
@@ -208,7 +200,7 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates the snapped position of the building for perfect grid alignment.
+    /// Calculates the snapped world position based on grid indices and footprint.
     /// </summary>
     private Vector3 CalculateSnapPosition(Vector2Int indices, BuildingDataSO data, int rotation)
     {
@@ -216,16 +208,19 @@ public class BuildingPlacementManager : MonoBehaviour
         Vector2Int footprint = GetRotatedSize(data, rotation);
         float width = footprint.x * nodeSize;
         float depth = footprint.y * nodeSize;
-        float y = _gridManager.getNodeFromWorldPosition(new Vector3(indices.x * nodeSize, 0, indices.y * nodeSize)).worldPosition.y;
+        float y = _gridManager.getNodeFromWorldPosition(
+            new Vector3(indices.x * nodeSize, 0, indices.y * nodeSize)
+        ).worldPosition.y;
+
         return new Vector3(
-            indices.x * nodeSize + width * 0.5f - nodeSize * 0.5f,
+            indices.x * nodeSize + (width - nodeSize) * 0.5f,
             y,
-            indices.y * nodeSize + depth * 0.5f - nodeSize * 0.5f
+            indices.y * nodeSize + (depth - nodeSize) * 0.5f
         );
     }
 
     /// <summary>
-    /// Determines the rotated size (footprint) of the building based on its rotation.
+    /// Computes the footprint size based on building rotation.
     /// </summary>
     private Vector2Int GetRotatedSize(BuildingDataSO data, int rotation) =>
         (rotation % 180 == 0)
@@ -233,7 +228,7 @@ public class BuildingPlacementManager : MonoBehaviour
             : new Vector2Int(data.SizeZ, data.SizeX);
 
     /// <summary>
-    /// Checks if all grid nodes in the footprint are walkable.
+    /// Checks if every node in the footprint is walkable.
     /// </summary>
     private bool IsAreaWalkable(Vector2Int baseIndices, Vector2Int footprint)
     {
@@ -248,7 +243,7 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Marks or unmarks grid nodes in the footprint as walkable.
+    /// Marks or unmarks grid nodes as walkable/non-walkable.
     /// </summary>
     private void MarkAreaOccupied(Vector2Int baseIndices, Vector2Int footprint, bool walkable)
     {

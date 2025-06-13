@@ -24,10 +24,8 @@ public class BuildingGate : BuildingBase
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.V))
-            OpenGate();
-        if (Input.GetKeyDown(KeyCode.B))
-            CloseGate();
+        if (Input.GetKeyDown(KeyCode.V)) OpenGate();
+        if (Input.GetKeyDown(KeyCode.B)) CloseGate();
     }
 
     /// <summary>
@@ -55,29 +53,48 @@ public class BuildingGate : BuildingBase
     }
 
     /// <summary>
-    /// Initialize placement data including the grid reference,
-    /// footprint dimensions, and compute offsets for the two middle
-    /// columns across the full height (six cells for a 6×3 gate).
+    /// Initialize placement data including the grid reference, footprint dimensions,
+    /// and compute offsets for the central passage cells along width or height.
     /// </summary>
+    /// <param name="baseIndices">The lower-left grid cell indices of the gate.</param>
+    /// <param name="footprint">Width × height in grid cells (already rotated).</param>
+    /// <param name="gridManager">Reference to the grid manager.</param>
     public void InitializePlacement(Vector2Int baseIndices, Vector2Int footprint, GridManager gridManager)
     {
         _placementBase = baseIndices;
         _placementFootprint = footprint;
         _gridManager = gridManager;
 
-        int half = footprint.x / 2;
-        var offsets = new List<Vector2Int>(footprint.y * 2);
-        for (int y = 0; y < footprint.y; y++)
+        // Determine if gate is rotated (footprint.x differs from default width)
+        bool rotated = footprint.x != buildingData.SizeX;
+        var offsets = new List<Vector2Int>();
+
+        if (!rotated)
         {
-            offsets.Add(new Vector2Int(half - 1, y));
-            offsets.Add(new Vector2Int(half, y));
+            // Vertical orientation: open two central columns across full height
+            int half = footprint.x / 2;
+            for (int y = 0; y < footprint.y; y++)
+            {
+                offsets.Add(new Vector2Int(half - 1, y));
+                offsets.Add(new Vector2Int(half, y));
+            }
         }
+        else
+        {
+            // Rotated (horizontal): open two central rows across full width
+            int half = footprint.y / 2;
+            for (int x = 0; x < footprint.x; x++)
+            {
+                offsets.Add(new Vector2Int(x, half - 1));
+                offsets.Add(new Vector2Int(x, half));
+            }
+        }
+
         _centerOffsets = offsets.ToArray();
     }
 
     /// <summary>
-    /// Trigger the opening animation. Actual walkability toggles
-    /// happen via Animation Event when the clip ends.
+    /// Trigger the opening animation and toggle walkability immediately.
     /// </summary>
     public void OpenGate()
     {
@@ -85,13 +102,11 @@ public class BuildingGate : BuildingBase
             return;
         _currentState = GateState.Opening;
         _animator?.SetTrigger(OpenTrigger);
-
         OnGateOpened();
     }
 
     /// <summary>
-    /// Trigger the closing animation. Actual walkability toggles
-    /// happen via Animation Event when the clip ends.
+    /// Trigger the closing animation and toggle walkability immediately.
     /// </summary>
     public void CloseGate()
     {
@@ -99,13 +114,11 @@ public class BuildingGate : BuildingBase
             return;
         _currentState = GateState.Closing;
         _animator?.SetTrigger(CloseTrigger);
-
         OnGateClosed();
     }
 
     /// <summary>
-    /// Called at the end of the “Open” animation (via Animation Event).
-    /// Marks the two center columns × height cells as walkable.
+    /// Marks the central passage cells as walkable.
     /// </summary>
     public void OnGateOpened()
     {
@@ -121,8 +134,7 @@ public class BuildingGate : BuildingBase
     }
 
     /// <summary>
-    /// Called at the end of the “Close” animation (via Animation Event).
-    /// Marks the two center columns × height cells as non-walkable.
+    /// Marks the central passage cells as non-walkable.
     /// </summary>
     public void OnGateClosed()
     {
@@ -138,7 +150,7 @@ public class BuildingGate : BuildingBase
     }
 
     /// <summary>
-    /// Highlight selection state by tinting the gate gray and displaying UI.
+    /// Highlight selection state by tinting the gate gray.
     /// </summary>
     public override void OnSelected()
     {
