@@ -17,6 +17,9 @@ public class SelectionManager : MonoBehaviour
     // Track any ISelectable
     private readonly List<ISelectable> _selected = new List<ISelectable>();
 
+    /// <summary>
+    /// Initializes the SelectionManager with required dependencies.
+    /// </summary>
     public void Initialize(Camera cam, GridManager gm, UnitManager um)
     {
         _mainCamera = cam;
@@ -26,6 +29,9 @@ public class SelectionManager : MonoBehaviour
         _unitSelectionBox.minDragSize = _minDragSize;
     }
 
+    /// <summary>
+    /// Called once per frame. Handles toggling gizmos and mouse input for selection.
+    /// </summary>
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.X))
@@ -33,17 +39,25 @@ public class SelectionManager : MonoBehaviour
         HandleMouse();
     }
 
+    /// <summary>
+    /// Handles mouse input for selection and commanding units.
+    /// </summary>
     private void HandleMouse()
     {
         if (Input.GetMouseButtonDown(0))
             _unitSelectionBox.BeginDrag(Mouse.current.position.ReadValue());
+
         if (_unitSelectionBox.IsDragging)
             _unitSelectionBox.UpdateDrag(Mouse.current.position.ReadValue());
+
         if (Input.GetMouseButtonUp(0) && _unitSelectionBox.IsDragging)
         {
             _unitSelectionBox.EndDrag(Mouse.current.position.ReadValue());
             if (_unitSelectionBox.DragDistance < _minDragSize)
+            {
                 TrySingleSelect(_unitSelectionBox.DragEnd);
+            }
+
             else
             {
                 // handle drag select for units only
@@ -53,7 +67,9 @@ public class SelectionManager : MonoBehaviour
                     Vector3 sp = _mainCamera.WorldToScreenPoint(unit.transform.position);
                     Vector2 guiPoint = new(sp.x, Screen.height - sp.y);
                     if (selRect.Contains(guiPoint))
+                    {
                         AddToSelection(unit);
+                    }
                 }
             }
         }
@@ -62,14 +78,20 @@ public class SelectionManager : MonoBehaviour
         {
             // unit move commands
             if (_selected.Count > 0)
+            {
                 CommandUnits();
+            }
         }
     }
 
+    /// <summary>
+    /// Tries to select a single selectable object at the given screen position.
+    /// </summary>
     private void TrySingleSelect(Vector2 screenPos)
     {
         ClearSelection();
         Ray ray = _mainCamera.ScreenPointToRay(screenPos);
+
         if (Physics.Raycast(ray, out var hit, 100f))
         {
             var sel = hit.collider.GetComponentInParent<ISelectable>();
@@ -78,6 +100,9 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds the given ISelectable to the selection and shows its visual feedback.
+    /// </summary>
     private void AddToSelection(ISelectable sel)
     {
         if (_selected.Contains(sel)) return;
@@ -94,6 +119,9 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clears the current selection and hides visual indicators.
+    /// </summary>
     private void ClearSelection()
     {
         foreach (var sel in _selected)
@@ -103,24 +131,32 @@ public class SelectionManager : MonoBehaviour
                 if (unit.TryGetComponent(out UnitVisualController vc))
                     vc.HideSelectionIndicator();
             }
-            else if (sel is BuildingBase bld)
+            else if (sel is BuildingBase building)
             {
-                bld.OnDeselected();
+                building.OnDeselected();
             }
         }
         _selected.Clear();
     }
 
+    /// <summary>
+    /// Commands all selected units to move to the target grid node.
+    /// </summary>
     private void CommandUnits()
     {
         Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
         Plane ground = new Plane(Vector3.up, Vector3.zero);
         if (!ground.Raycast(ray, out var enter)) return;
+
         var hitPoint = ray.GetPoint(enter);
         var node = _gridManager.getNodeFromWorldPosition(hitPoint);
         if (!node.walkable) return;
         foreach (var sel in _selected)
-            if (sel is UnitBase u)
-                u.MoveTo(node);
+        {
+            if (sel is UnitBase unit)
+            {
+                unit.MoveTo(node);
+            }
+        }
     }
 }

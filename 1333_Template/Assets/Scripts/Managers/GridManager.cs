@@ -34,15 +34,36 @@ public class GridManager : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        // Reinitialize grid when pressing O
-        if (Input.GetKeyDown(KeyCode.O))
-        {
-            //InitializeGrid();
-        }
         // Press 'X' to toggle grid gizmos on/off
         if (Input.GetKeyDown(KeyCode.X))
         {
             _showGizmos = !_showGizmos;
+        }
+        if (!_showGizmos || !isInitialized) return;
+
+        /*float half = _gridSettings.NodeSize * 0.5f;
+        for (int x = 0; x < _gridSettings.GridSizeX; x++)
+            for (int y = 0; y < _gridSettings.GridSizeY; y++)
+            {
+                var node = _gridNodes[x, y];
+                if (!node.walkable)
+                {
+                    Vector3 p = node.worldPosition;
+                    Vector3 bl = p + new Vector3(-half, 0, -half);
+                    Vector3 br = p + new Vector3(half, 0, -half);
+                    Vector3 tr = p + new Vector3(half, 0, half);
+                    Vector3 tl = p + new Vector3(-half, 0, half);
+
+                    Debug.DrawLine(bl, br, Color.red);
+                    Debug.DrawLine(br, tr, Color.red);
+                    Debug.DrawLine(tr, tl, Color.red);
+                    Debug.DrawLine(tl, bl, Color.red);
+                }
+            }*/
+        // Reinitialize grid when pressing O
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            //InitializeGrid();
         }
     }
 
@@ -188,16 +209,27 @@ public class GridManager : MonoBehaviour
     {
         if (!isInitialized || _gridNodes == null || !_showGizmos) return;
 
-        float half = _gridSettings.NodeSize * 0.5f;
+        float size = _gridSettings.NodeSize * 0.9f;
+        Vector3 halfOffset = Vector3.one * (_gridSettings.NodeSize * 0.5f);
 
         for (int x = 0; x < _gridSettings.GridSizeX; x++)
-        {
             for (int y = 0; y < _gridSettings.GridSizeY; y++)
             {
-                GridNode node = _gridNodes[x, y];
-                Gizmos.color = node.GizmoColor;
-                Gizmos.DrawWireCube(node.worldPosition, Vector3.one * (_gridSettings.NodeSize * 0.9f));
+                var node = _gridNodes[x, y];
+                Vector3 center = node.worldPosition;
+
+                if (!node.walkable)
+                {
+                    // draw solid red cube for blocked nodes
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawCube(center, Vector3.one * size);
+                }
+                else if (_showGizmos)
+                {
+                    // draw your normal wireframe for walkable nodes
+                    Gizmos.color = node.GizmoColor;
+                    Gizmos.DrawWireCube(center, Vector3.one * size);
+                }
             }
-        }
     }
 }

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Handles displaying building placement UI and initializing building selection buttons.
+/// </summary>
 public class BuildingPlacementUI : MonoBehaviour
 {
     [SerializeField] private RectTransform _layoutGroupParent;
@@ -7,11 +10,17 @@ public class BuildingPlacementUI : MonoBehaviour
     [SerializeField] private BuildingTypeSO _buildingType;
     [SerializeField] private BuildingPlacementManager _placementManager;
 
+    /// <summary>
+    /// Called when the script starts. Displays building placement UI.
+    /// </summary>
     private void Start()
     {
         ShowBuildingPlacementUI();
     }
 
+    /// <summary>
+    /// Instantiates building selection buttons for each building type.
+    /// </summary>
     private void ShowBuildingPlacementUI()
     {
         foreach (var data in _buildingType.Buildings)
