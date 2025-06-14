@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private TerrainType[] _terrainTypes;
 
     private GridNode[,] _gridNodes;
+    private bool _showGizmos = false; // Toggle flag for drawing gizmos
     public bool isInitialized { get; private set; }
 
     /// <summary>
@@ -33,10 +34,36 @@ public class GridManager : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        // Press 'X' to toggle grid gizmos on/off
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            _showGizmos = !_showGizmos;
+        }
+        if (!_showGizmos || !isInitialized) return;
+
+        /*float half = _gridSettings.NodeSize * 0.5f;
+        for (int x = 0; x < _gridSettings.GridSizeX; x++)
+            for (int y = 0; y < _gridSettings.GridSizeY; y++)
+            {
+                var node = _gridNodes[x, y];
+                if (!node.walkable)
+                {
+                    Vector3 p = node.worldPosition;
+                    Vector3 bl = p + new Vector3(-half, 0, -half);
+                    Vector3 br = p + new Vector3(half, 0, -half);
+                    Vector3 tr = p + new Vector3(half, 0, half);
+                    Vector3 tl = p + new Vector3(-half, 0, half);
+
+                    Debug.DrawLine(bl, br, Color.red);
+                    Debug.DrawLine(br, tr, Color.red);
+                    Debug.DrawLine(tr, tl, Color.red);
+                    Debug.DrawLine(tl, bl, Color.red);
+                }
+            }*/
         // Reinitialize grid when pressing O
         if (Input.GetKeyDown(KeyCode.O))
         {
-            InitializeGrid();
+            //InitializeGrid();
         }
     }
 
@@ -112,12 +139,30 @@ public class GridManager : MonoBehaviour
     /// <returns>The GridNode located at (x, y).</returns>
     public GridNode GetNode(int x, int y)
     {
-        if (!isInitialized)
-        {
-            InitializeGrid();
-        }
+        if (!isInitialized) InitializeGrid();
+
+        if (x < 0 || x >= _gridSettings.GridSizeX || y < 0 || y >= _gridSettings.GridSizeY)
+            return null;
 
         return _gridNodes[x, y];
+    }
+
+    /// <summary>
+    /// Marks a given cell as walkable or not. 
+    /// </summary>
+    public void SetWalkable(int x, int y, bool isWalkable)
+    {
+        if (!isInitialized) InitializeGrid();
+
+        // guard against out of bound
+        if (x < 0 || x >= _gridSettings.GridSizeX ||
+            y < 0 || y >= _gridSettings.GridSizeY)
+        {
+            Debug.LogWarning($"SetWalkable: ({x},{y}) is outside grid bounds.");
+            return;
+        }
+
+        _gridNodes[x, y].walkable = isWalkable;
     }
 
     /// <summary>
@@ -125,7 +170,7 @@ public class GridManager : MonoBehaviour
     /// Returns null if no walkable nodes are available.
     /// </summary>
     /// <returns>A randomly selected walkable GridNode, or null if none are walkable.</returns>
-    public GridNode? GetRandomWalkableNode()
+    public GridNode GetRandomWalkableNode()
     {
         int gridWidth = _gridSettings.GridSizeX;
         int gridHeight = _gridSettings.GridSizeY;
@@ -158,23 +203,33 @@ public class GridManager : MonoBehaviour
 
     /// <summary>
     /// Draws gizmos in the editor to visualize the grid and node colors.
-    /// Only runs if the grid is initialized.
+    /// Only runs if the grid is initialized and showGizmos is true.
     /// </summary>
     private void OnDrawGizmos()
     {
-        if (!isInitialized || _gridNodes == null) return;
+        if (!isInitialized || _gridNodes == null || !_showGizmos) return;
 
-        float half = _gridSettings.NodeSize * 0.5f;
+        float size = _gridSettings.NodeSize * 0.9f;
+        Vector3 halfOffset = Vector3.one * (_gridSettings.NodeSize * 0.5f);
 
-        // Draw a wire cube for each grid node using the node's GizmoColor
         for (int x = 0; x < _gridSettings.GridSizeX; x++)
-        {
             for (int y = 0; y < _gridSettings.GridSizeY; y++)
             {
-                GridNode node = _gridNodes[x, y];
-                Gizmos.color = node.GizmoColor;
-                Gizmos.DrawWireCube(node.worldPosition, Vector3.one * (_gridSettings.NodeSize * 0.9f));
+                var node = _gridNodes[x, y];
+                Vector3 center = node.worldPosition;
+
+                if (!node.walkable)
+                {
+                    // draw solid red cube for blocked nodes
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawCube(center, Vector3.one * size);
+                }
+                else if (_showGizmos)
+                {
+                    // draw your normal wireframe for walkable nodes
+                    Gizmos.color = node.GizmoColor;
+                    Gizmos.DrawWireCube(center, Vector3.one * size);
+                }
             }
-        }
     }
 }

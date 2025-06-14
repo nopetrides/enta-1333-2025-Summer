@@ -1,172 +1,162 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.InputSystem;
 
+using UnityEngine;
+
 /// <summary>
-/// Handles unit selection via click/drag and movement commands via right-click.
+/// Handles selection of units and buildings (ISelectable).
 /// </summary>
 public class SelectionManager : MonoBehaviour
 {
     private Camera _mainCamera;
     private GridManager _gridManager;
     private UnitManager _unitManager;
-    private UnitSelectionBox _boxDrawer;
-
+    private UnitSelectionBox _unitSelectionBox;
     [SerializeField] private float _minDragSize = 3f;
 
-    private readonly List<UnitBase> _selectedUnits = new();
+    // Track any ISelectable
+    private readonly List<ISelectable> _selected = new List<ISelectable>();
 
     /// <summary>
-    /// Initializes references for camera, grid manager, unit manager, and selection box.
+    /// Initializes the SelectionManager with required dependencies.
     /// </summary>
-    /// <param name="cam">The main camera used for raycasting.</param>
-    /// <param name="gm">The grid manager used to find grid nodes.</param>
-    /// <param name="um">The unit manager containing all units in the scene.</param>
     public void Initialize(Camera cam, GridManager gm, UnitManager um)
     {
         _mainCamera = cam;
         _gridManager = gm;
         _unitManager = um;
-        _boxDrawer = GetComponent<UnitSelectionBox>();
-        _boxDrawer.minDragSize = _minDragSize;
+        _unitSelectionBox = GetComponent<UnitSelectionBox>();
+        _unitSelectionBox.minDragSize = _minDragSize;
     }
 
     /// <summary>
-    /// Called once per frame; toggles path gizmos and handles mouse input.
+    /// Called once per frame. Handles toggling gizmos and mouse input for selection.
     /// </summary>
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.X))
             UnitBase.ShowPathGizmos = !UnitBase.ShowPathGizmos;
-
-        HandleMouseInput();
+        HandleMouse();
     }
 
     /// <summary>
-    /// Processes mouse button events for starting drag, updating drag, ending drag, and issuing move commands.
+    /// Handles mouse input for selection and commanding units.
     /// </summary>
-    private void HandleMouseInput()
+    private void HandleMouse()
     {
         if (Input.GetMouseButtonDown(0))
-            _boxDrawer.BeginDrag(Mouse.current.position.ReadValue());
+            _unitSelectionBox.BeginDrag(Mouse.current.position.ReadValue());
 
-        if (_boxDrawer.IsDragging)
-            _boxDrawer.UpdateDrag(Mouse.current.position.ReadValue());
+        if (_unitSelectionBox.IsDragging)
+            _unitSelectionBox.UpdateDrag(Mouse.current.position.ReadValue());
 
-        if (Input.GetMouseButtonUp(0) && _boxDrawer.IsDragging)
+        if (Input.GetMouseButtonUp(0) && _unitSelectionBox.IsDragging)
         {
-            _boxDrawer.EndDrag(Mouse.current.position.ReadValue());
-            if (_boxDrawer.DragDistance < _minDragSize)
-                SingleClickSelect(_boxDrawer.DragEnd);
+            _unitSelectionBox.EndDrag(Mouse.current.position.ReadValue());
+            if (_unitSelectionBox.DragDistance < _minDragSize)
+            {
+                TrySingleSelect(_unitSelectionBox.DragEnd);
+            }
+
             else
-                DragSelect(_boxDrawer.DragStart, _boxDrawer.DragEnd);
+            {
+                // handle drag select for units only
+                Rect selRect = _unitSelectionBox.GetScreenRect(_unitSelectionBox.DragStart, _unitSelectionBox.DragEnd);
+                foreach (var unit in _unitManager.AllUnits)
+                {
+                    Vector3 sp = _mainCamera.WorldToScreenPoint(unit.transform.position);
+                    Vector2 guiPoint = new(sp.x, Screen.height - sp.y);
+                    if (selRect.Contains(guiPoint))
+                    {
+                        AddToSelection(unit);
+                    }
+                }
+            }
         }
 
-        if (Input.GetMouseButtonDown(1) && _selectedUnits.Count > 0)
-            CommandSelectedUnits();
+        if (Input.GetMouseButtonDown(1))
+        {
+            // unit move commands
+            if (_selected.Count > 0)
+            {
+                CommandUnits();
+            }
+        }
     }
 
     /// <summary>
-    /// Performs a single-click selection by raycasting from the clicked screen position to select a unit.
+    /// Tries to select a single selectable object at the given screen position.
     /// </summary>
-    /// <param name="screenPos">The screen coordinates where the click occurred.</param>
-    private void SingleClickSelect(Vector2 screenPos)
+    private void TrySingleSelect(Vector2 screenPos)
     {
-        if (_mainCamera == null) return;
-
+        ClearSelection();
         Ray ray = _mainCamera.ScreenPointToRay(screenPos);
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
-        {
-            ISelectable selectable = hit.collider.GetComponentInParent<ISelectable>();
-            if (selectable is UnitBase unit && unit.UnitTeam == Team.Player)
-            {
-                ClearSelection();
-                AddToSelection(unit);
-                return;
-            }
-        }
 
-        ClearSelection();
+        if (Physics.Raycast(ray, out var hit, 100f))
+        {
+            var sel = hit.collider.GetComponentInParent<ISelectable>();
+            if (sel != null)
+                AddToSelection(sel);
+        }
     }
 
     /// <summary>
-    /// Performs a drag selection by creating a screen-space rectangle and selecting all units within it.
+    /// Adds the given ISelectable to the selection and shows its visual feedback.
     /// </summary>
-    /// <param name="start">Screen position where the drag started.</param>
-    /// <param name="end">Screen position where the drag ended.</param>
-    private void DragSelect(Vector2 start, Vector2 end)
+    private void AddToSelection(ISelectable sel)
     {
-        if (_mainCamera == null || _unitManager == null) return;
+        if (_selected.Contains(sel)) return;
+        _selected.Add(sel);
 
-        Rect rect = _boxDrawer.GetScreenRect(start, end);
-        ClearSelection();
-
-        foreach (UnitBase unit in _unitManager.AllUnits)
+        if (sel is UnitBase unit)
         {
-            if (unit.UnitTeam != Team.Player) continue;
-
-            Vector3 screenPoint = _mainCamera.WorldToScreenPoint(unit.transform.position);
-            if (screenPoint.z < 0) continue;
-
-            Vector2 guiPoint = new(screenPoint.x, Screen.height - screenPoint.y);
-            if (rect.Contains(guiPoint))
-                AddToSelection(unit);
+            if (unit.TryGetComponent(out UnitVisualController vc))
+                vc.ShowSelectionIndicator();
+        }
+        else if (sel is BuildingBase building)
+        {
+            building.OnSelected();
         }
     }
 
     /// <summary>
-    /// Issues move commands to all currently selected units by raycasting to the ground plane and obtaining the target grid node.
-    /// </summary>
-    private void CommandSelectedUnits()
-    {
-        if (_mainCamera == null || _gridManager == null) return;
-
-        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane ground = new(Vector3.up, Vector3.zero);
-
-        if (ground.Raycast(ray, out float enter))
-        {
-            Vector3 hitPoint = ray.GetPoint(enter);
-            GridNode node = _gridManager.getNodeFromWorldPosition(hitPoint);
-            if (!node.walkable)
-            {
-                Debug.Log("SelectionManager: Target node is not walkable.");
-                return;
-            }
-
-            foreach (UnitBase unit in _selectedUnits)
-                unit.MoveTo(node);
-        }
-    }
-
-    /// <summary>
-    /// Adds a unit to the selection list and displays its selection indicator.
-    /// </summary>
-    /// <param name="unit">The UnitBase instance to add to selection.</param>
-    private void AddToSelection(UnitBase unit)
-    {
-        if (_selectedUnits.Contains(unit)) return;
-
-        _selectedUnits.Add(unit);
-        if (unit.TryGetComponent(out UnitVisualController unitVisualController))
-        {
-            unitVisualController.ShowSelectionIndicator();
-        }
-    }
-
-    /// <summary>
-    /// Clears the current selection by hiding all selection indicators and emptying the selected units list.
+    /// Clears the current selection and hides visual indicators.
     /// </summary>
     private void ClearSelection()
     {
-        foreach (var unit in _selectedUnits)
+        foreach (var sel in _selected)
         {
-            if (unit.TryGetComponent(out UnitVisualController unitVisualController))
+            if (sel is UnitBase unit)
             {
-                unitVisualController.HideSelectionIndicator();
+                if (unit.TryGetComponent(out UnitVisualController vc))
+                    vc.HideSelectionIndicator();
+            }
+            else if (sel is BuildingBase building)
+            {
+                building.OnDeselected();
             }
         }
+        _selected.Clear();
+    }
 
-        _selectedUnits.Clear();
+    /// <summary>
+    /// Commands all selected units to move to the target grid node.
+    /// </summary>
+    private void CommandUnits()
+    {
+        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Plane ground = new Plane(Vector3.up, Vector3.zero);
+        if (!ground.Raycast(ray, out var enter)) return;
+
+        var hitPoint = ray.GetPoint(enter);
+        var node = _gridManager.getNodeFromWorldPosition(hitPoint);
+        if (!node.walkable) return;
+        foreach (var sel in _selected)
+        {
+            if (sel is UnitBase unit)
+            {
+                unit.MoveTo(node);
+            }
+        }
     }
 }
