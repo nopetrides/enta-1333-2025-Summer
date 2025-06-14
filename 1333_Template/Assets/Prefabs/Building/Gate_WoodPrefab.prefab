@@ -136,14 +136,11 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 7464343ccc792784e95cc547f0e36f8a, type: 2}
   - {fileID: 2100000, guid: 24f50c58f94ce9d478fd8eedcdd1644d, type: 2}
   buildingData: {fileID: 11400000, guid: 5b2aee09f16c96a42ac15a0e0d963079, type: 2}
-  _selectionRenderers:
-  - {fileID: 2914146287359942983}
-  - {fileID: 2914146287359942979}
-  - {fileID: 2914146287359942981}
   _skinnedRenderers:
   - {fileID: 2914146287359942983}
   - {fileID: 2914146287359942979}
   - {fileID: 2914146287359942981}
+  _animator: {fileID: 2914146287364153223}
 --- !u!65 &-2237755233088955413
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -178,5 +175,10 @@ SkinnedMeshRenderer:
 --- !u!137 &2914146287359942983 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 13700000, guid: 7ae56a8428b94f24b854dac395c7c925, type: 3}
+  m_PrefabInstance: {fileID: 2914146287354768103}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &2914146287364153223 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 9500000, guid: 7ae56a8428b94f24b854dac395c7c925, type: 3}
   m_PrefabInstance: {fileID: 2914146287354768103}
   m_PrefabAsset: {fileID: 0}

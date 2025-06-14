@@ -279,6 +279,7 @@ Transform:
   - {fileID: 250037352}
   - {fileID: 1255263805}
   - {fileID: 588100087}
+  - {fileID: 1204304709}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &250037350
@@ -661,6 +662,52 @@ MonoBehaviour:
   useKeyboardRotate: 1
   initialFocusDistance: 10
   rotateSpeed: 100
+--- !u!1 &1204304708
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1204304709}
+  - component: {fileID: 1204304710}
+  m_Layer: 0
+  m_Name: ResourceManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1204304709
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204304708}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 175193423}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1204304710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204304708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f36a1fb4a31e0b44ba91fc5f2256a3c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _resourceTypeSOs:
+  - {fileID: 11400000, guid: b37301b0b78b7aa4495945e045c2c88a, type: 2}
 --- !u!1 &1255263803
 GameObject:
   m_ObjectHideFlags: 0
@@ -1414,6 +1461,8 @@ MonoBehaviour:
   _unitManager: {fileID: 1274391301}
   _armyManager: {fileID: 250037351}
   _unitSelectionManager: {fileID: 1255263804}
+  _buildingPlacementManager: {fileID: 588100088}
+  _resourceManager: {fileID: 1204304710}
   _camera: {fileID: 1161391203}
 --- !u!4 &2036225621
 Transform:
