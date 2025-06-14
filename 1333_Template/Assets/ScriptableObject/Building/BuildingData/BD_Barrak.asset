@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de4928df2c355e24b8bc50401df8fa1e, type: 3}
+  m_Name: BD_Barrak
+  m_EditorClassIdentifier: 
+  _buildingName: Barrak
+  _buttonImage: {fileID: 21300000, guid: f8c41eb02f515664f8d1867763cb1c67, type: 3}
+  _description: Example description
+  _buildingPrefab: {fileID: 5772896056242797515, guid: 13754e388e58c6342b0f79c268e81edf, type: 3}
+  _health: 100
+  _sizeX: 7
+  _sizeZ: 7
