@@ -16,6 +16,7 @@ MonoBehaviour:
   _buttonImage: {fileID: 21300000, guid: f8c41eb02f515664f8d1867763cb1c67, type: 3}
   _description: Example description
   _buildingPrefab: {fileID: 5772896056242797515, guid: 13754e388e58c6342b0f79c268e81edf, type: 3}
+  _buildingModel: {fileID: 5772896056242797515, guid: 1cd7c8fb78b5fd4409d6ed7e534e1dd7, type: 3}
   _health: 100
   _sizeX: 7
   _sizeZ: 7
