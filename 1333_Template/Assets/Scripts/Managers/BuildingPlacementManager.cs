@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 /// <summary>
 /// Manages building placement: preview with BuildingModel, rotation, validation,
@@ -36,42 +38,47 @@ public class BuildingPlacementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles input for preview rotation, placement validation, and actual placement.
+    /// Handles preview rotation, movement, and placement input.
+    /// Prevents only placement and cancellation clicks on relevant UI elements,
+    /// but always updates preview position and rotation.
     /// </summary>
     private void Update()
     {
         if (_previewInstance == null)
             return;
 
-        // Rotate preview on middle mouse click
+        // Rotate preview on middle mouse click (regardless of UI)
         if (Mouse.current.middleButton.wasPressedThisFrame)
         {
             _currentYRotation = (_currentYRotation + 90) % 360;
             ApplyRotation(_previewInstance.transform, _previewBaseRotation, _currentYRotation);
         }
 
-        // Get world position under mouse cursor
-        if (!TryGetMouseWorldPosition(out Vector3 hitPoint))
-            return;
+        // Always update preview position
+        if (TryGetMouseWorldPosition(out Vector3 hitPoint))
+        {
+            bool canPlace = CanPlace(_currentBuildingData, hitPoint, _currentYRotation, out Vector3 snapPos);
+            _previewInstance.transform.position = snapPos;
+            ApplyGhostMaterial(_previewInstance, canPlace ? _ghostValidMaterial : _ghostInvalidMaterial);
 
-        // Determine if placement is valid and get snapped position
-        bool canPlace = CanPlace(_currentBuildingData, hitPoint, _currentYRotation, out Vector3 snapPos);
-        _previewInstance.transform.position = snapPos;
+            // Place on left-click if valid and not over blocking UI
+            if (canPlace && Mouse.current.leftButton.wasPressedThisFrame && !IsPointerOverUI())
+            {
+                PlaceRealBuilding(hitPoint);
+                return;
+            }
+        }
 
-        // Update ghost preview material
-        ApplyGhostMaterial(_previewInstance, canPlace ? _ghostValidMaterial : _ghostInvalidMaterial);
-
-        // Confirm placement on left click
-        if (canPlace && Mouse.current.leftButton.wasPressedThisFrame)
-            PlaceRealBuilding(hitPoint);
-
-        // Cancel placement on right click
-        if (Mouse.current.rightButton.wasPressedThisFrame)
+        // Cancel on right-click if not over blocking UI
+        if (Mouse.current.rightButton.wasPressedThisFrame && !IsPointerOverUI())
+        {
             CancelPlacement();
+        }
     }
 
     /// <summary>
-    /// Begins placement by instantiating only the BuildingModel for a lightweight preview.
+    /// Begins placement by instantiating only the BuildingModel for a lightweight preview,
+    /// resetting rotation to default.
     /// </summary>
     /// <param name="buildingData">The BuildingDataSO containing prefab and model references.</param>
     public void StartPlacement(BuildingDataSO buildingData)
@@ -81,198 +88,194 @@ public class BuildingPlacementManager : MonoBehaviour
 
         _currentBuildingData = buildingData;
         _currentYRotation = 0;
-
-        // Use BuildingModel (no scripts/colliders) for preview
-        _previewInstance = Instantiate(buildingData.BuildingModel);
-        _previewBaseRotation = _previewInstance.transform.rotation;
-        ApplyRotation(_previewInstance.transform, _previewBaseRotation, _currentYRotation);
-
-        // Start with invalid material until position is valid
-        ApplyGhostMaterial(_previewInstance, _ghostInvalidMaterial);
+        CreatePreview();
     }
 
     /// <summary>
-    /// Cancels the current building placement and destroys the preview instance.
+    /// Cancels the current building placement, destroys preview, and resets rotation.
     /// </summary>
     private void CancelPlacement()
     {
-        Destroy(_previewInstance);
+        if (_previewInstance != null)
+            Destroy(_previewInstance);
+
         _previewInstance = null;
+        _currentYRotation = 0;
     }
 
     /// <summary>
-    /// Instantiates the real building prefab at the specified world position and continues placement mode.
+    /// Instantiates the real building prefab at world position,
+    /// preserves rotation for next preview, and starts a new preview.
     /// </summary>
-    /// <param name="worldPosition">The raw world position under the cursor when placing.</param>
+    /// <param name="worldPosition">Cursor world position on placement.</param>
     private void PlaceRealBuilding(Vector3 worldPosition)
     {
-        // Instantiate the actual prefab with all features
         var realGO = Instantiate(_currentBuildingData.BuildingPrefab);
         var realBase = realGO.GetComponent<BuildingBase>();
         realBase.buildingData = _currentBuildingData;
         realBase.team = Team.Player;
         realBase.ApplyTeamMaterial();
 
-        // Copy rotation from preview
         realGO.transform.rotation = _previewInstance.transform.rotation;
 
-        // Compute grid indices and footprint
         Vector2Int baseIndices = GetBaseIndices(worldPosition);
         Vector2Int footprint = GetRotatedSize(_currentBuildingData, _currentYRotation);
 
-        // Initialize gate if needed
         if (realBase is BuildingGate gate)
             gate.InitializePlacement(baseIndices, footprint, _gridManager);
 
-        // Snap into place and mark occupied
         Vector3 snapPos = CalculateSnapPosition(baseIndices, _currentBuildingData, _currentYRotation);
         realGO.transform.position = snapPos;
         MarkAreaOccupied(baseIndices, footprint, false);
 
-        // Remove the old preview
         Destroy(_previewInstance);
         _previewInstance = null;
-
-        // Continue placement mode by creating a new preview for the same building
-        StartPlacement(_currentBuildingData);
+        CreatePreview();
     }
 
     /// <summary>
-    /// Applies a Y-axis rotation on top of the base rotation.
+    /// Instantiates the BuildingModel preview and applies current rotation and invalid material.
     /// </summary>
-    /// <param name="target">The transform to rotate.</param>
-    /// <param name="baseRotation">The original rotation of the object.</param>
-    /// <param name="yRotation">The additional yaw in degrees.</param>
-    private void ApplyRotation(Transform target, Quaternion baseRotation, int yRotation)
+    private void CreatePreview()
     {
-        Vector3 baseEuler = baseRotation.eulerAngles;
-        target.rotation = Quaternion.Euler(baseEuler.x, baseEuler.y + yRotation, baseEuler.z);
+        _previewInstance = Instantiate(_currentBuildingData.BuildingModel);
+        _previewBaseRotation = _previewInstance.transform.rotation;
+        ApplyRotation(_previewInstance.transform, _previewBaseRotation, _currentYRotation);
+        ApplyGhostMaterial(_previewInstance, _ghostInvalidMaterial);
     }
 
     /// <summary>
-    /// Applies a ghost material to all renderers under the instance.
+    /// Determines if the pointer is over any UI element except those tagged 'UIIgnore'.
     /// </summary>
-    /// <param name="instance">The preview GameObject.</param>
-    /// <param name="ghostMaterial">The material to apply.</param>
-    private void ApplyGhostMaterial(GameObject instance, Material ghostMaterial)
+    /// <remarks>
+    /// Tag UI element 'UIIgnore' to let clicks pass through if needed.
+    /// </remarks>
+    private bool IsPointerOverUI()
     {
-        foreach (var renderer in instance.GetComponentsInChildren<Renderer>())
+        if (EventSystem.current == null)
+            return false;
+
+        var pointerData = new PointerEventData(EventSystem.current)
         {
-            renderer.material = ghostMaterial;
-        }
-    }
+            position = Mouse.current.position.ReadValue()
+        };
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
 
-    /// <summary>
-    /// Casts a ray from the mouse into the world to find the ground plane point.
-    /// </summary>
-    /// <param name="worldPosition">Out parameter for the hit point on the ground plane.</param>
-    /// <returns>True if the ray hit the ground plane, otherwise false.</returns>
-    private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
-    {
-        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane groundPlane = new(Vector3.up, Vector3.zero);
-        if (groundPlane.Raycast(ray, out float enter))
+        foreach (var res in results)
         {
-            worldPosition = ray.GetPoint(enter);
+            if (res.gameObject.CompareTag("UIIgnore"))
+                continue;
             return true;
         }
-        worldPosition = Vector3.zero;
         return false;
     }
 
     /// <summary>
-    /// Validates placement, computing snapped grid-aligned position.
+    /// Applies additional yaw rotation to an object's base rotation.
     /// </summary>
-    /// <param name="data">Building data including size.</param>
-    /// <param name="worldPosition">Raw world coordinate under cursor.</param>
-    /// <param name="rotation">Current Y rotation in degrees.</param>
-    /// <param name="snapPosition">Out parameter for snapped position.</param>
-    /// <returns>True if all grid cells in footprint are walkable.</returns>
-    private bool CanPlace(BuildingDataSO data, Vector3 worldPosition, int rotation, out Vector3 snapPosition)
+    private void ApplyRotation(Transform target, Quaternion baseRotation, int yRotation)
     {
-        Vector2Int baseIndices = GetBaseIndices(worldPosition);
-        snapPosition = CalculateSnapPosition(baseIndices, data, rotation);
-        Vector2Int footprint = GetRotatedSize(data, rotation);
-        return IsAreaWalkable(baseIndices, footprint);
+        Vector3 e = baseRotation.eulerAngles;
+        target.rotation = Quaternion.Euler(e.x, e.y + yRotation, e.z);
     }
 
     /// <summary>
-    /// Converts a world coordinate to grid indices.
+    /// Applies a single ghost material across all child renderers.
     /// </summary>
-    /// <param name="worldPosition">The world position to convert.</param>
-    /// <returns>Grid indices as Vector2Int.</returns>
-    private Vector2Int GetBaseIndices(Vector3 worldPosition)
+    private void ApplyGhostMaterial(GameObject instance, Material ghostMaterial)
     {
-        GridNode node = _gridManager.getNodeFromWorldPosition(worldPosition);
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        int x = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
-        int y = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
-        return new Vector2Int(x, y);
+        foreach (var r in instance.GetComponentsInChildren<Renderer>())
+            r.material = ghostMaterial;
     }
 
     /// <summary>
-    /// Calculates the snapped world position for placing the building.
+    /// Raycasts from mouse to ground plane and returns hit point.
     /// </summary>
-    /// <param name="indices">Base grid indices.</param>
-    /// <param name="data">Building data including size.</param>
-    /// <param name="rotation">Current Y rotation in degrees.</param>
-    /// <returns>The world position snapped to grid center.</returns>
-    private Vector3 CalculateSnapPosition(Vector2Int indices, BuildingDataSO data, int rotation)
+    private bool TryGetMouseWorldPosition(out Vector3 worldPos)
     {
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        Vector2Int footprint = GetRotatedSize(data, rotation);
-        float width = footprint.x * nodeSize;
-        float depth = footprint.y * nodeSize;
-        float y = _gridManager.getNodeFromWorldPosition(
-            new Vector3(indices.x * nodeSize, 0, indices.y * nodeSize)
-        ).worldPosition.y;
+        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Plane plane = new(Vector3.up, Vector3.zero);
+        if (plane.Raycast(ray, out float d))
+        {
+            worldPos = ray.GetPoint(d);
+            return true;
+        }
+        worldPos = Vector3.zero;
+        return false;
+    }
 
-        return new Vector3(
-            indices.x * nodeSize + (width - nodeSize) * 0.5f,
-            y,
-            indices.y * nodeSize + (depth - nodeSize) * 0.5f
+    /// <summary>
+    /// Checks if a footprint area is placeable and returns snapped position.
+    /// </summary>
+    private bool CanPlace(BuildingDataSO data, Vector3 worldPos, int rot, out Vector3 snap)
+    {
+        Vector2Int idx = GetBaseIndices(worldPos);
+        snap = CalculateSnapPosition(idx, data, rot);
+        return IsAreaWalkable(idx, GetRotatedSize(data, rot));
+    }
+
+    /// <summary>
+    /// Converts world position to grid indices.
+    /// </summary>
+    private Vector2Int GetBaseIndices(Vector3 worldPos)
+    {
+        var node = _gridManager.getNodeFromWorldPosition(worldPos);
+        float size = _gridManager.GridSettings.NodeSize;
+        return new Vector2Int(
+            Mathf.RoundToInt(node.worldPosition.x / size),
+            Mathf.RoundToInt(node.worldPosition.z / size)
         );
     }
 
     /// <summary>
-    /// Determines the building footprint size based on Y rotation.
+    /// Calculates center-aligned world position based on grid indices and footprint.
     /// </summary>
-    /// <param name="data">Building data including original size.</param>
-    /// <param name="rotation">Current Y rotation in degrees.</param>
-    /// <returns>Rotated footprint as Vector2Int.</returns>
-    private Vector2Int GetRotatedSize(BuildingDataSO data, int rotation) =>
-        (rotation % 180 == 0)
+    private Vector3 CalculateSnapPosition(Vector2Int idx, BuildingDataSO data, int rot)
+    {
+        float size = _gridManager.GridSettings.NodeSize;
+        var fp = GetRotatedSize(data, rot);
+        float w = fp.x * size, d = fp.y * size;
+        float y = _gridManager.getNodeFromWorldPosition(
+            new Vector3(idx.x * size, 0, idx.y * size)
+        ).worldPosition.y;
+        return new Vector3(
+            idx.x * size + (w - size) * 0.5f,
+            y,
+            idx.y * size + (d - size) * 0.5f
+        );
+    }
+
+    /// <summary>
+    /// Returns rotated footprint dimensions.
+    /// </summary>
+    private Vector2Int GetRotatedSize(BuildingDataSO data, int rot) =>
+        rot % 180 == 0
             ? new Vector2Int(data.SizeX, data.SizeZ)
             : new Vector2Int(data.SizeZ, data.SizeX);
 
     /// <summary>
-    /// Checks whether all nodes in the specified footprint are walkable.
+    /// Checks grid walkability for the given footprint.
     /// </summary>
-    /// <param name="baseIndices">Starting grid indices.</param>
-    /// <param name="footprint">Footprint size in grid cells.</param>
-    /// <returns>True if all nodes are walkable.</returns>
-    private bool IsAreaWalkable(Vector2Int baseIndices, Vector2Int footprint)
+    private bool IsAreaWalkable(Vector2Int idx, Vector2Int fp)
     {
-        for (int dx = 0; dx < footprint.x; dx++)
-            for (int dy = 0; dy < footprint.y; dy++)
+        for (int dx = 0; dx < fp.x; dx++)
+            for (int dy = 0; dy < fp.y; dy++)
             {
-                var node = _gridManager.GetNode(baseIndices.x + dx, baseIndices.y + dy);
-                if (node == null || !node.walkable)
+                var n = _gridManager.GetNode(idx.x + dx, idx.y + dy);
+                if (n == null || !n.walkable)
                     return false;
             }
         return true;
     }
 
     /// <summary>
-    /// Marks or unmarks grid nodes as walkable or non-walkable.
+    /// Marks or unmarks grid cells as walkable.
     /// </summary>
-    /// <param name="baseIndices">Starting grid indices.</param>
-    /// <param name="footprint">Footprint size in grid cells.</param>
-    /// <param name="walkable">True to mark nodes as walkable, false otherwise.</param>
-    private void MarkAreaOccupied(Vector2Int baseIndices, Vector2Int footprint, bool walkable)
+    private void MarkAreaOccupied(Vector2Int idx, Vector2Int fp, bool walkable)
     {
-        for (int dx = 0; dx < footprint.x; dx++)
-            for (int dy = 0; dy < footprint.y; dy++)
-                _gridManager.SetWalkable(baseIndices.x + dx, baseIndices.y + dy, walkable);
+        for (int dx = 0; dx < fp.x; dx++)
+            for (int dy = 0; dy < fp.y; dy++)
+                _gridManager.SetWalkable(idx.x + dx, idx.y + dy, walkable);
     }
 }

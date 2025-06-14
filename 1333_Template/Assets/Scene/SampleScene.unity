@@ -181,7 +181,7 @@ GameObject:
   - component: {fileID: 151204212}
   m_Layer: 5
   m_Name: BG
-  m_TagString: Untagged
+  m_TagString: UIIgnore
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
