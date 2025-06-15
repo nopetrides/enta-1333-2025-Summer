@@ -26,15 +26,17 @@ public class BuildingPlacementManager : MonoBehaviour
     private Quaternion _previewBaseRotation;
     private int _currentYRotation = 0;
 
-    // Injected by GameManager
+    // Injected dependencies
     private ResourceManager _resourceManager;
+    private ArmyManager _armyManager;
 
     /// <summary>
-    /// Called by GameManager to inject dependencies.
+    /// Injects ResourceManager and ArmyManager. Called by GameManager at startup.
     /// </summary>
-    public void Initialize(ResourceManager resourceManager)
+    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager)
     {
         _resourceManager = resourceManager;
+        _armyManager = armyManager;
     }
 
     private void Awake()
@@ -114,6 +116,10 @@ public class BuildingPlacementManager : MonoBehaviour
 
         if (realBase is BuildingGate gate)
             gate.InitializePlacement(baseIdx, footprint, _gridManager);
+
+        // Injection for Barrack:
+        if (realBase is BuildingBarrack barrack)
+            barrack.Initialize(_armyManager, _resourceManager);
 
         // If it produces resources, inject manager
         if (realBase is BuildingResource br && _resourceManager != null)

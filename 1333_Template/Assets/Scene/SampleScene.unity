@@ -314,9 +314,9 @@ MonoBehaviour:
   _playerArmySO: {fileID: 11400000, guid: 31a93845c536e0f469f3b5d2c6015fd8, type: 2}
   _enemyArmySO: {fileID: 11400000, guid: a435ee948640e0d498a90499f71f2087, type: 2}
   _spearManArmySO: {fileID: 11400000, guid: b0b24892315671347b40bd7e6ef11a9d, type: 2}
-  _mountedKnightArmyS0: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
-  _workerArmyS0: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
-  _mountedHighMageArmyS0: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
+  _mountedKnightArmySO: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
+  _workerArmySO: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
+  _mountedHighMageArmySO: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
   _archerArmySO: {fileID: 11400000, guid: 4fcbd005d39c676428f8640beeed2f28, type: 2}
   _crossbowManArmySO: {fileID: 11400000, guid: 98d4de793532b1e40b1e931d9373f31e, type: 2}
   _commanderArmySO: {fileID: 11400000, guid: aece804b78393c94193d5b8b54e90b36, type: 2}
@@ -708,6 +708,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _resourceTypeSOs:
   - {fileID: 11400000, guid: b37301b0b78b7aa4495945e045c2c88a, type: 2}
+  _debugResourceList: []
 --- !u!1 &1255263803
 GameObject:
   m_ObjectHideFlags: 0

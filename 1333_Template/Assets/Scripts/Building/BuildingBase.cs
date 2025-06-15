@@ -10,7 +10,7 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
     public Material[] teamMaterials;     // Materials corresponding to each team
     public BuildingDataSO buildingData;  // Data object containing building properties
 
-    private Renderer _renderer;          // Cached Renderer component
+    protected Renderer _renderer;          // Cached Renderer component
 
     /// <summary>
     /// Current health of the building.
