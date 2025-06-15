@@ -111,6 +111,8 @@ public class SelectionManager : MonoBehaviour
     {
         if (sel is UnitBase unit && unit.UnitTeam != Team.Player)
             return;
+        if (sel is BuildingBase b && b.team != Team.Player)
+            return;
         if (_selected.Contains(sel)) return;
         _selected.Add(sel);
 

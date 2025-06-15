@@ -311,17 +311,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e18877d174efe244e95e4174a74c06d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _playerArmySO: {fileID: 11400000, guid: 31a93845c536e0f469f3b5d2c6015fd8, type: 2}
-  _enemyArmySO: {fileID: 11400000, guid: a435ee948640e0d498a90499f71f2087, type: 2}
-  _spearManArmySO: {fileID: 11400000, guid: b0b24892315671347b40bd7e6ef11a9d, type: 2}
-  _mountedKnightArmySO: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
-  _workerArmySO: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
-  _mountedHighMageArmySO: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
-  _archerArmySO: {fileID: 11400000, guid: 4fcbd005d39c676428f8640beeed2f28, type: 2}
-  _crossbowManArmySO: {fileID: 11400000, guid: 98d4de793532b1e40b1e931d9373f31e, type: 2}
-  _commanderArmySO: {fileID: 11400000, guid: aece804b78393c94193d5b8b54e90b36, type: 2}
-  _mageArmySO: {fileID: 11400000, guid: 27e52478459deff40b99ed1b6086eee6, type: 2}
-  _highMageArmySO: {fileID: 11400000, guid: e4f79c9d2faf478409e8460f299b2950, type: 2}
+  _armyMappings:
+  - type: 0
+    composition: {fileID: 11400000, guid: 31a93845c536e0f469f3b5d2c6015fd8, type: 2}
+  - type: 1
+    composition: {fileID: 11400000, guid: a435ee948640e0d498a90499f71f2087, type: 2}
+  - type: 2
+    composition: {fileID: 11400000, guid: b0b24892315671347b40bd7e6ef11a9d, type: 2}
+  - type: 3
+    composition: {fileID: 11400000, guid: 4fcbd005d39c676428f8640beeed2f28, type: 2}
+  - type: 4
+    composition: {fileID: 11400000, guid: 98d4de793532b1e40b1e931d9373f31e, type: 2}
+  - type: 5
+    composition: {fileID: 11400000, guid: cf234698cfa3776499a707ccb05f3e83, type: 2}
+  - type: 6
+    composition: {fileID: 11400000, guid: 27e52478459deff40b99ed1b6086eee6, type: 2}
+  - type: 7
+    composition: {fileID: 11400000, guid: e4f79c9d2faf478409e8460f299b2950, type: 2}
+  - type: 8
+    composition: {fileID: 11400000, guid: 6f80b189d49760041bc842273202b381, type: 2}
+  - type: 9
+    composition: {fileID: 11400000, guid: aece804b78393c94193d5b8b54e90b36, type: 2}
+  - type: 10
+    composition: {fileID: 11400000, guid: 36cab673645189b4bbeb09dfeca4dd94, type: 2}
 --- !u!4 &250037352
 Transform:
   m_ObjectHideFlags: 0

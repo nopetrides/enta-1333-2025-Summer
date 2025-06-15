@@ -123,7 +123,8 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 7464343ccc792784e95cc547f0e36f8a, type: 2}
   - {fileID: 2100000, guid: 24f50c58f94ce9d478fd8eedcdd1644d, type: 2}
   buildingData: {fileID: 11400000, guid: 9246362e81dc0bb4cbaa58f9a03241d2, type: 2}
-  SpawnPoint: {fileID: 2047607699876333459}
+  _armyType: 2
+  _spawnPoint: {fileID: 2047607699876333459}
   _spawnInterval: 1
   _selectionRenderers:
   - {fileID: 5772896056244725003}
