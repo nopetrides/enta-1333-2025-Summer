@@ -60,10 +60,14 @@ public class SelectionManager : MonoBehaviour
 
             else
             {
+
                 // handle drag select for units only
                 Rect selRect = _unitSelectionBox.GetScreenRect(_unitSelectionBox.DragStart, _unitSelectionBox.DragEnd);
                 foreach (var unit in _unitManager.AllUnits)
                 {
+                    // skip any non-player team units
+                    if (unit.UnitTeam != Team.Player)
+                        continue;
                     Vector3 sp = _mainCamera.WorldToScreenPoint(unit.transform.position);
                     Vector2 guiPoint = new(sp.x, Screen.height - sp.y);
                     if (selRect.Contains(guiPoint))
@@ -105,12 +109,14 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void AddToSelection(ISelectable sel)
     {
+        if (sel is UnitBase unit && unit.UnitTeam != Team.Player)
+            return;
         if (_selected.Contains(sel)) return;
         _selected.Add(sel);
 
-        if (sel is UnitBase unit)
+        if (sel is UnitBase u)
         {
-            if (unit.TryGetComponent(out UnitVisualController vc))
+            if (u.TryGetComponent(out UnitVisualController vc))
                 vc.ShowSelectionIndicator();
         }
         else if (sel is BuildingBase building)
