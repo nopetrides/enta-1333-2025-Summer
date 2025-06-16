@@ -78,6 +78,11 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     public UnitTypeSO UnitType => _unitType;
 
     /// <summary>
+    /// The current health points of this unit.
+    /// </summary>
+    public float CurrentHp => _currentHp;
+
+    /// <summary>
     /// Initializes this unit with its type, GridManager, UnitManager, AStarPathfinder, and team.
     /// Must be called immediately after instantiation.
     /// </summary>

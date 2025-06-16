@@ -14,6 +14,10 @@ public class SelectionManager : MonoBehaviour
     private UnitSelectionBox _unitSelectionBox;
     [SerializeField] private float _minDragSize = 3f;
 
+    [Header("Selection UI")]
+    [Tooltip("UI panel that shows info for the currently selected unit.")]
+    [SerializeField] private UnitSelectedUI _unitSelectedUI = null;
+
     // Track any ISelectable
     private readonly List<ISelectable> _selected = new List<ISelectable>();
 
@@ -27,6 +31,10 @@ public class SelectionManager : MonoBehaviour
         _unitManager = um;
         _unitSelectionBox = GetComponent<UnitSelectionBox>();
         _unitSelectionBox.minDragSize = _minDragSize;
+
+        // Ensure UI is hidden at start
+        if (_unitSelectedUI != null)
+            _unitSelectedUI.Hide();
     }
 
     /// <summary>
@@ -55,6 +63,7 @@ public class SelectionManager : MonoBehaviour
         if (Input.GetMouseButtonUp(0) && _unitSelectionBox.IsDragging)
         {
             _unitSelectionBox.EndDrag(Mouse.current.position.ReadValue());
+            ClearSelection();
             if (_unitSelectionBox.DragDistance < _minDragSize)
             {
                 TrySingleSelect(_unitSelectionBox.DragEnd);
@@ -122,10 +131,14 @@ public class SelectionManager : MonoBehaviour
         {
             if (u.TryGetComponent(out UnitVisualController vc))
                 vc.ShowSelectionIndicator();
+            // show its stats in UI
+            _unitSelectedUI.ShowUnitInfo(u);
         }
         else if (sel is BuildingBase building)
         {
             building.OnSelected();
+            // hide unit UI if a building is selected
+            _unitSelectedUI.Hide();
         }
     }
 
@@ -134,6 +147,7 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void ClearSelection()
     {
+        _unitSelectedUI.Hide();
         foreach (var sel in _selected)
         {
             if (sel is UnitBase unit)

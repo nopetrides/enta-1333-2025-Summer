@@ -9,7 +9,7 @@ public class UnitTypeSO : ScriptableObject
 {
     [Header("Basic Info")]
     [Tooltip("The display name of this unit type.")]
-    [SerializeField] private string _typeName = "New Unit";
+    [SerializeField] private string _typeName = "New Unit Name";
 
     [Header("Grid Size (in cells)")]
     [Tooltip("How many cells wide this unit occupies.")]
