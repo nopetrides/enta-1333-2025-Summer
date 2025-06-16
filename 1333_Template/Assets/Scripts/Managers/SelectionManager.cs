@@ -44,6 +44,8 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void HandleMouse()
     {
+        if (Banner.IsAnyDragging)
+            return;
         if (Input.GetMouseButtonDown(0))
             _unitSelectionBox.BeginDrag(Mouse.current.position.ReadValue());
 

@@ -1,9 +1,12 @@
-﻿using System.Collections;
+﻿// BuildingBarrack.cs
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 /// <summary>
 /// Barrack building that spawns a configured ArmyType at its spawn point when the N key is pressed.
+/// After spawning, units form around a Banner if present; otherwise around the spawn point.
 /// </summary>
 public class BuildingBarrack : BuildingBase
 {
@@ -14,8 +17,6 @@ public class BuildingBarrack : BuildingBase
     [SerializeField] private float _spawnInterval = 1f;
 
     [Header("Formation Settings")]
-    [Tooltip("Transform indicating the center of the formation.")]
-    [SerializeField] private Transform _formationPoint = null;
     [Tooltip("Seconds to wait after last spawn before ordering formation.")]
     [SerializeField] private float _formationDelay = 0.5f;
 
@@ -27,14 +28,21 @@ public class BuildingBarrack : BuildingBase
     private ResourceManager _resourceManager;
     private GridManager _gridManager;
 
+
+    // Injected selection UI
+    private BarrackSelectedUI _selectionUI;
+
     /// <summary>
-    /// Injects the ArmyManager and ResourceManager. Called by BuildingPlacementManager after placement.
+    /// Injects the ArmyManager, ResourceManager, and GridManager. Called by BuildingPlacementManager after placement.
     /// </summary>
-    public void Initialize(ArmyManager armyManager, ResourceManager resourceManager, GridManager gridManager)
+    public void Initialize(ArmyManager armyManager, ResourceManager resourceManager, GridManager gridManager, BarrackSelectedUI ui)
     {
         _armyManager = armyManager;
         _resourceManager = resourceManager;
-        _gridManager = gridManager; 
+        _gridManager = gridManager;
+
+        _selectionUI = ui;
+        _selectionUI.Hide();
     }
 
     private void Update()
@@ -46,18 +54,26 @@ public class BuildingBarrack : BuildingBase
     }
 
     /// <summary>
-    /// Spawns a wave of units, collects them into a list, waits for all to appear,
-    /// then orders them into a distributed formation around the formation point.
+    /// Public entry point for UI to spawn a single wave unit.
+    /// </summary>
+    public void SpawnUnit()
+    {
+        StartCoroutine(SpawnAndFormWave());
+    }
+
+    /// <summary>
+    /// Spawns a wave of units, waits for them to appear, then issues move orders
+    /// around a Banner if present, otherwise around the spawn point.
     /// </summary>
     private IEnumerator SpawnAndFormWave()
     {
-        if (_armyManager == null || _spawnPoint == null || _formationPoint == null || _gridManager == null)
+        if (_armyManager == null || _spawnPoint == null || _gridManager == null)
             yield break;
 
         // Determine how many units will spawn
         int totalUnits = _armyManager.GetCompositionCount(ArmyType.Archer);
 
-        // Temporary list to track spawned units
+        // Track spawned units
         List<UnitBase> spawnedUnits = new List<UnitBase>();
 
         // Subscribe to spawn event
@@ -65,10 +81,9 @@ public class BuildingBarrack : BuildingBase
         {
             spawnedUnits.Add(unit);
         }
-
         _armyManager.UnitSpawned += OnUnitSpawned;
 
-        // Trigger the spawn coroutine (with callback)
+        // Trigger spawn
         _armyManager.SpawnArmyByType(
             ArmyType.Archer,
             team,
@@ -76,7 +91,7 @@ public class BuildingBarrack : BuildingBase
             _spawnInterval
         );
 
-        // Wait until all units are spawned
+        // Wait for all units or timeout
         float timeout = totalUnits * _spawnInterval + 1f;
         float elapsed = 0f;
         while (spawnedUnits.Count < totalUnits && elapsed < timeout)
@@ -84,27 +99,32 @@ public class BuildingBarrack : BuildingBase
             elapsed += Time.deltaTime;
             yield return null;
         }
-
-        // Unsubscribe from event
         _armyManager.UnitSpawned -= OnUnitSpawned;
 
-        // Small delay before issuing move orders
+        // Delay before formation
         yield return new WaitForSeconds(_formationDelay);
 
-        // Convert formation center to grid node
-        GridNode center = _gridManager.getNodeFromWorldPosition(_formationPoint.position);
+        // Determine formation center: Banner if exists, else spawn point
+        Vector3 formationPos;
+        Banner banner = Object.FindAnyObjectByType<Banner>(); 
+        if (banner != null)
+            formationPos = banner.transform.position;
+        else
+            formationPos = _spawnPoint.position;
 
-        // Find nearest free nodes for each spawned unit
-        List<GridNode> formationNodes = _gridManager.FindNearestFreeNodes(center, spawnedUnits.Count);
+        // Convert to grid node
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(formationPos);
 
-        // Order each unit into its formation slot
+        // Find free nodes around center
+        List<GridNode> formationNodes = _gridManager.FindNearestFreeNodes(centerNode, spawnedUnits.Count);
+
+        // Issue move orders
         for (int i = 0; i < spawnedUnits.Count; i++)
         {
             UnitBase u = spawnedUnits[i];
-            GridNode target = i < formationNodes.Count ? formationNodes[i] : center;
-
-            u.SetReservedDestination(target);  // store the reservation target on the unit
-            u.MoveTo(target);                  // run A*, target must still be free
+            GridNode target = (i < formationNodes.Count) ? formationNodes[i] : centerNode;
+            u.SetReservedDestination(target);
+            u.MoveTo(target);
         }
     }
 
@@ -113,10 +133,21 @@ public class BuildingBarrack : BuildingBase
         foreach (var r in _selectionRenderers)
             if (r != null)
                 r.material.color = Color.gray;
+
+        // pass this instance to UI
+        _selectionUI.GetBarrackInstance(this);
+        // show UI
+        _selectionUI?.Show();
+
     }
 
     public override void OnDeselected()
     {
         ApplyTeamMaterial();
+
+        // clear Barrack instance in UI
+        _selectionUI.ClearBarrackInstance();
+        // hide UI
+        _selectionUI?.Hide();
     }
 }

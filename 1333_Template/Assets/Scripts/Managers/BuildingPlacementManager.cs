@@ -16,6 +16,10 @@ public class BuildingPlacementManager : MonoBehaviour
     [Tooltip("Semi-transparent red material for invalid placement")]
     [SerializeField] private Material _ghostInvalidMaterial;
 
+    [Header("Barrack Selection UI")]
+    [Tooltip("Prefab of the BarrackSelectedUI (initially inactive).")]
+    [SerializeField] private BarrackSelectedUI _barrackSelectedUIPrefab;
+
     private Camera _mainCamera;
     private BuildingDataSO _currentBuildingData;
     private GameObject _previewInstance;
@@ -122,7 +126,7 @@ public class BuildingPlacementManager : MonoBehaviour
 
         // Injection for Barrack:
         if (realBase is BuildingBarrack barrack)
-            barrack.Initialize(_armyManager, _resourceManager, _gridManager);
+            barrack.Initialize(_armyManager, _resourceManager, _gridManager, _barrackSelectedUIPrefab);
 
         // If it produces resources, inject manager
         if (realBase is BuildingResource br && _resourceManager != null)
