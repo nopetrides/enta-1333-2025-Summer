@@ -149,6 +149,7 @@ public class SelectionManager : MonoBehaviour
 
     /// <summary>
     /// Commands all selected units to move to the target grid node.
+    /// Frees each unit's starting cell before computing any paths.
     /// </summary>
     private void CommandUnits()
     {
@@ -156,15 +157,33 @@ public class SelectionManager : MonoBehaviour
         Plane ground = new Plane(Vector3.up, Vector3.zero);
         if (!ground.Raycast(ray, out var enter)) return;
 
-        var hitPoint = ray.GetPoint(enter);
-        var node = _gridManager.getNodeFromWorldPosition(hitPoint);
-        if (!node.walkable) return;
+        Vector3 hitPoint = ray.GetPoint(enter);
+        GridNode targetNode = _gridManager.getNodeFromWorldPosition(hitPoint);
+        if (!targetNode.walkable) return;
+
+        // Gather selected units
+        var units = new List<UnitBase>();
         foreach (var sel in _selected)
-        {
             if (sel is UnitBase unit)
-            {
-                unit.MoveTo(node);
-            }
+                units.Add(unit);
+
+        // 1) Free all start cells so no unit blocks pathfinding
+        foreach (var u in units)
+        {
+            GridNode startNode = _gridManager.getNodeFromWorldPosition(u.transform.position);
+            startNode.walkable = true;
+        }
+
+        // 2) Find nearest free nodes around the target for each unit
+        var assignedNodes = _gridManager.FindNearestFreeNodes(targetNode, units.Count);
+
+        // 3) Issue movement commands
+        for (int i = 0; i < units.Count; i++)
+        {
+            var u = units[i];
+            var destNode = assignedNodes[i];
+            u.SetReservedDestination(destNode);
+            u.MoveTo(destNode);
         }
     }
 }

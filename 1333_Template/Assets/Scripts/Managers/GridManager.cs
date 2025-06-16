@@ -14,6 +14,8 @@ public class GridManager : MonoBehaviour
     private bool _showGizmos = false; // Toggle flag for drawing gizmos
     public bool isInitialized { get; private set; }
 
+    private HashSet<GridNode> _reservedNodes = new HashSet<GridNode>(); // Reserved node
+
     /// <summary>
     /// Exposes the GridSettings so other classes can access configuration values.
     /// </summary>
@@ -40,31 +42,6 @@ public class GridManager : MonoBehaviour
             _showGizmos = !_showGizmos;
         }
         if (!_showGizmos || !isInitialized) return;
-
-        /*float half = _gridSettings.NodeSize * 0.5f;
-        for (int x = 0; x < _gridSettings.GridSizeX; x++)
-            for (int y = 0; y < _gridSettings.GridSizeY; y++)
-            {
-                var node = _gridNodes[x, y];
-                if (!node.walkable)
-                {
-                    Vector3 p = node.worldPosition;
-                    Vector3 bl = p + new Vector3(-half, 0, -half);
-                    Vector3 br = p + new Vector3(half, 0, -half);
-                    Vector3 tr = p + new Vector3(half, 0, half);
-                    Vector3 tl = p + new Vector3(-half, 0, half);
-
-                    Debug.DrawLine(bl, br, Color.red);
-                    Debug.DrawLine(br, tr, Color.red);
-                    Debug.DrawLine(tr, tl, Color.red);
-                    Debug.DrawLine(tl, bl, Color.red);
-                }
-            }*/
-        // Reinitialize grid when pressing O
-        if (Input.GetKeyDown(KeyCode.O))
-        {
-            //InitializeGrid();
-        }
     }
 
     /// <summary>
@@ -107,6 +84,112 @@ public class GridManager : MonoBehaviour
         // Mark the grid as initialized
         isInitialized = true;
     }
+    /// <summary>
+    /// Add node to reservedNodes harshset
+    /// </summary>
+    /// <param name="node"></param>
+    public void ReserveNode(GridNode node)
+    {
+        if (node != null && !_reservedNodes.Contains(node))
+            _reservedNodes.Add(node);
+    }
+
+    /// <summary>
+    /// Remove node to reservedNodes harshset
+    /// </summary>
+    /// <param name="node"></param>
+    public void UnreserveNode(GridNode node)
+    {
+        if (node != null)
+            _reservedNodes.Remove(node);
+    }
+
+    /// <summary>
+    /// Check if the node is reserved
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
+    public bool IsNodeReserved(GridNode node)
+    {
+        return _reservedNodes.Contains(node);
+    }
+
+    /// <summary>
+    /// Clear all reserved nodes
+    /// </summary>
+    public void ClearAllReservations()
+    {
+        _reservedNodes.Clear();
+    }
+
+    /// <summary>
+    /// Returns the four direct neighbors (up, down, left, right) of a given node within grid bounds.
+    /// </summary>
+    /// <param name="node">The GridNode whose neighbors you want to retrieve.</param>
+    /// <returns>An IEnumerable of adjacent GridNode objects.</returns>
+    public IEnumerable<GridNode> GetNeighbors(GridNode node)
+    {
+        // Convert world position to grid indices
+        int x = Mathf.RoundToInt(node.worldPosition.x / _gridSettings.NodeSize);
+        int y = Mathf.RoundToInt(node.worldPosition.z / _gridSettings.NodeSize);
+
+        // Yield the node above if within bounds
+        if (y + 1 < _gridSettings.GridSizeY)
+            yield return GetNode(x, y + 1);
+
+        // Yield the node below if within bounds
+        if (y - 1 >= 0)
+            yield return GetNode(x, y - 1);
+
+        // Yield the node to the right if within bounds
+        if (x + 1 < _gridSettings.GridSizeX)
+            yield return GetNode(x + 1, y);
+
+        // Yield the node to the left if within bounds
+        if (x - 1 >= 0)
+            yield return GetNode(x - 1, y);
+    }
+
+    /// <summary>
+    /// Finds up to a specified number of free nodes (walkable and not reserved) 
+    /// starting from a center node, using breadth-first search.
+    /// </summary>
+    /// <param name="center">The starting GridNode for the search.</param>
+    /// <param name="count">The maximum number of free nodes to return.</param>
+    /// <returns>A list of GridNode objects that are walkable and not reserved.</returns>
+    public List<GridNode> FindNearestFreeNodes(GridNode center, int count)
+    {
+        List<GridNode> result = new List<GridNode>();
+        HashSet<GridNode> checkedNodes = new HashSet<GridNode>();
+        Queue<GridNode> queue = new Queue<GridNode>();
+
+        // Begin BFS from the center node
+        queue.Enqueue(center);
+        checkedNodes.Add(center);
+
+        // Continue until queue is empty or desired count is reached
+        while (queue.Count > 0 && result.Count < count)
+        {
+            GridNode node = queue.Dequeue();
+
+            // If this node is walkable and not reserved, add to results
+            if (node.walkable && !IsNodeReserved(node))
+                result.Add(node);
+
+            // Enqueue each neighbor that has not yet been checked
+            foreach (GridNode neighbor in GetNeighbors(node))
+            {
+                if (!checkedNodes.Contains(neighbor))
+                {
+                    checkedNodes.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     /// <summary>
     /// Converts a world-space position to the nearest GridNode.

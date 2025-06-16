@@ -10,10 +10,6 @@ using System.Collections.Generic;
 /// </summary>
 public class BuildingPlacementManager : MonoBehaviour
 {
-    [Header("Grid Reference")]
-    [Tooltip("Drag your GridManager here")]
-    [SerializeField] private GridManager _gridManager;
-
     [Header("Ghost Preview Materials")]
     [Tooltip("Semi-transparent green material for valid placement")]
     [SerializeField] private Material _ghostValidMaterial;
@@ -29,21 +25,28 @@ public class BuildingPlacementManager : MonoBehaviour
     // Injected dependencies
     private ResourceManager _resourceManager;
     private ArmyManager _armyManager;
+    private GridManager _gridManager;
 
     /// <summary>
     /// Injects ResourceManager and ArmyManager. Called by GameManager at startup.
     /// </summary>
-    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager)
+    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager)
     {
         _resourceManager = resourceManager;
         _armyManager = armyManager;
+        _gridManager = gridManager;
+
+        if (_gridManager == null)
+            Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
+        if (_armyManager == null)
+            Debug.LogError("BuildingPlacementManager: ArmyManager is not assigned.");
+        if (_resourceManager == null)
+            Debug.LogError("BuildingPlacementManager: ResourceManager is not assigned.");
     }
 
     private void Awake()
     {
         _mainCamera = Camera.main;
-        if (_gridManager == null)
-            Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
         if (_mainCamera == null)
             Debug.LogError("BuildingPlacementManager: MainCamera not found.");
     }
@@ -119,7 +122,7 @@ public class BuildingPlacementManager : MonoBehaviour
 
         // Injection for Barrack:
         if (realBase is BuildingBarrack barrack)
-            barrack.Initialize(_armyManager, _resourceManager);
+            barrack.Initialize(_armyManager, _resourceManager, _gridManager);
 
         // If it produces resources, inject manager
         if (realBase is BuildingResource br && _resourceManager != null)

@@ -32,7 +32,8 @@ public struct ArmyMapping
 
 /// <summary>
 /// Responsible for spawning units based on ArmyCompositionSO assets.
-/// Supports both instant (debug) spawning and coroutine-driven, interval-based spawning by ArmyType.
+/// Supports interval-based spawning by ArmyType, and will distribute units
+/// across nearby grid nodes to avoid overlap.
 /// </summary>
 public class ArmyManager : MonoBehaviour
 {
@@ -40,13 +41,15 @@ public class ArmyManager : MonoBehaviour
     [Tooltip("Map each ArmyType to its ArmyCompositionSO asset.")]
     [SerializeField] private List<ArmyMapping> _armyMappings = new List<ArmyMapping>();
 
-    // Runtime lookup from ArmyType to SO
+    // Runtime lookup from ArmyType to its composition asset
     private Dictionary<ArmyType, ArmyCompositionSO> _compositionLookup;
 
     // Injected dependencies
     private GridManager _gridManager;
     private UnitManager _unitManager;
     private AStarPathfinder _pathfinder;
+
+    public event System.Action<UnitBase> UnitSpawned; // Unit spawn event
 
     private void Awake()
     {
@@ -58,43 +61,27 @@ public class ArmyManager : MonoBehaviour
             else
                 Debug.LogWarning($"ArmyManager: Duplicate mapping for {mapping.type}");
         }
-        // DEBUG: what got loaded
-        Debug.Log($"[ArmyManager] Loaded mappings: {string.Join(", ", _compositionLookup.Keys)}");
     }
 
     /// <summary>
-    /// Initializes the ArmyManager with required dependencies.
+    /// Initializes the ArmyManager with required managers.
     /// Must be called before any spawn methods.
     /// </summary>
     public void Initialize(GridManager gridManager, UnitManager unitManager)
     {
         _gridManager = gridManager;
         _unitManager = unitManager;
-
-        if (_gridManager == null)
-            Debug.LogError("ArmyManager: GridManager reference is null.");
-        if (_unitManager == null)
-            Debug.LogError("ArmyManager: UnitManager reference is null.");
-
         _pathfinder = new AStarPathfinder(_gridManager);
     }
 
     /// <summary>
-    /// Instantly spawns all units of the given ArmyType at spawnPosition. Useful for debugging.
+    /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between spawns,
+    /// and positions each unit at the nearest free grid node around spawnPosition.
     /// </summary>
-    public void SpawnArmyByTypeInstantly(ArmyType type, Team team, Vector3 spawnPosition)
-    {
-        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
-        {
-            Debug.LogError($"ArmyManager: No composition registered for {type}");
-            return;
-        }
-        SpawnArmyAtPosition(composition, team, spawnPosition);
-    }
-
-    /// <summary>
-    /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between each instantiation.
-    /// </summary>
+    /// <param name="type">Which ArmyType to spawn.</param>
+    /// <param name="team">Team affiliation.</param>
+    /// <param name="spawnPosition">Center world-space point for distribution.</param>
+    /// <param name="delay">Seconds to wait between each unit spawn.</param>
     public void SpawnArmyByType(ArmyType type, Team team, Vector3 spawnPosition, float delay)
     {
         if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
@@ -102,82 +89,73 @@ public class ArmyManager : MonoBehaviour
             Debug.LogError($"ArmyManager: No composition registered for {type}");
             return;
         }
-        // DEBUG: spawning start
-        Debug.Log($"[ArmyManager] SpawnArmyByType({type}) called. totalCount={GetCompositionCount(type)}, delay={delay}");
-        StartCoroutine(SpawnArmyCoroutine(composition, team, spawnPosition, delay));
+        StartCoroutine(SpawnArmyCoroutine(type, composition, team, spawnPosition, delay));
     }
 
     /// <summary>
-    /// Synchronously instantiates all units defined in the composition at the given world-space position.
-    /// </summary>
-    public void SpawnArmyAtPosition(ArmyCompositionSO composition, Team team, Vector3 spawnPosition)
-    {
-        if (_gridManager == null || _unitManager == null)
-        {
-            Debug.LogError("ArmyManager: Must call Initialize() before spawning.");
-            return;
-        }
-
-        foreach (var entry in composition.unitEntries)
-        {
-            var unitStats = entry.unitTypePrefab.unitType;
-            var prefab = entry.unitTypePrefab.unitPrefab;
-
-            if (unitStats == null || prefab == null)
-            {
-                Debug.LogWarning($"ArmyManager: Missing stats or prefab in '{composition.armyName}'.");
-                continue;
-            }
-
-            for (int i = 0; i < entry.count; i++)
-            {
-                var unitGO = Instantiate(prefab, spawnPosition, Quaternion.identity);
-                var unitComp = unitGO.GetComponent<UnitBase>();
-                if (unitComp != null)
-                {
-                    _unitManager.RegisterUnit(unitComp);
-                    unitComp.Initialize(unitStats, _gridManager, _unitManager, _pathfinder, team);
-                }
-                else
-                {
-                    Debug.LogWarning($"ArmyManager: '{unitGO.name}' missing UnitBase component.");
-                    Destroy(unitGO);
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Coroutine that spawns each unit in the composition one at a time, waiting 'delay' seconds between spawns.
+    /// Coroutine that actually instantiates each unit, distributes them across free grid nodes,
+    /// and registers/initializes them with the pathfinder.
     /// </summary>
     private IEnumerator SpawnArmyCoroutine(
-    ArmyCompositionSO composition,
-    Team team,
-    Vector3 spawnPosition,
-    float delay)
+        ArmyType type,
+        ArmyCompositionSO composition,
+        Team team,
+        Vector3 spawnPosition,
+        float delay)
     {
-        Debug.Log($"[ArmyManager] Coroutine start for '{composition.armyName}'");
+        // Determine how many units in total we need to spawn
+        int totalCount = GetCompositionCount(type);
+
+        // Find the grid node at the barrack’s spawn point
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+
+        // Get up to totalCount nearest free nodes (walkable & not reserved)
+        List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);
+
+        Debug.Log($"[ArmyManager] Distributing {totalCount} units around {centerNode.name}");
+
+        int index = 0;
+        // Loop through each entry in the composition
         foreach (var entry in composition.unitEntries)
         {
             for (int i = 0; i < entry.count; i++)
             {
-                Debug.Log($"[ArmyManager] Instantiating {entry.unitTypePrefab.unitType.name} #{i + 1}/{entry.count}");
-                var unitGO = Instantiate(entry.unitTypePrefab.unitPrefab, spawnPosition, Quaternion.identity);
-                var unitComp = unitGO.GetComponent<UnitBase>();
+                // Choose either the next free node or fallback to the center
+                Vector3 pos = (index < spawnNodes.Count)
+                    ? spawnNodes[index].worldPosition
+                    : spawnPosition;
+
+                // Instantiate the unit prefab at the chosen position
+                GameObject unitGO = Instantiate(
+                    entry.unitTypePrefab.unitPrefab,
+                    pos,
+                    Quaternion.identity);
+
+                // Register and initialize the new unit
+                UnitBase unitComp = unitGO.GetComponent<UnitBase>();
+                UnitSpawned?.Invoke(unitComp);              // Invoke unit spawned event
                 if (unitComp != null)
                 {
                     _unitManager.RegisterUnit(unitComp);
-                    unitComp.Initialize(entry.unitTypePrefab.unitType, _gridManager, _unitManager, _pathfinder, team);
+                    unitComp.Initialize(
+                        entry.unitTypePrefab.unitType,
+                        _gridManager,
+                        _unitManager,
+                        _pathfinder,
+                        team);
                 }
                 else
                 {
                     Debug.LogWarning($"ArmyManager: '{unitGO.name}' missing UnitBase component.");
                     Destroy(unitGO);
                 }
+
+                index++;
                 yield return new WaitForSeconds(delay);
             }
         }
-        Debug.Log($"[ArmyManager] Coroutine end for '{composition.armyName}'");
+
+        Debug.Log($"[ArmyManager] Finished spawning wave of {type}");
     }
 
     /// <summary>
@@ -194,3 +172,4 @@ public class ArmyManager : MonoBehaviour
         return total;
     }
 }
+
