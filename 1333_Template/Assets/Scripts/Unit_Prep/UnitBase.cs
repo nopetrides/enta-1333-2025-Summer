@@ -196,10 +196,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     }
 
     /// <summary>
-    /// Begins movement toward the specified grid node.  
-    /// Marks the starting cell as occupied, calculates a path, and transitions to Moving state.
+    /// Begins movement toward the specified grid node.
+    /// Immediately reserves the destination to prevent other units targeting it.
     /// </summary>
-    /// <param name="targetNode">The grid node to move to.</param>
     public virtual void MoveTo(GridNode targetNode)
     {
         // 1) Preconditions
@@ -209,89 +208,141 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
             return;
         }
 
-        // 2) Free up the start cell so other units can walk through it now that this unit is moving
+        // 2) Free up and unreserve the start cell
         GridNode startNode = _gridManager.getNodeFromWorldPosition(transform.position);
-        startNode.walkable = true;
+        int startX = Mathf.RoundToInt(startNode.worldPosition.x / _gridManager.GridSettings.NodeSize);
+        int startY = Mathf.RoundToInt(startNode.worldPosition.z / _gridManager.GridSettings.NodeSize);
+        _gridManager.SetWalkable(startX, startY, true);
+        _gridManager.UnreserveNode(startNode);
 
-        // 3) Compute the path without locking any nodes
+        // 3) Prevent moving into an already occupied or reserved cell
+        if (!startNode.walkable || _gridManager.IsNodeReserved(targetNode))
+        {
+            Debug.LogWarning($"{name}.MoveTo: Target node {targetNode.name} is not available.");
+            return;
+        }
+
+        // 4) Compute the path
         List<Vector2Int> path = _pathfinder.FindPathWithNodes(
-            startNode,
-            targetNode,
-            Width,
-            Height);
+            startNode, targetNode, Width, Height);
 
-        // 4) If no valid path exists, exit early
         if (path == null || path.Count == 0)
         {
             Debug.Log($"{name}.MoveTo: No path found.");
             return;
         }
 
-        // 5) Reserve the destination for future locking
+        // 5) Reserve the destination immediately
+        _gridManager.ReserveNode(targetNode);
         _reservedDestNode = targetNode;
 
-        // 6) Store path and enter Moving state
+        // 6) Store path and enter Moving
         _currentPath = path;
-        _nextPathIndex = 0;
+        if (_currentPath.Count > 1)
+        {
+            // get our current grid coords
+            Vector3 world = transform.position;
+            Vector2Int startCoords = new Vector2Int(
+                Mathf.RoundToInt(world.x / _gridManager.GridSettings.NodeSize),
+                Mathf.RoundToInt(world.z / _gridManager.GridSettings.NodeSize)
+            );
+
+            // if the first node is where we stand, skip it
+            if (_currentPath[0] == startCoords)
+                _nextPathIndex = 1;
+            else
+                _nextPathIndex = 0;
+        }
+        else
+        {
+            _nextPathIndex = 0;
+        }
+
+        // 7) Enter Moving
         _state = UnitState.Moving;
         _AnimHandler?.OnStateChanged(_state);
     }
 
     /// <summary>
     /// Called every frame while the unit is in Moving state.
-    /// Moves toward the next waypoint and, upon arrival at the final cell,
-    /// marks that cell non-walkable.
+    /// Moves toward the next waypoint, increments the path index when reached,
+    /// and upon arrival at the final cell, marks that cell non-walkable.
     /// </summary>
     protected virtual void HandleMovement()
     {
+        // nothing to do if no path or we’ve already finished
         if (_currentPath == null || _nextPathIndex >= _currentPath.Count)
             return;
 
-        // 1) Identify the next waypoint
-        Vector2Int nextCoords = _currentPath[_nextPathIndex];
-        GridNode nextNode = _gridManager.GetNode(nextCoords.x, nextCoords.y);
-        Vector3 nextWorldPos = nextNode.worldPosition + Vector3.up * 0.1f;
+        // Get the next target cell
+        Vector2Int coords = _currentPath[_nextPathIndex];
+        GridNode node = _gridManager.GetNode(coords.x, coords.y);
+        Vector3 targetPos = node.worldPosition + Vector3.up * 0.1f;
 
-        // 2) Rotate smoothly toward the waypoint direction
-        Vector3 direction = nextWorldPos - transform.position;
-        direction.y = 0f;
-        if (direction.sqrMagnitude > Mathf.Epsilon)
+        // 1) Have we reached this waypoint?
+        if (Vector3.Distance(transform.position, targetPos) < 0.05f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            _nextPathIndex++;
+
+            // If that was the last waypoint, finish movement
+            if (_nextPathIndex >= _currentPath.Count)
+            {
+                FinishMovement();
+                return;
+            }
+
+            // Otherwise advance to the next waypoint before rotating/moving
+            coords = _currentPath[_nextPathIndex];
+            node = _gridManager.GetNode(coords.x, coords.y);
+            targetPos = node.worldPosition + Vector3.up * 0.1f;
+        }
+
+        // 2) Rotate smoothly toward the waypoint
+        Vector3 dir = targetPos - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+        {
+            Quaternion look = Quaternion.LookRotation(dir, Vector3.up);
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
-                targetRotation,
-                _rotationSpeed * Time.deltaTime
-            );
+                look,
+                _rotationSpeed * Time.deltaTime);
         }
 
         // 3) Move toward the waypoint
         transform.position = Vector3.MoveTowards(
             transform.position,
-            nextWorldPos,
-            _moveSpeed * Time.deltaTime
-        );
-
-        // 4) If the waypoint is reached, advance path index
-        if (Vector3.Distance(transform.position, nextWorldPos) < 0.01f)
-        {
-            _nextPathIndex++;
-
-            // 5) If this was the final waypoint, lock that node
-            if (_nextPathIndex >= _currentPath.Count && _reservedDestNode != null)
-            {
-                _reservedDestNode.walkable = false;
-
-                // Transition to Idle and notify arrival
-                _state = UnitState.Idle;
-                OnArrivedAtDestination(_state);
-
-                // Clear path and reservation
-                _currentPath = null;
-                _reservedDestNode = null;
-            }
-        }
+            targetPos,
+            _moveSpeed * Time.deltaTime);
     }
+
+    /// <summary>
+    /// Cleanup once we hit the final destination:
+    /// unreserve & occupy the node, fire Idle state & animation.
+    /// </summary>
+    private void FinishMovement()
+    {
+        // 1) Unreserve the destination
+        if (_reservedDestNode != null)
+        {
+            _gridManager.UnreserveNode(_reservedDestNode);
+
+            // 2) Permanently block it (occupy)
+            Vector3 wp = _reservedDestNode.worldPosition;
+            int tx = Mathf.RoundToInt(wp.x / _gridManager.GridSettings.NodeSize);
+            int ty = Mathf.RoundToInt(wp.z / _gridManager.GridSettings.NodeSize);
+            _gridManager.SetWalkable(tx, ty, false);
+        }
+
+        // 3) Transition to Idle & play Idle animation
+        _state = UnitState.Idle;
+        _AnimHandler?.OnStateChanged(_state);
+
+        // 4) Clean up
+        _currentPath = null;
+        _reservedDestNode = null;
+    }
+
 
 
 
