@@ -75,6 +75,76 @@ public class ArmyManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Spawns all units of the given type, registers & initializes them,
+    /// and collects them into the provided list, yielding between each spawn.
+    /// </summary>
+    /// <param name="type">Which ArmyType to spawn.</param>
+    /// <param name="team">Which Team they belong to.</param>
+    /// <param name="spawnPosition">World‐space origin of the spawn.</param>
+    /// <param name="delay">Seconds between each unit instantiation.</param>
+    /// <param name="outUnits">List to fill with the spawned UnitBase instances.</param>
+    public IEnumerator SpawnArmyAndCollect(
+        ArmyType type,
+        Team team,
+        Vector3 spawnPosition,
+        float delay,
+        List<UnitBase> outUnits)
+    {
+        // 1) Look up composition
+        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
+        {
+            Debug.LogError($"ArmyManager: No composition registered for {type}");
+            yield break;
+        }
+
+        // 2) Determine total count and candidate nodes
+        int totalCount = GetCompositionCount(type);
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+        List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);
+
+        Debug.Log($"[ArmyManager] Spawning {totalCount} x {type} at {spawnPosition}");
+
+        // 3) Loop through each entry and spawn
+        int index = 0;
+        foreach (var entry in composition.unitEntries)
+        {
+            for (int i = 0; i < entry.count; i++)
+            {
+                // pick a free node or fallback to spawnPosition
+                Vector3 pos = (index < spawnNodes.Count)
+                    ? spawnNodes[index].worldPosition
+                    : spawnPosition;
+
+                GameObject unitGO = Instantiate(entry.unitTypePrefab.unitPrefab, pos, Quaternion.identity);
+                UnitBase unit = unitGO.GetComponent<UnitBase>();
+                if (unit != null)
+                {
+                    _unitManager.RegisterUnit(unit);
+                    unit.Initialize(
+                        entry.unitTypePrefab.unitType,
+                        _gridManager,
+                        _unitManager,
+                        _pathfinder,
+                        team);
+
+                    outUnits.Add(unit);
+                }
+                else
+                {
+                    Debug.LogWarning($"ArmyManager: '{unitGO.name}' missing UnitBase component.");
+                    Destroy(unitGO);
+                }
+
+                index++;
+                // yield between spawns
+                yield return new WaitForSeconds(delay);
+            }
+        }
+
+        Debug.Log($"[ArmyManager] Finished SpawnArmyAndCollect for {type}");
+    }
+
+    /// <summary>
     /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between spawns,
     /// and positions each unit at the nearest free grid node around spawnPosition.
     /// </summary>

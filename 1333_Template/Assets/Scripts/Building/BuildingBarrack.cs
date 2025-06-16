@@ -61,64 +61,37 @@ public class BuildingBarrack : BuildingBase
         StartCoroutine(SpawnAndFormWave());
     }
 
-    /// <summary>
-    /// Spawns a wave of units, waits for them to appear, then issues move orders
-    /// around a Banner if present, otherwise around the spawn point.
-    /// </summary>
     private IEnumerator SpawnAndFormWave()
     {
         if (_armyManager == null || _spawnPoint == null || _gridManager == null)
             yield break;
 
-        // Determine how many units will spawn
-        int totalUnits = _armyManager.GetCompositionCount(ArmyType.Archer);
-
-        // Track spawned units
+        // 1) Prepare list and call the new API
         List<UnitBase> spawnedUnits = new List<UnitBase>();
+        yield return StartCoroutine(
+            _armyManager.SpawnArmyAndCollect(
+                ArmyType.Archer,
+                team,
+                _spawnPoint.position,
+                _spawnInterval,
+                spawnedUnits));
 
-        // Subscribe to spawn event
-        void OnUnitSpawned(UnitBase unit)
-        {
-            spawnedUnits.Add(unit);
-        }
-        _armyManager.UnitSpawned += OnUnitSpawned;
-
-        // Trigger spawn
-        _armyManager.SpawnArmyByType(
-            ArmyType.Archer,
-            team,
-            _spawnPoint.position,
-            _spawnInterval
-        );
-
-        // Wait for all units or timeout
-        float timeout = totalUnits * _spawnInterval + 1f;
-        float elapsed = 0f;
-        while (spawnedUnits.Count < totalUnits && elapsed < timeout)
-        {
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        _armyManager.UnitSpawned -= OnUnitSpawned;
-
-        // Delay before formation
+        // 2) Wait a moment before issuing formation orders
         yield return new WaitForSeconds(_formationDelay);
 
-        // Determine formation center: Banner if exists, else spawn point
+        // 3) Decide formation center (Banner if present)
         Vector3 formationPos;
-        Banner banner = Object.FindAnyObjectByType<Banner>(); 
+        Banner banner = Object.FindAnyObjectByType<Banner>();
         if (banner != null)
             formationPos = banner.transform.position;
         else
             formationPos = _spawnPoint.position;
 
-        // Convert to grid node
         GridNode centerNode = _gridManager.getNodeFromWorldPosition(formationPos);
+        List<GridNode> formationNodes =
+            _gridManager.FindNearestFreeNodes(centerNode, spawnedUnits.Count);
 
-        // Find free nodes around center
-        List<GridNode> formationNodes = _gridManager.FindNearestFreeNodes(centerNode, spawnedUnits.Count);
-
-        // Issue move orders
+        // 4) Issue movement to each unit
         for (int i = 0; i < spawnedUnits.Count; i++)
         {
             UnitBase u = spawnedUnits[i];
@@ -127,6 +100,7 @@ public class BuildingBarrack : BuildingBase
             u.MoveTo(target);
         }
     }
+
 
     public override void OnSelected()
     {
