@@ -46,6 +46,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     protected AStarPathfinder _pathfinder;
 
     protected GridNode _reservedDestNode = null;
+    public bool IsSelected { get; private set; }
 
     /// <summary>
     /// Static toggle that controls whether unit paths are drawn as gizmos.
@@ -362,6 +363,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 
     public virtual void OnSelected()
     {
+        IsSelected = true;
         if (TryGetComponent<UnitVisualController>(out var vc))
             vc.ShowSelectionIndicator();
     }
@@ -369,6 +371,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     /// <inheritdoc/>
     public virtual void OnDeselected()
     {
+        IsSelected = false;
         if (TryGetComponent<UnitVisualController>(out var vc))
             vc.HideSelectionIndicator();
     }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿// Banner.cs
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -7,9 +8,10 @@ using UnityEngine.InputSystem;
 /// and snaps to the nearest grid node. Releasing the button places it permanently at that grid node,
 /// preserving its original rotation and marking that node as non-walkable.
 /// Also occupies its initial grid cell at game start.
+/// Fires a static event whenever it is placed.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class Banner : MonoBehaviour
+public class Banner : MonoBehaviour, ISelectable
 {
     [Header("Dependencies")]
     [Tooltip("Reference to the GridManager for snapping to grid.")]
@@ -21,15 +23,15 @@ public class Banner : MonoBehaviour
     private Plane _groundPlane;
     private GridNode _occupiedNode; // currently occupied grid node
 
-    /// <summary>
-    /// Indicates whether any Banner instance is currently being dragged.
-    /// Other systems can check this to disable conflicting interactions.
-    /// </summary>
+    /// <summary>True if any banner is being dragged right now.</summary>
     public static bool IsAnyDragging { get; private set; } = false;
 
     /// <summary>
-    /// Cache main camera, initial rotation, set up ground plane, and validate dependencies.
+    /// Fired whenever this banner is dropped into place.
+    /// The Vector3 argument is the new world position.
     /// </summary>
+    public static event System.Action<Vector3> BannerMoved;
+
     private void Awake()
     {
         _mainCamera = Camera.main;
@@ -40,48 +42,41 @@ public class Banner : MonoBehaviour
             Debug.LogError("Banner: GridManager is not assigned.");
     }
 
-    /// <summary>
-    /// After all Awake calls, occupy the initial grid cell.
-    /// </summary>
     private void Start()
     {
-        var startNode = _gridManager.getNodeFromWorldPosition(transform.position);
+        // Occupy the cell we start in
+        GridNode startNode = _gridManager.getNodeFromWorldPosition(transform.position);
         OccupyNode(startNode);
     }
 
-    /// <summary>
-    /// Begin dragging when the banner is pressed.
-    /// </summary>
     private void OnMouseDown()
     {
         _isDragging = true;
         IsAnyDragging = true;
     }
 
-    /// <summary>
-    /// On mouse release, place the banner at the nearest valid grid node and stop dragging.
-    /// </summary>
     private void OnMouseUp()
     {
-        if (!_isDragging)
-            return;
+        if (!_isDragging) return;
 
+        // Snap to nearest valid node
         GridNode node = PlaceAtCursor();
         if (node != null)
             OccupyNode(node);
 
+        // End drag state
         _isDragging = false;
         IsAnyDragging = false;
+
+        // Notify listeners of new banner position
+        BannerMoved?.Invoke(transform.position);
     }
 
-    /// <summary>
-    /// While dragging, continuously update the banner position to follow the mouse.
-    /// </summary>
     private void Update()
     {
-        if (!_isDragging)
-            return;
+        if (!_isDragging) return;
 
+        // Follow mouse on ground plane
         Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (_groundPlane.Raycast(ray, out float enter))
         {
@@ -95,10 +90,6 @@ public class Banner : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Snap and place the banner at the grid node under the cursor.
-    /// Returns the node if placement succeeded.
-    /// </summary>
     private GridNode PlaceAtCursor()
     {
         Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -116,10 +107,6 @@ public class Banner : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Unmark the previous node and mark the new node as non-walkable.
-    /// </summary>
-    /// <param name="node">Grid node to occupy.</param>
     private void OccupyNode(GridNode node)
     {
         if (_occupiedNode != null)
@@ -129,9 +116,6 @@ public class Banner : MonoBehaviour
         SetNodeWalkable(node, false);
     }
 
-    /// <summary>
-    /// Helper to set a node's walkable flag via GridManager.
-    /// </summary>
     private void SetNodeWalkable(GridNode node, bool walkable)
     {
         int x = Mathf.RoundToInt(node.worldPosition.x / _gridManager.GridSettings.NodeSize);
@@ -142,4 +126,8 @@ public class Banner : MonoBehaviour
         );
         _gridManager.SetWalkable(x, y, walkable);
     }
+
+    // ISelectable implementation (no UI for banners)
+    public void OnSelected() { }
+    public void OnDeselected() { }
 }

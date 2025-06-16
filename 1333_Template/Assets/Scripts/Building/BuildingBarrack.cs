@@ -1,12 +1,12 @@
 ﻿// BuildingBarrack.cs
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 /// <summary>
 /// Barrack building that spawns a configured ArmyType at its spawn point when the N key is pressed.
 /// After spawning, units form around a Banner if present; otherwise around the spawn point.
+/// When the banner moves, any non-selected spawned units will re-form around the banner.
 /// </summary>
 public class BuildingBarrack : BuildingBase
 {
@@ -27,20 +27,23 @@ public class BuildingBarrack : BuildingBase
     private ArmyManager _armyManager;
     private ResourceManager _resourceManager;
     private GridManager _gridManager;
-
+    private readonly List<UnitBase> _spawnedUnits = new List<UnitBase>();
 
     /// <summary>
-    /// Injects the ArmyManager, ResourceManager, and GridManager. Called by BuildingPlacementManager after placement.
+    /// Injects the ArmyManager, ResourceManager, and GridManager.
+    /// Called by BuildingPlacementManager after placement.
+    /// Also subscribes to banner movement events.
     /// </summary>
     public void Initialize(ArmyManager armyManager, ResourceManager resourceManager, GridManager gridManager)
     {
         _armyManager = armyManager;
         _resourceManager = resourceManager;
         _gridManager = gridManager;
+        Banner.BannerMoved += OnBannerMoved;
     }
 
     /// <summary>
-    /// Public entry point for UI to spawn a single wave unit.
+    /// Public entry point for UI to spawn a single wave of units.
     /// </summary>
     public void SpawnUnit()
     {
@@ -52,49 +55,69 @@ public class BuildingBarrack : BuildingBase
         if (_armyManager == null || _spawnPoint == null || _gridManager == null)
             yield break;
 
-        // 1) Prepare list and call the new API
-        List<UnitBase> spawnedUnits = new List<UnitBase>();
+        // 1) Spawn units into a list
+        List<UnitBase> spawned = new List<UnitBase>();
         yield return StartCoroutine(
             _armyManager.SpawnArmyAndCollect(
                 ArmyType.Archer,
                 team,
                 _spawnPoint.position,
                 _spawnInterval,
-                spawnedUnits));
+                spawned));
 
-        // 2) Wait a moment before issuing formation orders
+        // 2) Wait before initial formation
         yield return new WaitForSeconds(_formationDelay);
 
-        // 3) Decide formation center (Banner if present)
-        Vector3 formationPos;
+        // 3) Cache spawned units and issue formation
+        _spawnedUnits.Clear();
+        _spawnedUnits.AddRange(spawned);
+        IssueFormationOrders();
+    }
+
+    /// <summary>
+    /// Computes formation nodes around the banner (or spawn point),
+    /// then issues MoveTo for each spawned unit that is not currently selected.
+    /// </summary>
+    private void IssueFormationOrders()
+    {
+        // Always use banner if it exists
         Banner banner = Object.FindAnyObjectByType<Banner>();
-        if (banner != null)
-            formationPos = banner.transform.position;
-        else
-            formationPos = _spawnPoint.position;
+        Vector3 centerPos = (banner != null) ? banner.transform.position : _spawnPoint.position;
 
-        GridNode centerNode = _gridManager.getNodeFromWorldPosition(formationPos);
-        List<GridNode> formationNodes =
-            _gridManager.FindNearestFreeNodes(centerNode, spawnedUnits.Count);
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(centerPos);
+        List<GridNode> nodes = _gridManager.FindNearestFreeNodes(centerNode, _spawnedUnits.Count);
 
-        // 4) Issue movement to each unit
-        for (int i = 0; i < spawnedUnits.Count; i++)
+        for (int i = 0; i < _spawnedUnits.Count; i++)
         {
-            UnitBase u = spawnedUnits[i];
-            GridNode target = (i < formationNodes.Count) ? formationNodes[i] : centerNode;
-            u.SetReservedDestination(target);
-            u.MoveTo(target);
+            UnitBase unit = _spawnedUnits[i];
+            if (unit.IsSelected)
+                continue; // skip units currently selected by player
+
+            GridNode target = (i < nodes.Count) ? nodes[i] : centerNode;
+            unit.SetReservedDestination(target);
+            unit.MoveTo(target);
         }
     }
 
+    private void OnBannerMoved(Vector3 newPosition)
+    {
+        IssueFormationOrders();
+    }
 
+    private void OnDestroy()
+    {
+        Banner.BannerMoved -= OnBannerMoved;
+    }
+
+    /// <inheritdoc/>
     public override void OnSelected()
     {
-        foreach (var r in _selectionRenderers)
+        foreach (Renderer r in _selectionRenderers)
             if (r != null)
                 r.material.color = Color.gray;
     }
 
+    /// <inheritdoc/>
     public override void OnDeselected()
     {
         ApplyTeamMaterial();
