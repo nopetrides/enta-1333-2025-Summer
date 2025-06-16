@@ -348,10 +348,6 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         _reservedDestNode = null;
     }
 
-
-
-
-
     /// <summary>
     /// Called when the unit reaches its final destination. Notifies the animation handler.
     /// </summary>
@@ -364,11 +360,24 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         }
     }
 
-    /// <summary>
-    /// Draws path gizmos in the Scene view when ShowPathGizmos is true and the unit is Moving.
-    /// Draws cyan lines between waypoints, a red cube at the start, and a green cube at the end.
-    /// </summary>
-    private void OnDrawGizmos()
+    public virtual void OnSelected()
+    {
+        if (TryGetComponent<UnitVisualController>(out var vc))
+            vc.ShowSelectionIndicator();
+    }
+
+    /// <inheritdoc/>
+    public virtual void OnDeselected()
+    {
+        if (TryGetComponent<UnitVisualController>(out var vc))
+            vc.HideSelectionIndicator();
+    }
+
+/// <summary>
+/// Draws path gizmos in the Scene view when ShowPathGizmos is true and the unit is Moving.
+/// Draws cyan lines between waypoints, a red cube at the start, and a green cube at the end.
+/// </summary>
+private void OnDrawGizmos()
     {
         if (!ShowPathGizmos || _currentPath == null || _gridManager == null)
             return;

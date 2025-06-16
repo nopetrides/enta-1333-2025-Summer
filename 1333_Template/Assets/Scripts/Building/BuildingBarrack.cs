@@ -29,28 +29,14 @@ public class BuildingBarrack : BuildingBase
     private GridManager _gridManager;
 
 
-    // Injected selection UI
-    private BarrackSelectedUI _selectionUI;
-
     /// <summary>
     /// Injects the ArmyManager, ResourceManager, and GridManager. Called by BuildingPlacementManager after placement.
     /// </summary>
-    public void Initialize(ArmyManager armyManager, ResourceManager resourceManager, GridManager gridManager, BarrackSelectedUI ui)
+    public void Initialize(ArmyManager armyManager, ResourceManager resourceManager, GridManager gridManager)
     {
         _armyManager = armyManager;
         _resourceManager = resourceManager;
         _gridManager = gridManager;
-
-        _selectionUI = ui;
-        _selectionUI.Hide();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.N))
-        {
-            StartCoroutine(SpawnAndFormWave());
-        }
     }
 
     /// <summary>
@@ -107,21 +93,10 @@ public class BuildingBarrack : BuildingBase
         foreach (var r in _selectionRenderers)
             if (r != null)
                 r.material.color = Color.gray;
-
-        // pass this instance to UI
-        _selectionUI.GetBarrackInstance(this);
-        // show UI
-        _selectionUI?.Show();
-
     }
 
     public override void OnDeselected()
     {
         ApplyTeamMaterial();
-
-        // clear Barrack instance in UI
-        _selectionUI.ClearBarrackInstance();
-        // hide UI
-        _selectionUI?.Hide();
     }
 }

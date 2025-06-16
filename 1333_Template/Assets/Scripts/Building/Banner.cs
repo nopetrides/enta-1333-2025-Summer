@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 /// Also occupies its initial grid cell at game start.
 /// </summary>
 [RequireComponent(typeof(Collider))]
-public class Banner : MonoBehaviour, ISelectable
+public class Banner : MonoBehaviour
 {
     [Header("Dependencies")]
     [Tooltip("Reference to the GridManager for snapping to grid.")]

@@ -14,9 +14,10 @@ public class SelectionManager : MonoBehaviour
     private UnitSelectionBox _unitSelectionBox;
     [SerializeField] private float _minDragSize = 3f;
 
-    [Header("Selection UI")]
-    [Tooltip("UI panel that shows info for the currently selected unit.")]
-    [SerializeField] private UnitSelectedUI _unitSelectedUI = null;
+    [Header("UI Manager")]
+    [Tooltip("Central SelectedUIManager for all panels.")]
+    [SerializeField] private SelectedUIManager _uiManager = null;
+
 
     // Track any ISelectable
     private readonly List<ISelectable> _selected = new List<ISelectable>();
@@ -32,9 +33,8 @@ public class SelectionManager : MonoBehaviour
         _unitSelectionBox = GetComponent<UnitSelectionBox>();
         _unitSelectionBox.minDragSize = _minDragSize;
 
-        // Ensure UI is hidden at start
-        if (_unitSelectedUI != null)
-            _unitSelectedUI.Hide();
+        //Ensure All selectedUI panels are hided
+        _uiManager.HideAll();
     }
 
     /// <summary>
@@ -86,6 +86,10 @@ public class SelectionManager : MonoBehaviour
                         AddToSelection(unit);
                     }
                 }
+
+                // only show panel if exactly one unit was dragged over
+                if (_selected.Count == 1)
+                    _uiManager.Show(_selected[0]);
             }
         }
 
@@ -112,6 +116,8 @@ public class SelectionManager : MonoBehaviour
             var sel = hit.collider.GetComponentInParent<ISelectable>();
             if (sel != null)
                 AddToSelection(sel);
+            // single‐click: exactly one item => show its panel
+            _uiManager.Show(sel);
         }
     }
 
@@ -127,19 +133,8 @@ public class SelectionManager : MonoBehaviour
         if (_selected.Contains(sel)) return;
         _selected.Add(sel);
 
-        if (sel is UnitBase u)
-        {
-            if (u.TryGetComponent(out UnitVisualController vc))
-                vc.ShowSelectionIndicator();
-            // show its stats in UI
-            _unitSelectedUI.ShowUnitInfo(u);
-        }
-        else if (sel is BuildingBase building)
-        {
-            building.OnSelected();
-            // hide unit UI if a building is selected
-            _unitSelectedUI.Hide();
-        }
+        // unified selection hook + UI panel
+        sel.OnSelected();
     }
 
     /// <summary>
@@ -147,19 +142,11 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void ClearSelection()
     {
-        _unitSelectedUI.Hide();
+        _uiManager.HideAll();
+
         foreach (var sel in _selected)
-        {
-            if (sel is UnitBase unit)
-            {
-                if (unit.TryGetComponent(out UnitVisualController vc))
-                    vc.HideSelectionIndicator();
-            }
-            else if (sel is BuildingBase building)
-            {
-                building.OnDeselected();
-            }
-        }
+            sel.OnDeselected();
+
         _selected.Clear();
     }
 
