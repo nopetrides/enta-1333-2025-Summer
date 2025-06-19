@@ -159,8 +159,8 @@ MonoBehaviour:
   buildingData: {fileID: 11400000, guid: 9246362e81dc0bb4cbaa58f9a03241d2, type: 2}
   _spawnPoint: {fileID: 2047607699876333459}
   _spawnInterval: 1
-  _formationPoint: {fileID: 8840873802604448272}
   _formationDelay: 0.5
+  _spawnableTypes: 02000000030000000400000005000000060000000700000008000000090000000a000000
   _selectionRenderers:
   - {fileID: 5772896056244725003}
 --- !u!65 &-1694756381369867313
