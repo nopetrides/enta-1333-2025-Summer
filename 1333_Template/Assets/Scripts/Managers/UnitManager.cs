@@ -37,4 +37,25 @@ public class UnitManager : MonoBehaviour
     {
         _allUnits.Remove(unit);
     }
+
+    public UnitBase FindNearestEnemy(UnitBase seeker, float range)
+    {
+        float bestDist = float.MaxValue;
+        UnitBase best = null;
+
+        foreach (UnitBase u in _allUnits)
+        {
+            if (u.UnitTeam == seeker.UnitTeam || u.CurrentState == UnitState.Dead)
+                continue;
+
+            float dist = Vector3.Distance(seeker.transform.position,
+                                          u.transform.position);
+            if (dist < range && dist < bestDist)
+            {
+                bestDist = dist;
+                best = u;
+            }
+        }
+        return best;
+    }
 }

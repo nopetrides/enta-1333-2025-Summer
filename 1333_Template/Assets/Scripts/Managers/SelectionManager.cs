@@ -186,6 +186,7 @@ public class SelectionManager : MonoBehaviour
         {
             var u = units[i];
             var destNode = assignedNodes[i];
+            u.SetReservedDestination(destNode);
             u.MoveTo(destNode);
         }
     }

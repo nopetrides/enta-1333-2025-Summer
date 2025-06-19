@@ -119,6 +119,7 @@ GameObject:
   - component: {fileID: 6389222395922256974}
   - component: {fileID: 7774118913342098103}
   - component: {fileID: 2573640755913684602}
+  - component: {fileID: 6143301600002370351}
   m_Layer: 0
   m_Name: Parent_CrossbowMan
   m_TagString: Untagged
@@ -186,6 +187,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6143301600002370351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9126553609748573969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cab208ce084be40a21926adcb1e6fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _scanInterval: 0.2
 --- !u!1001 &5238948755771873150
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -85,6 +85,7 @@ public class BuildingBarrack : BuildingBase
             if (unit.IsSelected) continue;
 
             GridNode target = i < nodes.Count ? nodes[i] : centerNode;
+            unit.SetReservedDestination(target);
             unit.MoveTo(target);
         }
     }

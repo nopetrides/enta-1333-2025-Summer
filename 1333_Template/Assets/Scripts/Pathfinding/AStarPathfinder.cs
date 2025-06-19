@@ -162,7 +162,7 @@ public class AStarPathfinder
                     return false;
 
                 GridNode checkNode = gm.GetNode(nx, ny);
-                if (!checkNode.walkable || gm.IsNodeReserved(checkNode))
+                if (!checkNode.walkable)
                     return false;
             }
         }

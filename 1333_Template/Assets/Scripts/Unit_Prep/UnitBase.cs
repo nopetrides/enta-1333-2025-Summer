@@ -74,6 +74,12 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         // Inject references into Movement component
         _movement.Init(gridManager, pathfinder, unitType.MoveSpeed, 360f);
 
+        _movement.OccupyCurrentNode();
+
+        UnitCombat combat = GetComponent<UnitCombat>();
+        if (combat != null)
+            combat.Init(unitManager, unitType);
+
         // Apply team material
         Material teamMat = unitType.GetArmyMaterial(team);
         if (teamMat != null && TryGetComponent<UnitVisualController>(out var vc))
@@ -84,6 +90,13 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     public virtual void MoveTo(GridNode targetNode)
     {
         _movement.MoveTo(targetNode);
+    }
+
+    public void SetReservedDestination(GridNode node)
+    {
+        // Store and reserve via UnitMovement
+        if (_movement != null)
+            _movement.PlanAndReserveDestination(node);
     }
 
     public virtual void TakeDamage(float damageAmount)

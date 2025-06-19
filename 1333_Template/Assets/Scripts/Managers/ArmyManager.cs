@@ -41,6 +41,10 @@ public class ArmyManager : MonoBehaviour
     [Tooltip("Map each ArmyType to its ArmyCompositionSO asset.")]
     [SerializeField] private List<ArmyMapping> _armyMappings = new List<ArmyMapping>();
 
+    [Header("Hot-key Spawning (Debug)")]
+    [SerializeField] private bool _enableHotkeySpawn = true;    
+    [SerializeField] private Team _enemyTeam = Team.Enemy; 
+
     // Runtime lookup from ArmyType to its composition asset
     private Dictionary<ArmyType, ArmyCompositionSO> _compositionLookup;
 
@@ -61,6 +65,17 @@ public class ArmyManager : MonoBehaviour
             else
                 Debug.LogWarning($"ArmyManager: Duplicate mapping for {mapping.type}");
         }
+    }
+
+    /// <summary>
+    /// Debug helper: press Alpha1 to spawn one EnemyArmy wave at a random node.
+    /// </summary>
+    private void Update()
+    {
+        if (!_enableHotkeySpawn || _gridManager == null) return;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            SpawnEnemyArmyAtRandomNode();
     }
 
     /// <summary>
@@ -145,24 +160,6 @@ public class ArmyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between spawns,
-    /// and positions each unit at the nearest free grid node around spawnPosition.
-    /// </summary>
-    /// <param name="type">Which ArmyType to spawn.</param>
-    /// <param name="team">Team affiliation.</param>
-    /// <param name="spawnPosition">Center world-space point for distribution.</param>
-    /// <param name="delay">Seconds to wait between each unit spawn.</param>
-    public void SpawnArmyByType(ArmyType type, Team team, Vector3 spawnPosition, float delay)
-    {
-        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
-        {
-            Debug.LogError($"ArmyManager: No composition registered for {type}");
-            return;
-        }
-        StartCoroutine(SpawnArmyCoroutine(type, composition, team, spawnPosition, delay));
-    }
-
-    /// <summary>
     /// Coroutine that actually instantiates each unit, distributes them across free grid nodes,
     /// and registers/initializes them with the pathfinder.
     /// </summary>
@@ -240,6 +237,67 @@ public class ArmyManager : MonoBehaviour
         foreach (var entry in composition.unitEntries)
             total += entry.count;
         return total;
+    }
+
+    /// <summary>
+    /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between spawns,
+    /// and positions each unit at the nearest free grid node around spawnPosition.
+    /// </summary>
+    /// <param name="type">Which ArmyType to spawn.</param>
+    /// <param name="team">Team affiliation.</param>
+    /// <param name="spawnPosition">Center world-space point for distribution.</param>
+    /// <param name="delay">Seconds to wait between each unit spawn.</param>
+    public void SpawnArmyByType(ArmyType type, Team team, Vector3 spawnPosition, float delay)
+    {
+        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
+        {
+            Debug.LogError($"ArmyManager: No composition registered for {type}");
+            return;
+        }
+        StartCoroutine(SpawnArmyCoroutine(type, composition, team, spawnPosition, delay));
+    }
+
+    //--------------------- Helper method
+    /// <summary>
+    /// Picks a random walkable & unreserved node and spawns EnemyArmy there.
+    /// </summary>
+    private void SpawnEnemyArmyAtRandomNode()
+    {
+        GridNode node = GetRandomFreeNode();
+        if (node == null)
+        {
+            Debug.LogWarning("ArmyManager: No free node found for EnemyArmy spawn.");
+            return;
+        }
+
+        // Spawn delay = 0.1f 예시
+        SpawnArmyByType(ArmyType.EnemyArmy, _enemyTeam, node.worldPosition, 0.1f);
+
+        Debug.Log($"[ArmyManager] Hot-key spawn EnemyArmy at ({node.worldPosition.x}, {node.worldPosition.y})");
+    }
+
+    /// <summary>
+    /// Returns a random walkable & unreserved node within the grid.
+    /// Tries up to maxAttempts before giving up.
+    /// </summary>
+    private GridNode GetRandomFreeNode(int maxAttempts = 50)
+    {
+        if (_gridManager == null || !_gridManager.isInitialized)
+            return null;
+
+        int maxX = _gridManager.GridSettings.GridSizeX;   // ← 변경
+        int maxY = _gridManager.GridSettings.GridSizeY;   // ← 변경
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            int rx = Random.Range(0, maxX);
+            int ry = Random.Range(0, maxY);
+            GridNode node = _gridManager.GetNode(rx, ry);
+
+            if (node != null && node.walkable && !_gridManager.IsNodeReserved(node))
+                return node;
+        }
+        return null;
     }
 }
 
