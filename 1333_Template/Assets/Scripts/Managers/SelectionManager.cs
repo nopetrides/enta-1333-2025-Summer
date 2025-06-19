@@ -43,7 +43,8 @@ public class SelectionManager : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.X))
-            UnitBase.ShowPathGizmos = !UnitBase.ShowPathGizmos;
+            UnitMovement.ShowPathGizmos = !UnitMovement.ShowPathGizmos;  
+
         HandleMouse();
     }
 
@@ -185,7 +186,6 @@ public class SelectionManager : MonoBehaviour
         {
             var u = units[i];
             var destNode = assignedNodes[i];
-            u.SetReservedDestination(destNode);
             u.MoveTo(destNode);
         }
     }

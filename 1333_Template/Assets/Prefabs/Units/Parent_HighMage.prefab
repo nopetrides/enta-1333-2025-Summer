@@ -118,6 +118,7 @@ GameObject:
   - component: {fileID: 5344748510558935562}
   - component: {fileID: 6330159166700171305}
   - component: {fileID: 2506446610119636060}
+  - component: {fileID: 622597652940875138}
   m_Layer: 0
   m_Name: Parent_HighMage
   m_TagString: Untagged
@@ -155,9 +156,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _unitType: {fileID: 11400000, guid: c32c7167b6234be4d8e82436aca420d6, type: 2}
-  _AnimHandler: {fileID: 8927427426895845376}
-  _moveSpeed: 5
-  _rotationSpeed: 360
+  _animHandler: {fileID: 8927427426895845376}
+  _movement: {fileID: 622597652940875138}
 --- !u!114 &2506446610119636060
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,6 +174,18 @@ MonoBehaviour:
   bodyRenderer: {fileID: 5631886129398074210}
   horseRenderer: {fileID: 0}
   selectionIndicator: {fileID: 842890180408715196}
+--- !u!114 &622597652940875138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1643975294449979136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &6733315438541348238
 PrefabInstance:
   m_ObjectHideFlags: 0

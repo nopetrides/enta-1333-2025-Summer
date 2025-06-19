@@ -1,97 +1,62 @@
-// UnitBase.cs
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Abstract base class for all units in the game. Implements ISelectable for selection.
-/// Contains common stats, state machine, grid-based movement logic (including smooth rotation),
-/// and gizmo drawing for the path (colored lines and cubes). Path gizmos only draw when Moving.
-/// Includes a debug feature: pressing H will immediately kill this unit.
+/// Abstract base for concrete units (Archer, Commander, etc.).
+/// Holds HP, team, state, animation, and selection logic.
+/// Delegates pathfinding and movement to the attached UnitMovement component.
 /// </summary>
 public abstract class UnitBase : MonoBehaviour, ISelectable
 {
+    // ---------- Serialized references ----------
     [Header("References")]
-    [Tooltip("The UnitType ScriptableObject that defines this unit's stats.")]
+    [Tooltip("ScriptableObject that defines stats and visuals for this unit.")]
     [SerializeField] protected UnitTypeSO _unitType = null;
 
-    [Tooltip("The helper class that handles animation for units.")]
-    [SerializeField] protected UnitAnimHandler _AnimHandler;
+    [Tooltip("Component that triggers Animator parameters when state changes.")]
+    [SerializeField] protected UnitAnimHandler _animHandler = null;
 
-    [Header("Movement Settings")]
-    [Tooltip("How fast (in units/sec) the unit moves along the path.")]
-    [SerializeField] protected float _moveSpeed = 5f;
+    [Tooltip("Component responsible for pathfinding and translation.")]
+    [SerializeField] private UnitMovement _movement = null;
 
-    [Tooltip("How fast (in degrees/sec) the unit rotates to face its next waypoint.")]
-    [SerializeField] protected float _rotationSpeed = 360f;
-
-    // Current health points for this unit
+    // ---------- Runtime data ----------
     protected float _currentHp;
-
-    // The current path to follow as a list of grid coordinates
-    protected List<Vector2Int> _currentPath = null;
-
-    // Index of the next node in _currentPath to move toward
-    protected int _nextPathIndex = 0;
-
-    // The current state of this unit (Idle, Moving, Attacking, Patrolling, or Dead)
     protected UnitState _state = UnitState.Idle;
-
-    // The team this unit belongs to (Player or Enemy)
     protected Team _team;
 
-    // References for pathfinding and unit management
-    protected GridManager _gridManager;
     protected UnitManager _unitManager;
-    protected AStarPathfinder _pathfinder;
 
-    protected GridNode _reservedDestNode = null;
+    // Selection
     public bool IsSelected { get; private set; }
 
-    /// <summary>
-    /// Static toggle that controls whether unit paths are drawn as gizmos.
-    /// </summary>
-    public static bool ShowPathGizmos = false;
-
-    /// <summary>
-    /// The width of the unit in grid cells, obtained from the UnitType.
-    /// </summary>
+    // ---------- Properties ----------
     public virtual int Width => (_unitType != null) ? _unitType.Width : 1;
-
-    /// <summary>
-    /// The height of the unit in grid cells, obtained from the UnitType.
-    /// </summary>
     public virtual int Height => (_unitType != null) ? _unitType.Height : 1;
 
-    /// <summary>
-    /// Exposes the current state of the unit.
-    /// </summary>
     public UnitState CurrentState => _state;
-
-    /// <summary>
-    /// Exposes which team this unit belongs to.
-    /// </summary>
     public Team UnitTeam => _team;
-
-    /// <summary>
-    /// Exposes the UnitType ScriptableObject for this unit.
-    /// </summary>
     public UnitTypeSO UnitType => _unitType;
-
-    /// <summary>
-    /// The current health points of this unit.
-    /// </summary>
     public float CurrentHp => _currentHp;
 
+    // ---------- MonoBehaviour ----------
+    protected virtual void Awake()
+    {
+        // Ensure movement component is present
+        if (_movement == null && !TryGetComponent(out _movement))
+            _movement = gameObject.AddComponent<UnitMovement>();
+    }
+
+    protected virtual void Update()
+    {
+        // Debug: kill unit with H key
+        if (Input.GetKeyDown(KeyCode.H) && _state != UnitState.Dead)
+            Die();
+    }
+
+    // ---------- Initialization ----------
     /// <summary>
-    /// Initializes this unit with its type, GridManager, UnitManager, AStarPathfinder, and team.
-    /// Must be called immediately after instantiation.
+    /// Must be called immediately after instantiation by ArmyManager (DI style).
     /// </summary>
-    /// <param name="unitType">ScriptableObject containing stats for this unit.</param>
-    /// <param name="gridManager">Reference to the GridManager in the scene.</param>
-    /// <param name="unitManager">Reference to the UnitManager in the scene.</param>
-    /// <param name="pathfinder">Shared AStarPathfinder instance.</param>
-    /// <param name="team">The team (Player or Enemy) this unit belongs to.</param>
     public virtual void Initialize(
         UnitTypeSO unitType,
         GridManager gridManager,
@@ -100,265 +65,33 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         Team team)
     {
         _unitType = unitType;
-        _currentHp = unitType.MaxHp;
-        _moveSpeed = unitType.MoveSpeed;
-        _gridManager = gridManager;
         _unitManager = unitManager;
-        _pathfinder = pathfinder;
         _team = team;
 
-        // Apply the correct material based on team color and mount status
-        Material teamMaterial = unitType.GetArmyMaterial(team);
-        if (teamMaterial != null)
-        {
-            UnitVisualController headRef = GetComponent<UnitVisualController>();
-            if (headRef != null)
-            {
-                headRef.ApplyTeamMaterial(teamMaterial, unitType.IsMounted);
-            }
-        }
+        _currentHp = unitType.MaxHp;
+        _state = UnitState.Idle;
+
+        // Inject references into Movement component
+        _movement.Init(gridManager, pathfinder, unitType.MoveSpeed, 360f);
+
+        // Apply team material
+        Material teamMat = unitType.GetArmyMaterial(team);
+        if (teamMat != null && TryGetComponent<UnitVisualController>(out var vc))
+            vc.ApplyTeamMaterial(teamMat, unitType.IsMounted);
     }
 
-    protected virtual void Update()
-    {
-        // Debug: If H is pressed, immediately kill this unit once
-        if (Input.GetKeyDown(KeyCode.H) && _state != UnitState.Dead)
-        {
-            Die();
-            return;
-        }
-
-        // If the unit is dead, do not process movement or other states
-        if (_state == UnitState.Dead)
-            return;
-
-        // If currently moving, handle movement logic each frame
-        if (_state == UnitState.Moving)
-        {
-            HandleMovement();
-        }
-    }
-
-    /// <summary>
-    /// Apply damage to this unit. If health drops to zero or below, trigger death.
-    /// </summary>
-    /// <param name="damageAmount">Amount of damage to apply.</param>
-    public virtual void TakeDamage(float damageAmount)
-    {
-        if (_state == UnitState.Dead)
-            return;
-
-        _currentHp -= damageAmount;
-        if (_currentHp <= 0f)
-        {
-            Die();
-        }
-    }
-
-    /// <summary>
-    /// Handle unit death: change state to Dead, notify animation handler, unregister from UnitManager,
-    /// and destroy the GameObject after a delay to allow the death animation to play.
-    /// </summary>
-    protected virtual void Die()
-    {
-        if (_state == UnitState.Dead)
-            return;
-
-        _state = UnitState.Dead;
-
-        // Notify the animation handler of the state change via Trigger
-        if (_AnimHandler != null)
-        {
-            _AnimHandler.OnStateChanged(_state);
-        }
-
-        // Unregister this unit from the UnitManager
-        if (_unitManager != null)
-        {
-            _unitManager.UnregisterUnit(this);
-        }
-
-        // Start coroutine to destroy this GameObject after a delay
-        StartCoroutine(DestroyAfterDelay(5f));
-    }
-
-    /// <summary>
-    /// Coroutine to destroy the GameObject after a specified delay.
-    /// </summary>
-    /// <param name="delay">Time in seconds to wait before destroying the object.</param>
-    private IEnumerator DestroyAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        Destroy(gameObject);
-    }
-
-    /// <summary>
-    /// Stores the node reserved as this unit’s destination.
-    /// </summary>
-    /// <param name="node">The GridNode to reserve for arrival.</param>
-    public void SetReservedDestination(GridNode node)
-    {
-        _reservedDestNode = node;
-    }
-
-    /// <summary>
-    /// Begins movement toward the specified grid node.
-    /// Immediately reserves the destination to prevent other units targeting it.
-    /// </summary>
+    // ---------- Public API ----------
     public virtual void MoveTo(GridNode targetNode)
     {
-        // 1) Preconditions
-        if (_gridManager == null || _pathfinder == null)
-        {
-            Debug.LogWarning($"{name}.MoveTo: Missing GridManager or AStarPathfinder.");
-            return;
-        }
-
-        // 2) Free up and unreserve the start cell
-        GridNode startNode = _gridManager.getNodeFromWorldPosition(transform.position);
-        int startX = Mathf.RoundToInt(startNode.worldPosition.x / _gridManager.GridSettings.NodeSize);
-        int startY = Mathf.RoundToInt(startNode.worldPosition.z / _gridManager.GridSettings.NodeSize);
-        _gridManager.SetWalkable(startX, startY, true);
-        _gridManager.UnreserveNode(startNode);
-
-        // 3) Prevent moving into an already occupied or reserved cell
-        if (!startNode.walkable || _gridManager.IsNodeReserved(targetNode))
-        {
-            Debug.LogWarning($"{name}.MoveTo: Target node {targetNode.name} is not available.");
-            return;
-        }
-
-        // 4) Compute the path
-        List<Vector2Int> path = _pathfinder.FindPathWithNodes(
-            startNode, targetNode, Width, Height);
-
-        if (path == null || path.Count == 0)
-        {
-            Debug.Log($"{name}.MoveTo: No path found.");
-            return;
-        }
-
-        // 5) Reserve the destination immediately
-        _gridManager.ReserveNode(targetNode);
-        _reservedDestNode = targetNode;
-
-        // 6) Store path and enter Moving
-        _currentPath = path;
-        if (_currentPath.Count > 1)
-        {
-            // get our current grid coords
-            Vector3 world = transform.position;
-            Vector2Int startCoords = new Vector2Int(
-                Mathf.RoundToInt(world.x / _gridManager.GridSettings.NodeSize),
-                Mathf.RoundToInt(world.z / _gridManager.GridSettings.NodeSize)
-            );
-
-            // if the first node is where we stand, skip it
-            if (_currentPath[0] == startCoords)
-                _nextPathIndex = 1;
-            else
-                _nextPathIndex = 0;
-        }
-        else
-        {
-            _nextPathIndex = 0;
-        }
-
-        // 7) Enter Moving
-        _state = UnitState.Moving;
-        _AnimHandler?.OnStateChanged(_state);
+        _movement.MoveTo(targetNode);
     }
 
-    /// <summary>
-    /// Called every frame while the unit is in Moving state.
-    /// Moves toward the next waypoint, increments the path index when reached,
-    /// and upon arrival at the final cell, marks that cell non-walkable.
-    /// </summary>
-    protected virtual void HandleMovement()
+    public virtual void TakeDamage(float damageAmount)
     {
-        // nothing to do if no path or we’ve already finished
-        if (_currentPath == null || _nextPathIndex >= _currentPath.Count)
-            return;
+        if (_state == UnitState.Dead) return;
 
-        // Get the next target cell
-        Vector2Int coords = _currentPath[_nextPathIndex];
-        GridNode node = _gridManager.GetNode(coords.x, coords.y);
-        Vector3 targetPos = node.worldPosition + Vector3.up * 0.1f;
-
-        // 1) Have we reached this waypoint?
-        if (Vector3.Distance(transform.position, targetPos) < 0.05f)
-        {
-            _nextPathIndex++;
-
-            // If that was the last waypoint, finish movement
-            if (_nextPathIndex >= _currentPath.Count)
-            {
-                FinishMovement();
-                return;
-            }
-
-            // Otherwise advance to the next waypoint before rotating/moving
-            coords = _currentPath[_nextPathIndex];
-            node = _gridManager.GetNode(coords.x, coords.y);
-            targetPos = node.worldPosition + Vector3.up * 0.1f;
-        }
-
-        // 2) Rotate smoothly toward the waypoint
-        Vector3 dir = targetPos - transform.position;
-        dir.y = 0f;
-        if (dir.sqrMagnitude > 0.001f)
-        {
-            Quaternion look = Quaternion.LookRotation(dir, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                look,
-                _rotationSpeed * Time.deltaTime);
-        }
-
-        // 3) Move toward the waypoint
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            targetPos,
-            _moveSpeed * Time.deltaTime);
-    }
-
-    /// <summary>
-    /// Cleanup once we hit the final destination:
-    /// unreserve & occupy the node, fire Idle state & animation.
-    /// </summary>
-    private void FinishMovement()
-    {
-        // 1) Unreserve the destination
-        if (_reservedDestNode != null)
-        {
-            _gridManager.UnreserveNode(_reservedDestNode);
-
-            // 2) Permanently block it (occupy)
-            Vector3 wp = _reservedDestNode.worldPosition;
-            int tx = Mathf.RoundToInt(wp.x / _gridManager.GridSettings.NodeSize);
-            int ty = Mathf.RoundToInt(wp.z / _gridManager.GridSettings.NodeSize);
-            _gridManager.SetWalkable(tx, ty, false);
-        }
-
-        // 3) Transition to Idle & play Idle animation
-        _state = UnitState.Idle;
-        _AnimHandler?.OnStateChanged(_state);
-
-        // 4) Clean up
-        _currentPath = null;
-        _reservedDestNode = null;
-    }
-
-    /// <summary>
-    /// Called when the unit reaches its final destination. Notifies the animation handler.
-    /// </summary>
-    /// <param name="unitState">The state that was just entered (usually Idle).</param>
-    protected virtual void OnArrivedAtDestination(UnitState unitState)
-    {
-        if (_AnimHandler != null)
-        {
-            _AnimHandler.OnStateChanged(unitState);
-        }
+        _currentHp -= damageAmount;
+        if (_currentHp <= 0f) Die();
     }
 
     public virtual void OnSelected()
@@ -368,7 +101,6 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
             vc.ShowSelectionIndicator();
     }
 
-    /// <inheritdoc/>
     public virtual void OnDeselected()
     {
         IsSelected = false;
@@ -376,51 +108,28 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
             vc.HideSelectionIndicator();
     }
 
-/// <summary>
-/// Draws path gizmos in the Scene view when ShowPathGizmos is true and the unit is Moving.
-/// Draws cyan lines between waypoints, a red cube at the start, and a green cube at the end.
-/// </summary>
-private void OnDrawGizmos()
+    // ---------- Internal helpers ----------
+    public void InternalChangeState(UnitState newState)
     {
-        if (!ShowPathGizmos || _currentPath == null || _gridManager == null)
-            return;
-        if (_state != UnitState.Moving)
-            return;
-
-        Gizmos.color = Color.cyan;
-        for (int i = 0; i < _currentPath.Count - 1; i++)
-        {
-            Vector2Int aCoords = _currentPath[i];
-            Vector2Int bCoords = _currentPath[i + 1];
-            GridNode aNode = _gridManager.GetNode(aCoords.x, aCoords.y);
-            GridNode bNode = _gridManager.GetNode(bCoords.x, bCoords.y);
-            Vector3 aPos = aNode.worldPosition + Vector3.up * 0.1f;
-            Vector3 bPos = bNode.worldPosition + Vector3.up * 0.1f;
-            Gizmos.DrawLine(aPos, bPos);
-        }
-
-        // Draw a cyan cube at the start node
-        Vector2Int startCoords = _currentPath[0];
-        GridNode startNode = _gridManager.GetNode(startCoords.x, startCoords.y);
-        Vector3 startCenter = startNode.worldPosition + Vector3.up * 0.1f;
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawCube(startCenter, Vector3.one * (_gridManager.GridSettings.NodeSize * 0.8f));
-
-        // Draw a green cube at the end node
-        Vector2Int endCoords = _currentPath[_currentPath.Count - 1];
-        GridNode endNode = _gridManager.GetNode(endCoords.x, endCoords.y);
-        Vector3 endCenter = endNode.worldPosition + Vector3.up * 0.1f;
-        Gizmos.color = Color.green;
-        Gizmos.DrawCube(endCenter, Vector3.one * (_gridManager.GridSettings.NodeSize * 0.8f));
+        _state = newState;
+        _animHandler?.OnStateChanged(_state);
     }
-}
 
-// UnitState enum
-public enum UnitState
-{
-    Idle,
-    Moving,
-    Attacking,
-    Patrolling,
-    Dead
+    protected virtual void Die()
+    {
+        if (_state == UnitState.Dead) return;
+
+        InternalChangeState(UnitState.Dead);
+
+        if (_unitManager != null)
+            _unitManager.UnregisterUnit(this);
+
+        StartCoroutine(DestroyAfterDelay(5f));
+    }
+
+    private IEnumerator DestroyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Destroy(gameObject);
+    }
 }

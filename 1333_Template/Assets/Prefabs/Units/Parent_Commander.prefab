@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 788905096888276538}
   - component: {fileID: 6843983315154375199}
   - component: {fileID: 3195730330117185933}
+  - component: {fileID: 4266371818427680370}
   m_Layer: 0
   m_Name: Parent_Commander
   m_TagString: Untagged
@@ -48,9 +49,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _unitType: {fileID: 11400000, guid: ec5ecacaf7fa0ee44a6b5823f3cd6743, type: 2}
-  _AnimHandler: {fileID: 8772412415410596088}
-  _moveSpeed: 5
-  _rotationSpeed: 360
+  _animHandler: {fileID: 8772412415410596088}
+  _movement: {fileID: 4266371818427680370}
 --- !u!114 &3195730330117185933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +67,18 @@ MonoBehaviour:
   bodyRenderer: {fileID: 118937006305684745}
   horseRenderer: {fileID: 0}
   selectionIndicator: {fileID: 8733644529780977361}
+--- !u!114 &4266371818427680370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173969504950306958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8733644529780977361
 GameObject:
   m_ObjectHideFlags: 0

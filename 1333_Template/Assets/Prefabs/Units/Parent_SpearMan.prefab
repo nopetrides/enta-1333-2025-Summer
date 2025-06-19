@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 9023580210418073022}
   - component: {fileID: 5886207569797123519}
   - component: {fileID: 1803335899663014089}
+  - component: {fileID: 2050795100045843469}
   m_Layer: 0
   m_Name: Parent_SpearMan
   m_TagString: Untagged
@@ -48,9 +49,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
-  _AnimHandler: {fileID: 3241130454884643051}
-  _moveSpeed: 5
-  _rotationSpeed: 360
+  _animHandler: {fileID: 3241130454884643051}
+  _movement: {fileID: 2050795100045843469}
 --- !u!114 &1803335899663014089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +67,18 @@ MonoBehaviour:
   bodyRenderer: {fileID: 4814522396560930698}
   horseRenderer: {fileID: 0}
   selectionIndicator: {fileID: 7797520680328108246}
+--- !u!114 &2050795100045843469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5929047711669387220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7797520680328108246
 GameObject:
   m_ObjectHideFlags: 0

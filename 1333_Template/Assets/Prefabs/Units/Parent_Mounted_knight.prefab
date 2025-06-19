@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7389392584246665336}
   - component: {fileID: 8301144839092646265}
   - component: {fileID: 6091769966058110621}
+  - component: {fileID: 6642219015712542004}
   m_Layer: 0
   m_Name: Parent_Mounted_knight
   m_TagString: Untagged
@@ -48,9 +49,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _unitType: {fileID: 11400000, guid: 42d6e2468c19e944da87670b18f400e1, type: 2}
-  _AnimHandler: {fileID: 1432586396746421500}
-  _moveSpeed: 5
-  _rotationSpeed: 360
+  _animHandler: {fileID: 1432586396746421500}
+  _movement: {fileID: 6642219015712542004}
 --- !u!114 &6091769966058110621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +67,18 @@ MonoBehaviour:
   bodyRenderer: {fileID: 4962663108253970117}
   horseRenderer: {fileID: 5148478747156728520}
   selectionIndicator: {fileID: 3012418455819275979}
+--- !u!114 &6642219015712542004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2330823002029844089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3012418455819275979
 GameObject:
   m_ObjectHideFlags: 0
