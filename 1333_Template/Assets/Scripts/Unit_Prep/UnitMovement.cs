@@ -135,24 +135,24 @@ public class UnitMovement : MonoBehaviour
     // ---------- Gizmos ----------
     private void OnDrawGizmos()
     {
-        if (!ShowPathGizmos || _path == null || _gridManager == null) return;
+        if (!ShowPathGizmos || _gridManager == null) return;
+
+        var path = _path;
+        if (path == null || path.Count == 0) return;
 
         Gizmos.color = Color.cyan;
-        for (int i = 0; i < _path.Count - 1; i++)
+        for (int i = 0; i < path.Count - 1; i++)
         {
-            Vector3 a = _gridManager.GetNode(_path[i].x, _path[i].y).worldPosition + Vector3.up * 0.1f;
-            Vector3 b = _gridManager.GetNode(_path[i + 1].x, _path[i + 1].y).worldPosition + Vector3.up * 0.1f;
+            Vector3 a = _gridManager.GetNode(path[i].x, path[i].y).worldPosition + Vector3.up * 0.1f;
+            Vector3 b = _gridManager.GetNode(path[i + 1].x, path[i + 1].y).worldPosition + Vector3.up * 0.1f;
             Gizmos.DrawLine(a, b);
         }
 
-        // Start cube
-        Gizmos.color = Color.cyan;
-        Vector3 startPos = _gridManager.GetNode(_path[0].x, _path[0].y).worldPosition + Vector3.up * 0.1f;
+        Vector3 startPos = _gridManager.GetNode(path[0].x, path[0].y).worldPosition + Vector3.up * 0.1f;
         Gizmos.DrawCube(startPos, Vector3.one * (_gridManager.GridSettings.NodeSize * 0.8f));
 
-        // End cube
         Gizmos.color = Color.green;
-        Vector3 endPos = _gridManager.GetNode(_path[^1].x, _path[^1].y).worldPosition + Vector3.up * 0.1f;
+        Vector3 endPos = _gridManager.GetNode(path[path.Count - 1].x, path[path.Count - 1].y).worldPosition + Vector3.up * 0.1f;
         Gizmos.DrawCube(endPos, Vector3.one * (_gridManager.GridSettings.NodeSize * 0.8f));
     }
 }
