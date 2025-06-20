@@ -16,7 +16,6 @@ public class BuildingGate : BuildingBase
 
     private Vector2Int _placementBase;
     private Vector2Int _placementFootprint;
-    private GridManager _gridManager;
     private Vector2Int[] _centerOffsets;
 
     private static readonly int OpenTrigger = Animator.StringToHash("Open");
@@ -29,7 +28,7 @@ public class BuildingGate : BuildingBase
     }
 
     /// <summary>
-    /// Cache base Awake logic and ensure renderer/animator references.
+    /// Cache base Awake logic and ensure renderer/animator reference.
     /// </summary>
     protected override void Awake()
     {
@@ -71,22 +70,26 @@ public class BuildingGate : BuildingBase
 
         if (!rotated)
         {
-            // Vertical orientation: open two central columns across full height
+            // Default (horizontal): open four central rows across full width
             int half = footprint.x / 2;
             for (int y = 0; y < footprint.y; y++)
             {
+                offsets.Add(new Vector2Int(half - 2, y));
                 offsets.Add(new Vector2Int(half - 1, y));
                 offsets.Add(new Vector2Int(half, y));
+                offsets.Add(new Vector2Int(half + 1, y));
             }
         }
         else
         {
-            // Rotated (horizontal): open two central rows across full width
+            // Rotated (vertical): open four central columns across full height
             int half = footprint.y / 2;
             for (int x = 0; x < footprint.x; x++)
             {
+                offsets.Add(new Vector2Int(x, half - 2));
                 offsets.Add(new Vector2Int(x, half - 1));
                 offsets.Add(new Vector2Int(x, half));
+                offsets.Add(new Vector2Int(x, half + 1));
             }
         }
 
@@ -102,7 +105,7 @@ public class BuildingGate : BuildingBase
             return;
         _currentState = GateState.Opening;
         _animator?.SetTrigger(OpenTrigger);
-        OnGateOpened();
+        OnGateGridOpened();
     }
 
     /// <summary>
@@ -114,13 +117,13 @@ public class BuildingGate : BuildingBase
             return;
         _currentState = GateState.Closing;
         _animator?.SetTrigger(CloseTrigger);
-        OnGateClosed();
+        OnGateGridClosed();
     }
 
     /// <summary>
     /// Marks the central passage cells as walkable.
     /// </summary>
-    public void OnGateOpened()
+    public void OnGateGridOpened()
     {
         _currentState = GateState.Open;
         if (_gridManager == null) return;
@@ -136,7 +139,7 @@ public class BuildingGate : BuildingBase
     /// <summary>
     /// Marks the central passage cells as non-walkable.
     /// </summary>
-    public void OnGateClosed()
+    public void OnGateGridClosed()
     {
         _currentState = GateState.Closed;
         if (_gridManager == null) return;

@@ -151,25 +151,21 @@ public class AStarPathfinder
         int baseX = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
         int baseY = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
 
-        // Check each cell in the rectangular area.
         for (int dx = 0; dx < width; dx++)
         {
             for (int dy = 0; dy < height; dy++)
             {
                 int nx = baseX + dx;
                 int ny = baseY + dy;
-
-                // Return false if out of bounds.
                 if (nx < 0 || nx >= gm.GridSettings.GridSizeX ||
                     ny < 0 || ny >= gm.GridSettings.GridSizeY)
                     return false;
 
-                // Return false if any node is not walkable.
-                if (!gm.GetNode(nx, ny).walkable)
+                GridNode checkNode = gm.GetNode(nx, ny);
+                if (!checkNode.walkable)
                     return false;
             }
         }
-
         return true;
     }
 

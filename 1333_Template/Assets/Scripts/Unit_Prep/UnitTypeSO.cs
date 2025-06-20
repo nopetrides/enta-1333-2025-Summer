@@ -9,7 +9,7 @@ public class UnitTypeSO : ScriptableObject
 {
     [Header("Basic Info")]
     [Tooltip("The display name of this unit type.")]
-    [SerializeField] private string _typeName = "New Unit";
+    [SerializeField] private string _typeName = "New Unit Name";
 
     [Header("Grid Size (in cells)")]
     [Tooltip("How many cells wide this unit occupies.")]
@@ -34,6 +34,8 @@ public class UnitTypeSO : ScriptableObject
     [SerializeField] private AttackType _attackType = AttackType.Melee;
     [Tooltip("Maximum range (in grid cells) at which this unit can attack.")]
     [SerializeField] private int _attackRange = 1;
+    [Tooltip("Seconds between consecutive attacks.")]
+    [SerializeField] private float _attackCooldown = 0.8f;
 
     [Header("Faction Materials")]
     [Tooltip("Array of Materials, indexed by Team enum. e.g. [0] = Player, [1] = Enemy.")]
@@ -92,6 +94,11 @@ public class UnitTypeSO : ScriptableObject
     /// Maximum attack range in grid cells.
     /// </summary>
     public int AttackRange => _attackRange;
+
+    /// <summary>
+    /// Seconds between consecutive attacks.
+    /// </summary>
+    public float AttackCooldown => _attackCooldown;
 
     /// <summary>
     /// Whether this unit rides a mount (horse).

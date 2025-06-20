@@ -14,6 +14,11 @@ public class SelectionManager : MonoBehaviour
     private UnitSelectionBox _unitSelectionBox;
     [SerializeField] private float _minDragSize = 3f;
 
+    [Header("UI Manager")]
+    [Tooltip("Central SelectedUIManager for all panels.")]
+    [SerializeField] private SelectedUIManager _uiManager = null;
+
+
     // Track any ISelectable
     private readonly List<ISelectable> _selected = new List<ISelectable>();
 
@@ -27,6 +32,9 @@ public class SelectionManager : MonoBehaviour
         _unitManager = um;
         _unitSelectionBox = GetComponent<UnitSelectionBox>();
         _unitSelectionBox.minDragSize = _minDragSize;
+
+        //Ensure All selectedUI panels are hided
+        _uiManager.HideAll();
     }
 
     /// <summary>
@@ -35,7 +43,8 @@ public class SelectionManager : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.X))
-            UnitBase.ShowPathGizmos = !UnitBase.ShowPathGizmos;
+            UnitMovement.ShowPathGizmos = !UnitMovement.ShowPathGizmos;  
+
         HandleMouse();
     }
 
@@ -44,6 +53,8 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void HandleMouse()
     {
+        if (Banner.IsAnyDragging)
+            return;
         if (Input.GetMouseButtonDown(0))
             _unitSelectionBox.BeginDrag(Mouse.current.position.ReadValue());
 
@@ -53,6 +64,7 @@ public class SelectionManager : MonoBehaviour
         if (Input.GetMouseButtonUp(0) && _unitSelectionBox.IsDragging)
         {
             _unitSelectionBox.EndDrag(Mouse.current.position.ReadValue());
+            ClearSelection();
             if (_unitSelectionBox.DragDistance < _minDragSize)
             {
                 TrySingleSelect(_unitSelectionBox.DragEnd);
@@ -60,10 +72,14 @@ public class SelectionManager : MonoBehaviour
 
             else
             {
+
                 // handle drag select for units only
                 Rect selRect = _unitSelectionBox.GetScreenRect(_unitSelectionBox.DragStart, _unitSelectionBox.DragEnd);
                 foreach (var unit in _unitManager.AllUnits)
                 {
+                    // skip any non-player team units
+                    if (unit.UnitTeam != Team.Player)
+                        continue;
                     Vector3 sp = _mainCamera.WorldToScreenPoint(unit.transform.position);
                     Vector2 guiPoint = new(sp.x, Screen.height - sp.y);
                     if (selRect.Contains(guiPoint))
@@ -71,6 +87,10 @@ public class SelectionManager : MonoBehaviour
                         AddToSelection(unit);
                     }
                 }
+
+                // only show panel if exactly one unit was dragged over
+                if (_selected.Count == 1)
+                    _uiManager.Show(_selected[0]);
             }
         }
 
@@ -97,6 +117,8 @@ public class SelectionManager : MonoBehaviour
             var sel = hit.collider.GetComponentInParent<ISelectable>();
             if (sel != null)
                 AddToSelection(sel);
+            // single‐click: exactly one item => show its panel
+            _uiManager.Show(sel);
         }
     }
 
@@ -105,18 +127,15 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void AddToSelection(ISelectable sel)
     {
+        if (sel is UnitBase unit && unit.UnitTeam != Team.Player)
+            return;
+        if (sel is BuildingBase b && b.team != Team.Player)
+            return;
         if (_selected.Contains(sel)) return;
         _selected.Add(sel);
 
-        if (sel is UnitBase unit)
-        {
-            if (unit.TryGetComponent(out UnitVisualController vc))
-                vc.ShowSelectionIndicator();
-        }
-        else if (sel is BuildingBase building)
-        {
-            building.OnSelected();
-        }
+        // unified selection hook + UI panel
+        sel.OnSelected();
     }
 
     /// <summary>
@@ -124,23 +143,24 @@ public class SelectionManager : MonoBehaviour
     /// </summary>
     private void ClearSelection()
     {
-        foreach (var sel in _selected)
+        _uiManager.HideAll();
+
+        for (int i = _selected.Count - 1; i >= 0; i--)
         {
-            if (sel is UnitBase unit)
+            if (_selected[i] == null)        // already destroyed
             {
-                if (unit.TryGetComponent(out UnitVisualController vc))
-                    vc.HideSelectionIndicator();
+                _selected.RemoveAt(i);
+                continue;
             }
-            else if (sel is BuildingBase building)
-            {
-                building.OnDeselected();
-            }
+            _selected[i].OnDeselected();
         }
+
         _selected.Clear();
     }
 
     /// <summary>
     /// Commands all selected units to move to the target grid node.
+    /// Frees each unit's starting cell before computing any paths.
     /// </summary>
     private void CommandUnits()
     {
@@ -148,15 +168,47 @@ public class SelectionManager : MonoBehaviour
         Plane ground = new Plane(Vector3.up, Vector3.zero);
         if (!ground.Raycast(ray, out var enter)) return;
 
-        var hitPoint = ray.GetPoint(enter);
-        var node = _gridManager.getNodeFromWorldPosition(hitPoint);
-        if (!node.walkable) return;
+        Vector3 hitPoint = ray.GetPoint(enter);
+        GridNode targetNode = _gridManager.getNodeFromWorldPosition(hitPoint);
+        if (!targetNode.walkable) return;
+
+        // Gather selected units
+        var units = new List<UnitBase>();
         foreach (var sel in _selected)
-        {
             if (sel is UnitBase unit)
-            {
-                unit.MoveTo(node);
-            }
+                units.Add(unit);
+
+        // 1) Free all start cells so no unit blocks pathfinding
+        foreach (var u in units)
+        {
+            GridNode startNode = _gridManager.getNodeFromWorldPosition(u.transform.position);
+            startNode.walkable = true;
         }
+
+        // 2) Find nearest free nodes around the target for each unit
+        var assignedNodes = _gridManager.FindNearestFreeNodes(targetNode, units.Count);
+
+        // 3) Issue movement commands
+        for (int i = 0; i < units.Count; i++)
+        {
+            var u = units[i];
+            var destNode = assignedNodes[i];
+            u.SetReservedDestination(destNode);
+            u.MoveTo(destNode);
+        }
+    }
+
+    private void OnEnable()
+    {
+        UnitBase.UnitDestroyed += HandleSelectableDestroyed;
+    }
+    private void OnDisable()
+    {
+        UnitBase.UnitDestroyed -= HandleSelectableDestroyed;
+    }
+
+    private void HandleSelectableDestroyed(ISelectable dead)
+    {
+        _selected.Remove(dead);
     }
 }

@@ -96,6 +96,9 @@ MonoBehaviour:
   buildingData: {fileID: 11400000, guid: 0168579f7cfbf60468d89971e52ff6fb, type: 2}
   _selectionRenderers:
   - {fileID: 1821611569495175925}
+  _resourceType: {fileID: 11400000, guid: 7bb6fa75b39b77c4ea4e856afb50367e, type: 2}
+  _productionAmount: 1
+  _productionInterval: 1
 --- !u!65 &-4934664127469421612
 BoxCollider:
   m_ObjectHideFlags: 0

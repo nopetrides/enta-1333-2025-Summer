@@ -1,220 +1,303 @@
-﻿// ArmyManager.cs
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Handles spawning of units for each army at runtime.
-/// Reads from ArmyComposition ScriptableObjects for player and enemy armies,
-/// instantiates the appropriate prefabs, registers each unit with UnitManager,
-/// and initializes each unit with its stats, GridManager, and AStarPathfinder.
+/// Identifiers for each army composition asset.
+/// </summary>
+public enum ArmyType
+{
+    PlayerArmy,
+    EnemyArmy,
+    Spearman,
+    Archer,
+    CrossbowMan,
+    MountedKnight,
+    Mage,
+    HighMage,
+    MountedHighMage,
+    Commander,
+    Worker
+}
+
+/// <summary>
+/// Associates an ArmyType enum value with its ArmyCompositionSO asset.
+/// </summary>
+[System.Serializable]
+public struct ArmyMapping
+{
+    public ArmyType type;
+    public ArmyCompositionSO composition;
+}
+
+/// <summary>
+/// Responsible for spawning units based on ArmyCompositionSO assets.
+/// Supports interval-based spawning by ArmyType, and will distribute units
+/// across nearby grid nodes to avoid overlap.
 /// </summary>
 public class ArmyManager : MonoBehaviour
 {
-    [Header("Army Compositions")]
-    [Tooltip("ScriptableObject defining the player army composition.")]
-    [SerializeField] private ArmyCompositionSO _playerArmySO = null;
+    [Header("Army Mappings")]
+    [Tooltip("Map each ArmyType to its ArmyCompositionSO asset.")]
+    [SerializeField] private List<ArmyMapping> _armyMappings = new List<ArmyMapping>();
 
-    [Tooltip("ScriptableObject defining the enemy army composition.")]
-    [SerializeField] private ArmyCompositionSO _enemyArmySO = null;
+    [Header("Hot-key Spawning (Debug)")]
+    [SerializeField] private bool _enableHotkeySpawn = true;    
+    [SerializeField] private Team _enemyTeam = Team.Enemy; 
 
-    [Tooltip("ScriptableObject defining the spearman army composition.")]
-    [SerializeField] private ArmyCompositionSO _spearManArmySO = null;
+    // Runtime lookup from ArmyType to its composition asset
+    private Dictionary<ArmyType, ArmyCompositionSO> _compositionLookup;
 
-    [Tooltip("ScriptableObject defining the mounted knight army composition.")]
-    [SerializeField] private ArmyCompositionSO _mountedKnightArmyS0 = null;
-
-    [Tooltip("ScriptableObject defining the worker army composition.")]
-    [SerializeField] private ArmyCompositionSO _workerArmyS0 = null;
-
-    [Tooltip("ScriptableObject defining the mounted high mage army composition.")]
-    [SerializeField] private ArmyCompositionSO _mountedHighMageArmyS0 = null;
-
-    [Tooltip("ScriptableObject defining the archer army composition.")]
-    [SerializeField] private ArmyCompositionSO _archerArmySO = null;
-
-    [Tooltip("ScriptableObject defining the crossbowman army composition.")]
-    [SerializeField] private ArmyCompositionSO _crossbowManArmySO = null;
-
-    [Tooltip("ScriptableObject defining the commander army composition.")]
-    [SerializeField] private ArmyCompositionSO _commanderArmySO = null;
-
-    [Tooltip("ScriptableObject defining the mage army composition.")]
-    [SerializeField] private ArmyCompositionSO _mageArmySO = null;
-
-    [Tooltip("ScriptableObject defining the high mage army composition.")]
-    [SerializeField] private ArmyCompositionSO _highMageArmySO = null;
-
+    // Injected dependencies
     private GridManager _gridManager;
     private UnitManager _unitManager;
     private AStarPathfinder _pathfinder;
 
+    public event System.Action<UnitBase> UnitSpawned; // Unit spawn event
+
+    private void Awake()
+    {
+        _compositionLookup = new Dictionary<ArmyType, ArmyCompositionSO>();
+        foreach (var mapping in _armyMappings)
+        {
+            if (!_compositionLookup.ContainsKey(mapping.type))
+                _compositionLookup.Add(mapping.type, mapping.composition);
+            else
+                Debug.LogWarning($"ArmyManager: Duplicate mapping for {mapping.type}");
+        }
+    }
+
     /// <summary>
-    /// Must be called by GameManager.Awake() to provide references to GridManager and UnitManager.
+    /// Debug helper: press Alpha1 to spawn one EnemyArmy wave at a random node.
     /// </summary>
-    /// <param name="gridManager">Reference to the GridManager in the scene.</param>
-    /// <param name="unitManager">Reference to the UnitManager in the scene.</param>
+    private void Update()
+    {
+        if (!_enableHotkeySpawn || _gridManager == null) return;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            SpawnEnemyArmyAtRandomNode();
+    }
+
+    /// <summary>
+    /// Initializes the ArmyManager with required managers.
+    /// Must be called before any spawn methods.
+    /// </summary>
     public void Initialize(GridManager gridManager, UnitManager unitManager)
     {
         _gridManager = gridManager;
         _unitManager = unitManager;
-
-        if (_gridManager == null)
-        {
-            Debug.LogError("ArmyManager: GridManager reference is null.");
-        }
-
-        if (_unitManager == null)
-        {
-            Debug.LogError("ArmyManager: UnitManager reference is null.");
-        }
-
-        // Create a single AStarPathfinder instance using the provided GridManager
         _pathfinder = new AStarPathfinder(_gridManager);
     }
 
-    private void Update()
-    {
-        HandleSpawnInput();
-    }
-
     /// <summary>
-    /// Instantiates units for a specific army composition.
-    /// Each entry in the composition contains a UnitTypePrefab and a count.
-    /// After instantiating, each UnitBase is registered with UnitManager and initialized.
+    /// Spawns all units of the given type, registers & initializes them,
+    /// and collects them into the provided list, yielding between each spawn.
     /// </summary>
-    /// <param name="composition">ArmyComposition SO containing unit entries.</param>
-    /// <param name="team">Which team (Player or Enemy) these units belong to.</param>
-    private void SpawnArmy(ArmyCompositionSO composition, Team team)
+    /// <param name="type">Which ArmyType to spawn.</param>
+    /// <param name="team">Which Team they belong to.</param>
+    /// <param name="spawnPosition">World‐space origin of the spawn.</param>
+    /// <param name="delay">Seconds between each unit instantiation.</param>
+    /// <param name="outUnits">List to fill with the spawned UnitBase instances.</param>
+    public IEnumerator SpawnArmyAndCollect(
+        ArmyType type,
+        Team team,
+        Vector3 spawnPosition,
+        float delay,
+        List<UnitBase> outUnits)
     {
-        if (_gridManager == null || _unitManager == null)
+        // 1) Look up composition
+        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
         {
-            Debug.LogError("ArmyManager: Must call Initialize(gridManager, unitManager) before spawning.");
-            return;
+            Debug.LogError($"ArmyManager: No composition registered for {type}");
+            yield break;
         }
 
-        foreach (UnitEntry entry in composition.unitEntries)
+        // 2) Determine total count and candidate nodes
+        int totalCount = GetCompositionCount(type);
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+        List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);
+
+        Debug.Log($"[ArmyManager] Spawning {totalCount} x {type} at {spawnPosition}");
+
+        // 3) Loop through each entry and spawn
+        int index = 0;
+        foreach (var entry in composition.unitEntries)
         {
-            UnitTypeSO unitStats = entry.unitTypePrefab.unitType;
-            GameObject prefab = entry.unitTypePrefab.unitPrefab;
-
-            if (unitStats == null || prefab == null)
-            {
-                Debug.LogWarning($"ArmyManager: Null stats or prefab in ArmyComposition entry for team {team}.");
-                continue;
-            }
-
             for (int i = 0; i < entry.count; i++)
             {
-                // 1) Choose a random spawn position on a walkable node
-                GridNode randomWalkableNode = _gridManager.GetRandomWalkableNode();
-                if (randomWalkableNode == null)
+                // pick a free node or fallback to spawnPosition
+                Vector3 pos = (index < spawnNodes.Count)
+                    ? spawnNodes[index].worldPosition
+                    : spawnPosition;
+
+                GameObject unitGO = Instantiate(entry.unitTypePrefab.unitPrefab, pos, Quaternion.identity);
+                UnitBase unit = unitGO.GetComponent<UnitBase>();
+                if (unit != null)
                 {
-                    Debug.LogWarning("ArmyManager: No walkable nodes available to spawn units.");
-                    return;
-                }
+                    _unitManager.RegisterUnit(unit);
+                    unit.Initialize(
+                        entry.unitTypePrefab.unitType,
+                        _gridManager,
+                        _unitManager,
+                        _pathfinder,
+                        team);
 
-                Vector3 spawnPosition = randomWalkableNode.worldPosition;
-
-                // 2) Instantiate the unit prefab at that position
-                GameObject unitGO = Instantiate(prefab, spawnPosition, Quaternion.identity);
-
-                // 3) Get the UnitBase component and register it
-                UnitBase unitComponent = unitGO.GetComponent<UnitBase>();
-                if (unitComponent != null)
-                {
-                    // Register the unit with UnitManager
-                    _unitManager.RegisterUnit(unitComponent);
-
-                    // 4) Initialize the unit with its type, gridManager, pathfinder, and team
-                    unitComponent.Initialize(unitStats, _gridManager, _unitManager,_pathfinder, team);
+                    outUnits.Add(unit);
                 }
                 else
                 {
-                    Debug.LogWarning($"ArmyManager: Spawned object {unitGO.name} does not have a UnitBase-derived component.");
+                    Debug.LogWarning($"ArmyManager: '{unitGO.name}' missing UnitBase component.");
                     Destroy(unitGO);
                 }
+
+                index++;
+                // yield between spawns
+                yield return new WaitForSeconds(delay);
             }
         }
+
+        Debug.Log($"[ArmyManager] Finished SpawnArmyAndCollect for {type}");
     }
 
     /// <summary>
-    /// Checks for key presses and calls SpawnArmy with the appropriate ArmyComposition and Team.
+    /// Coroutine that actually instantiates each unit, distributes them across free grid nodes,
+    /// and registers/initializes them with the pathfinder.
     /// </summary>
-    private void HandleSpawnInput()
+    private IEnumerator SpawnArmyCoroutine(
+        ArmyType type,
+        ArmyCompositionSO composition,
+        Team team,
+        Vector3 spawnPosition,
+        float delay)
     {
-        ArmyCompositionSO composition = null;
-        Team team = Team.Player;
+        // Determine how many units in total we need to spawn
+        int totalCount = GetCompositionCount(type);
 
-        if (Input.GetKeyDown(KeyCode.BackQuote))
+        // Find the grid node at the barrack’s spawn point
+        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+
+        // Get up to totalCount nearest free nodes (walkable & not reserved)
+        List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);
+
+        Debug.Log($"[ArmyManager] Distributing {totalCount} units around {centerNode.name}");
+
+        int index = 0;
+        // Loop through each entry in the composition
+        foreach (var entry in composition.unitEntries)
         {
-            // Spawn All Enemy army
-            composition = _enemyArmySO;
-            team = Team.Enemy;
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            // Spawn All Player army
-            composition = _playerArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            // Spawn Player Spearman army
-            composition = _spearManArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            // Spawn Player Mounted Knight army
-            composition = _mountedKnightArmyS0;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            // Spawn Player Worker army
-            composition = _workerArmyS0;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha5))
-        {
-            // Spawn Player Mounted High Mage army
-            composition = _mountedHighMageArmyS0;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha6))
-        {
-            // Spawn Player Archer army
-            composition = _archerArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha7))
-        {
-            // Spawn Player Crossbowman army
-            composition = _crossbowManArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha8))
-        {
-            // Spawn Player Commander army
-            composition = _commanderArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha9))
-        {
-            // Spawn Player Mage army
-            composition = _mageArmySO;
-            team = Team.Player;
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha0))
-        {
-            // Spawn Player High Mage army
-            composition = _highMageArmySO;
-            team = Team.Player;
+            for (int i = 0; i < entry.count; i++)
+            {
+                // Choose either the next free node or fallback to the center
+                Vector3 pos = (index < spawnNodes.Count)
+                    ? spawnNodes[index].worldPosition
+                    : spawnPosition;
+
+                // Instantiate the unit prefab at the chosen position
+                GameObject unitGO = Instantiate(
+                    entry.unitTypePrefab.unitPrefab,
+                    pos,
+                    Quaternion.identity);
+
+                // Register and initialize the new unit
+                UnitBase unitComp = unitGO.GetComponent<UnitBase>();
+                UnitSpawned?.Invoke(unitComp);              // Invoke unit spawned event
+                if (unitComp != null)
+                {
+                    _unitManager.RegisterUnit(unitComp);
+                    unitComp.Initialize(
+                        entry.unitTypePrefab.unitType,
+                        _gridManager,
+                        _unitManager,
+                        _pathfinder,
+                        team);
+                }
+                else
+                {
+                    Debug.LogWarning($"ArmyManager: '{unitGO.name}' missing UnitBase component.");
+                    Destroy(unitGO);
+                }
+
+                index++;
+                yield return new WaitForSeconds(delay);
+            }
         }
 
-        if (composition != null)
+        Debug.Log($"[ArmyManager] Finished spawning wave of {type}");
+    }
+
+    /// <summary>
+    /// Returns the total number of units defined in the given ArmyType composition.
+    /// </summary>
+    public int GetCompositionCount(ArmyType type)
+    {
+        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
+            return 0;
+
+        int total = 0;
+        foreach (var entry in composition.unitEntries)
+            total += entry.count;
+        return total;
+    }
+
+    /// <summary>
+    /// Spawns units of the given ArmyType one by one, waiting 'delay' seconds between spawns,
+    /// and positions each unit at the nearest free grid node around spawnPosition.
+    /// </summary>
+    /// <param name="type">Which ArmyType to spawn.</param>
+    /// <param name="team">Team affiliation.</param>
+    /// <param name="spawnPosition">Center world-space point for distribution.</param>
+    /// <param name="delay">Seconds to wait between each unit spawn.</param>
+    public void SpawnArmyByType(ArmyType type, Team team, Vector3 spawnPosition, float delay)
+    {
+        if (!_compositionLookup.TryGetValue(type, out var composition) || composition == null)
         {
-            SpawnArmy(composition, team);
+            Debug.LogError($"ArmyManager: No composition registered for {type}");
+            return;
         }
+        StartCoroutine(SpawnArmyCoroutine(type, composition, team, spawnPosition, delay));
+    }
+
+    //--------------------- Helper method
+    /// <summary>
+    /// Picks a random walkable & unreserved node and spawns EnemyArmy there.
+    /// </summary>
+    private void SpawnEnemyArmyAtRandomNode()
+    {
+        GridNode node = GetRandomFreeNode();
+        if (node == null)
+        {
+            Debug.LogWarning("ArmyManager: No free node found for EnemyArmy spawn.");
+            return;
+        }
+
+        // Spawn delay = 0.1f 예시
+        SpawnArmyByType(ArmyType.Spearman, _enemyTeam, node.worldPosition, 0.1f);
+
+        Debug.Log($"[ArmyManager] Hot-key spawn EnemyArmy at ({node.worldPosition.x}, {node.worldPosition.y})");
+    }
+
+    /// <summary>
+    /// Returns a random walkable & unreserved node within the grid.
+    /// Tries up to maxAttempts before giving up.
+    /// </summary>
+    private GridNode GetRandomFreeNode(int maxAttempts = 50)
+    {
+        if (_gridManager == null || !_gridManager.isInitialized)
+            return null;
+
+        int maxX = _gridManager.GridSettings.GridSizeX;   // ← 변경
+        int maxY = _gridManager.GridSettings.GridSizeY;   // ← 변경
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            int rx = Random.Range(0, maxX);
+            int ry = Random.Range(0, maxY);
+            GridNode node = _gridManager.GetNode(rx, ry);
+
+            if (node != null && node.walkable && !_gridManager.IsNodeReserved(node))
+                return node;
+        }
+        return null;
     }
 }
+

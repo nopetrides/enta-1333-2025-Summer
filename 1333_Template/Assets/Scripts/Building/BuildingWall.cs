@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a placed building; handles selection coloring on specified renderers.
 /// </summary>
-public class BuildingInstance : BuildingBase
+public class BuildingWall : BuildingBase
 {
     [Header("Renderers for Selection")]
     [Tooltip("Assign specific mesh renderers to tint on selection")]

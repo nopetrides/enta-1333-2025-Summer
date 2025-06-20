@@ -1,17 +1,15 @@
-﻿using UnityEngine;
+﻿// BuildingPlacementManager.cs
+using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 /// <summary>
-/// Manages building placement: preview, rotation, placement validation,
-/// and actual building instantiation on the grid.
-/// Handles ghost preview material switching and communicates with the grid system for occupancy.
+/// Manages building placement: preview, rotation, validation,
+/// final instantiation, and injection of ResourceManager into new buildings.
 /// </summary>
 public class BuildingPlacementManager : MonoBehaviour
 {
-    [Header("Grid Reference")]
-    [Tooltip("Drag your GridManager here")]
-    [SerializeField] private GridManager _gridManager;
-
     [Header("Ghost Preview Materials")]
     [Tooltip("Semi-transparent green material for valid placement")]
     [SerializeField] private Material _ghostValidMaterial;
@@ -20,25 +18,39 @@ public class BuildingPlacementManager : MonoBehaviour
 
     private Camera _mainCamera;
     private BuildingDataSO _currentBuildingData;
-    private BuildingBase _previewInstance;
+    private GameObject _previewInstance;
     private Quaternion _previewBaseRotation;
     private int _currentYRotation = 0;
 
+    // Injected dependencies
+    private ResourceManager _resourceManager;
+    private ArmyManager _armyManager;
+    private GridManager _gridManager;
+
     /// <summary>
-    /// Sets up main camera and grid manager references.
+    /// Injects ResourceManager and ArmyManager. Called by GameManager at startup.
     /// </summary>
+    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager)
+    {
+        _resourceManager = resourceManager;
+        _armyManager = armyManager;
+        _gridManager = gridManager;
+
+        if (_gridManager == null)
+            Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
+        if (_armyManager == null)
+            Debug.LogError("BuildingPlacementManager: ArmyManager is not assigned.");
+        if (_resourceManager == null)
+            Debug.LogError("BuildingPlacementManager: ResourceManager is not assigned.");
+    }
+
     private void Awake()
     {
         _mainCamera = Camera.main;
-        if (_gridManager == null)
-            Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
         if (_mainCamera == null)
             Debug.LogError("BuildingPlacementManager: MainCamera not found.");
     }
 
-    /// <summary>
-    /// Updates preview, rotation, placement, and cancellation logic.
-    /// </summary>
     private void Update()
     {
         if (_previewInstance == null)
@@ -51,204 +63,188 @@ public class BuildingPlacementManager : MonoBehaviour
             ApplyRotation(_previewInstance.transform, _previewBaseRotation, _currentYRotation);
         }
 
-        // Get world position under mouse cursor
-        if (!TryGetMouseWorldPosition(out Vector3 hitPoint))
-            return;
+        // Always update preview position
+        if (TryGetMouseWorldPosition(out Vector3 hitPoint))
+        {
+            bool canPlace = CanPlace(_currentBuildingData, hitPoint, _currentYRotation, out Vector3 snapPos);
+            _previewInstance.transform.position = snapPos;
+            ApplyGhostMaterial(_previewInstance, canPlace ? _ghostValidMaterial : _ghostInvalidMaterial);
 
-        // Determine if placement is valid and get snapped position
-        bool canPlace = CanPlace(_currentBuildingData, hitPoint, _currentYRotation, out Vector3 snapPos);
-        _previewInstance.transform.position = snapPos;
+            // Place on left-click if valid and not over blocking UI
+            if (canPlace && Mouse.current.leftButton.wasPressedThisFrame && !IsPointerOverUI())
+            {
+                PlaceRealBuilding(hitPoint);
+                return;
+            }
+        }
 
-        // Update ghost preview materials (supporting gates)
-        ApplyGhostMaterial(_previewInstance, canPlace ? _ghostValidMaterial : _ghostInvalidMaterial);
-
-        // Confirm placement on left click
-        if (canPlace && Mouse.current.leftButton.wasPressedThisFrame)
-            PlaceRealBuilding(hitPoint);
-
-        // Cancel placement on right click
-        if (Mouse.current.rightButton.wasPressedThisFrame)
+        // Cancel on right-click if not over blocking UI
+        if (Mouse.current.rightButton.wasPressedThisFrame && !IsPointerOverUI())
+        {
             CancelPlacement();
+        }
     }
 
-    /// <summary>
-    /// Starts the building placement process for a selected building.
-    /// </summary>
     public void StartPlacement(BuildingDataSO buildingData)
     {
         if (_previewInstance != null)
-            Destroy(_previewInstance.gameObject);
+            Destroy(_previewInstance);
 
         _currentBuildingData = buildingData;
         _currentYRotation = 0;
-
-        var previewGO = Instantiate(buildingData.BuildingPrefab);
-        _previewInstance = previewGO.GetComponent<BuildingBase>();
-        _previewInstance.buildingData = buildingData;
-
-        _previewBaseRotation = previewGO.transform.rotation;
-        ApplyRotation(previewGO.transform, _previewBaseRotation, _currentYRotation);
-
-        // Set initial ghost material
-        ApplyGhostMaterial(_previewInstance, _ghostInvalidMaterial);
+        CreatePreview();
     }
 
-    /// <summary>
-    /// Cancels the current building placement and destroys the preview instance.
-    /// </summary>
     private void CancelPlacement()
     {
-        Destroy(_previewInstance.gameObject);
+        if (_previewInstance != null)
+            Destroy(_previewInstance);
+
         _previewInstance = null;
+        _currentYRotation = 0;
     }
 
-    /// <summary>
-    /// Instantiates the real building, applies rotation from preview,
-    /// snaps to grid, initializes gate data, and marks grid area occupied.
-    /// </summary>
     private void PlaceRealBuilding(Vector3 worldPosition)
     {
-        // Instantiate prefab
         var realGO = Instantiate(_currentBuildingData.BuildingPrefab);
-
-        // Generic base setup
         var realBase = realGO.GetComponent<BuildingBase>();
         realBase.buildingData = _currentBuildingData;
         realBase.team = Team.Player;
         realBase.ApplyTeamMaterial();
 
-        // Apply same rotation as preview
         realGO.transform.rotation = _previewInstance.transform.rotation;
 
-        // Compute placement data
-        Vector2Int baseIndices = GetBaseIndices(worldPosition);
+        Vector2Int baseIdx = GetBaseIndices(worldPosition);
         Vector2Int footprint = GetRotatedSize(_currentBuildingData, _currentYRotation);
 
-        // If gate, initialize gate placement
         if (realBase is BuildingGate gate)
-            gate.InitializePlacement(baseIndices, footprint, _gridManager);
+            gate.InitializePlacement(baseIdx, footprint, _gridManager);
 
-        // Snap position and occupy grid area
-        Vector3 snapPos = CalculateSnapPosition(baseIndices, _currentBuildingData, _currentYRotation);
+        // Injection for Barrack:
+        if (realBase is BuildingBarrack barrack)
+            barrack.Initialize(_armyManager, _resourceManager, _gridManager);
+
+        // If it produces resources, inject manager
+        if (realBase is BuildingResource br && _resourceManager != null)
+            br.Initialize(_resourceManager);
+
+        Vector3 snapPos = CalculateSnapPosition(baseIdx, _currentBuildingData, _currentYRotation);
         realGO.transform.position = snapPos;
-        MarkAreaOccupied(baseIndices, footprint, false);
+        MarkAreaOccupied(baseIdx, footprint, false);
 
-        Destroy(_previewInstance.gameObject);
+        // give building info for later demolition
+        realBase.SetupPlacement(_gridManager, baseIdx, footprint);
+
+        Destroy(_previewInstance);
         _previewInstance = null;
+        CreatePreview();
     }
 
-    /// <summary>
-    /// Applies rotation based on base quaternion and current Y rotation.
-    /// </summary>
-    private void ApplyRotation(Transform target, Quaternion baseRotation, int yRotation)
+    private void CreatePreview()
     {
-        Vector3 baseEuler = baseRotation.eulerAngles;
-        target.rotation = Quaternion.Euler(baseEuler.x, baseEuler.y + yRotation, baseEuler.z);
+        _previewInstance = Instantiate(_currentBuildingData.BuildingModel);
+        _previewBaseRotation = _previewInstance.transform.rotation;
+        ApplyRotation(_previewInstance.transform, _previewBaseRotation, _currentYRotation);
+        ApplyGhostMaterial(_previewInstance, _ghostInvalidMaterial);
     }
 
-    /// <summary>
-    /// Applies a ghost material to all mesh renderers on the preview.
-    /// </summary>
-    private void ApplyGhostMaterial(BuildingBase instance, Material ghostMaterial)
+    private bool IsPointerOverUI()
     {
-        var meshRenderer = instance.GetComponentInChildren<Renderer>();
-        if (meshRenderer != null)
-            meshRenderer.material = ghostMaterial;
+        if (EventSystem.current == null)
+            return false;
 
-        if (instance is BuildingGate gate)
-            foreach (var smr in gate.GetComponentsInChildren<SkinnedMeshRenderer>())
-                smr.material = ghostMaterial;
-    }
-
-    /// <summary>
-    /// Gets the world position under the mouse projected onto the ground plane.
-    /// </summary>
-    private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
-    {
-        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane groundPlane = new(Vector3.up, Vector3.zero);
-        if (groundPlane.Raycast(ray, out float enter))
+        var pointerData = new PointerEventData(EventSystem.current)
         {
-            worldPosition = ray.GetPoint(enter);
-            return true;
-        }
-        worldPosition = Vector3.zero;
+            position = Mouse.current.position.ReadValue()
+        };
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        foreach (var res in results)
+            if (!res.gameObject.CompareTag("UIIgnore"))
+                return true;
+
         return false;
     }
 
-    /// <summary>
-    /// Validates placement, computing snapped position for grid alignment.
-    /// </summary>
-    private bool CanPlace(BuildingDataSO data, Vector3 worldPosition, int rotation, out Vector3 snapPosition)
+    private void ApplyRotation(Transform target, Quaternion baseRot, int yRot)
     {
-        Vector2Int baseIndices = GetBaseIndices(worldPosition);
-        snapPosition = CalculateSnapPosition(baseIndices, data, rotation);
-        Vector2Int footprint = GetRotatedSize(data, rotation);
-        return IsAreaWalkable(baseIndices, footprint);
+        Vector3 e = baseRot.eulerAngles;
+        target.rotation = Quaternion.Euler(e.x, e.y + yRot, e.z);
     }
 
-    /// <summary>
-    /// Converts world position to grid indices.
-    /// </summary>
-    private Vector2Int GetBaseIndices(Vector3 worldPosition)
+    private void ApplyGhostMaterial(GameObject instance, Material mat)
     {
-        GridNode node = _gridManager.getNodeFromWorldPosition(worldPosition);
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        int x = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
-        int y = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
-        return new Vector2Int(x, y);
+        foreach (var r in instance.GetComponentsInChildren<Renderer>())
+            r.material = mat;
     }
 
-    /// <summary>
-    /// Calculates the snapped world position based on grid indices and footprint.
-    /// </summary>
-    private Vector3 CalculateSnapPosition(Vector2Int indices, BuildingDataSO data, int rotation)
+    private bool TryGetMouseWorldPosition(out Vector3 pos)
     {
-        float nodeSize = _gridManager.GridSettings.NodeSize;
-        Vector2Int footprint = GetRotatedSize(data, rotation);
-        float width = footprint.x * nodeSize;
-        float depth = footprint.y * nodeSize;
-        float y = _gridManager.getNodeFromWorldPosition(
-            new Vector3(indices.x * nodeSize, 0, indices.y * nodeSize)
-        ).worldPosition.y;
+        Ray ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Plane groundPlane = new(Vector3.up, Vector3.zero);
+        if (groundPlane.Raycast(ray, out float d))
+        {
+            pos = ray.GetPoint(d);
+            return true;
+        }
+        pos = Vector3.zero;
+        return false;
+    }
 
-        return new Vector3(
-            indices.x * nodeSize + (width - nodeSize) * 0.5f,
-            y,
-            indices.y * nodeSize + (depth - nodeSize) * 0.5f
+    private bool CanPlace(BuildingDataSO data, Vector3 worldPos, int rot, out Vector3 snap)
+    {
+        Vector2Int idx = GetBaseIndices(worldPos);
+        snap = CalculateSnapPosition(idx, data, rot);
+        return IsAreaWalkable(idx, GetRotatedSize(data, rot));
+    }
+
+    private Vector2Int GetBaseIndices(Vector3 worldPos)
+    {
+        var node = _gridManager.getNodeFromWorldPosition(worldPos);
+        float sz = _gridManager.GridSettings.NodeSize;
+        return new Vector2Int(
+            Mathf.RoundToInt(node.worldPosition.x / sz),
+            Mathf.RoundToInt(node.worldPosition.z / sz)
         );
     }
 
-    /// <summary>
-    /// Computes the footprint size based on building rotation.
-    /// </summary>
-    private Vector2Int GetRotatedSize(BuildingDataSO data, int rotation) =>
-        (rotation % 180 == 0)
+    private Vector3 CalculateSnapPosition(Vector2Int idx, BuildingDataSO data, int rot)
+    {
+        float sz = _gridManager.GridSettings.NodeSize;
+        var fp = GetRotatedSize(data, rot);
+        float w = fp.x * sz, d = fp.y * sz;
+        float y = _gridManager.getNodeFromWorldPosition(
+            new Vector3(idx.x * sz, 0, idx.y * sz)
+        ).worldPosition.y;
+        return new Vector3(
+            idx.x * sz + (w - sz) * 0.5f,
+            y,
+            idx.y * sz + (d - sz) * 0.5f
+        );
+    }
+
+    private Vector2Int GetRotatedSize(BuildingDataSO data, int rot) =>
+        (rot % 180 == 0)
             ? new Vector2Int(data.SizeX, data.SizeZ)
             : new Vector2Int(data.SizeZ, data.SizeX);
 
-    /// <summary>
-    /// Checks if every node in the footprint is walkable.
-    /// </summary>
-    private bool IsAreaWalkable(Vector2Int baseIndices, Vector2Int footprint)
+    private bool IsAreaWalkable(Vector2Int idx, Vector2Int fp)
     {
-        for (int dx = 0; dx < footprint.x; dx++)
-            for (int dy = 0; dy < footprint.y; dy++)
+        for (int x = 0; x < fp.x; x++)
+            for (int y = 0; y < fp.y; y++)
             {
-                var node = _gridManager.GetNode(baseIndices.x + dx, baseIndices.y + dy);
-                if (node == null || !node.walkable)
+                var n = _gridManager.GetNode(idx.x + x, idx.y + y);
+                if (n == null || !n.walkable)
                     return false;
             }
         return true;
     }
 
-    /// <summary>
-    /// Marks or unmarks grid nodes as walkable/non-walkable.
-    /// </summary>
-    private void MarkAreaOccupied(Vector2Int baseIndices, Vector2Int footprint, bool walkable)
+    private void MarkAreaOccupied(Vector2Int idx, Vector2Int fp, bool walkable)
     {
-        for (int dx = 0; dx < footprint.x; dx++)
-            for (int dy = 0; dy < footprint.y; dy++)
-                _gridManager.SetWalkable(baseIndices.x + dx, baseIndices.y + dy, walkable);
+        for (int x = 0; x < fp.x; x++)
+            for (int y = 0; y < fp.y; y++)
+                _gridManager.SetWalkable(idx.x + x, idx.y + y, walkable);
     }
 }

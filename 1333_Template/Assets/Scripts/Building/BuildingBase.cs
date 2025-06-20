@@ -10,7 +10,12 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
     public Material[] teamMaterials;     // Materials corresponding to each team
     public BuildingDataSO buildingData;  // Data object containing building properties
 
-    private Renderer _renderer;          // Cached Renderer component
+    protected Renderer _renderer;          // Cached Renderer component
+
+    protected Vector2Int _baseIdx;     // bottom-left tile index
+    protected Vector2Int _footprint;   // size after rotation
+    protected GridManager _gridManager;
+
 
     /// <summary>
     /// Current health of the building.
@@ -38,6 +43,13 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
     {
         MaxHealth = buildingData.Health;
         CurrentHealth = MaxHealth;
+    }
+
+    public void SetupPlacement(GridManager gm, Vector2Int baseIdx, Vector2Int footprint)
+    {
+        _gridManager = gm;
+        _baseIdx = baseIdx;
+        _footprint = footprint;
     }
 
     /// <summary>

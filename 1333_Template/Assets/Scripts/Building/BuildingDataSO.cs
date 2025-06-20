@@ -11,7 +11,8 @@ public class BuildingDataSO : ScriptableObject
     [SerializeField] private string _description;                // Description shown in tooltip or detail panel
     
     [Header("Game Stats")]
-    [SerializeField] private GameObject _buildingPrefab;        // Building model prefab
+    [SerializeField] private GameObject _buildingPrefab;        // Building prefab
+    [SerializeField] private GameObject _buildingModel;         // Building Model    
     [SerializeField] private int _health;                       // Building health
 
     [Header("Grid Size")]
@@ -38,6 +39,11 @@ public class BuildingDataSO : ScriptableObject
     /// Gets game object prefab.
     /// </summary>
     public GameObject BuildingPrefab => _buildingPrefab;
+
+    /// <summary>
+    /// Gets building model.
+    /// </summary>
+    public GameObject BuildingModel => _buildingModel;
 
     // <summary>
     /// Gets building health.
