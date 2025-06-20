@@ -16,7 +16,6 @@ public class BuildingGate : BuildingBase
 
     private Vector2Int _placementBase;
     private Vector2Int _placementFootprint;
-    private GridManager _gridManager;
     private Vector2Int[] _centerOffsets;
 
     private static readonly int OpenTrigger = Animator.StringToHash("Open");
@@ -29,7 +28,7 @@ public class BuildingGate : BuildingBase
     }
 
     /// <summary>
-    /// Cache base Awake logic and ensure renderer/animator references.
+    /// Cache base Awake logic and ensure renderer/animator reference.
     /// </summary>
     protected override void Awake()
     {
