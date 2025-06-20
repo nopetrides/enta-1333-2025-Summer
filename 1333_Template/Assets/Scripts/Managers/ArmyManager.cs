@@ -271,7 +271,7 @@ public class ArmyManager : MonoBehaviour
         }
 
         // Spawn delay = 0.1f 예시
-        SpawnArmyByType(ArmyType.EnemyArmy, _enemyTeam, node.worldPosition, 0.1f);
+        SpawnArmyByType(ArmyType.Spearman, _enemyTeam, node.worldPosition, 0.1f);
 
         Debug.Log($"[ArmyManager] Hot-key spawn EnemyArmy at ({node.worldPosition.x}, {node.worldPosition.y})");
     }

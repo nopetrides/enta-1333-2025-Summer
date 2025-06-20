@@ -134,6 +134,11 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 
         InternalChangeState(UnitState.Dead);
 
+        OnDeselected();
+
+        // free the tile this unit was occupying
+        _movement?.ReleaseOccupiedNode();
+
         if (_unitManager != null)
             _unitManager.UnregisterUnit(this);
 

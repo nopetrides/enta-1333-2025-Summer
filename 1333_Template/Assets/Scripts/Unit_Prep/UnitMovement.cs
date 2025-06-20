@@ -24,6 +24,7 @@ public class UnitMovement : MonoBehaviour
 
     private bool _isPaused = false;
     private GridNode _currentNode;   // node currently occupied
+    public GridManager Grid => _grid;   // expose for external query
 
     // Gizmo flag
     public static bool ShowPathGizmos = false;
@@ -166,12 +167,24 @@ public class UnitMovement : MonoBehaviour
             int tx = Mathf.RoundToInt(wp.x / _grid.GridSettings.NodeSize);
             int ty = Mathf.RoundToInt(wp.z / _grid.GridSettings.NodeSize);
             _grid.SetWalkable(tx, ty, false);
-
+            _currentNode = _grid.GetNode(tx, ty); // remember it for later release
             _reservedDest = null;
         }
 
         _path = null;
         _unit.InternalChangeState(UnitState.Idle);
+    }
+
+    public void ReleaseOccupiedNode()
+    {
+        if (_grid == null || _currentNode == null) return;
+
+        int x = Mathf.RoundToInt(_currentNode.worldPosition.x / _grid.GridSettings.NodeSize);
+        int y = Mathf.RoundToInt(_currentNode.worldPosition.z / _grid.GridSettings.NodeSize);
+        _grid.SetWalkable(x, y, true);      // open path-finding again
+        _grid.UnreserveNode(_currentNode);  // just in case
+
+        _currentNode = null;
     }
 
     private void OnDisable()

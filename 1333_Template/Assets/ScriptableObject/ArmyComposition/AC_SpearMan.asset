@@ -17,4 +17,4 @@ MonoBehaviour:
   - unitTypePrefab:
       unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
       unitPrefab: {fileID: 5929047711669387220, guid: 44478e378409b5a469654ca0453aa1b3, type: 3}
-    count: 4
+    count: 1

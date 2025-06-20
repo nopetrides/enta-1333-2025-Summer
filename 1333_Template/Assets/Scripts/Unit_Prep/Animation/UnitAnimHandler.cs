@@ -13,6 +13,7 @@ public class UnitAnimHandler : MonoBehaviour
     // Animator parameter hashes
     private static readonly int IsMovingHash = Animator.StringToHash("IsMoving");
     private static readonly int DeadTriggerHash = Animator.StringToHash("DeadTrigger");
+    private static readonly int AttackTriggerHash = Animator.StringToHash("AttackTrigger");
 
     private void Awake()
     {
@@ -47,7 +48,9 @@ public class UnitAnimHandler : MonoBehaviour
                 break;
 
             case UnitState.Attacking:
-                // Future: trigger attack animation (e.g., _animator.SetTrigger("AttackTrigger"))
+                // Stop locomotion blend tree, then fire one-shot attack trigger
+                _animator.SetBool(IsMovingHash, false);
+                _animator.SetTrigger(AttackTriggerHash);
                 break;
 
             case UnitState.Patrolling:
