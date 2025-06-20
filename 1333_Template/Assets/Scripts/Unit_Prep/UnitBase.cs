@@ -26,6 +26,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 
     protected UnitManager _unitManager;
 
+    public static event System.Action<UnitBase> UnitDestroyed;
+    private Collider _selectCollider;
+
     // Selection
     public bool IsSelected { get; private set; }
 
@@ -44,6 +47,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         // Ensure movement component is present
         if (_movement == null && !TryGetComponent(out _movement))
             _movement = gameObject.AddComponent<UnitMovement>();
+
+        _selectCollider = GetComponent<Collider>();
     }
 
     protected virtual void Update()
@@ -116,6 +121,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 
     public virtual void OnDeselected()
     {
+        if (this == null) return;   // object already destroyed
         IsSelected = false;
         if (TryGetComponent<UnitVisualController>(out var vc))
             vc.HideSelectionIndicator();
@@ -135,7 +141,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
         InternalChangeState(UnitState.Dead);
 
         OnDeselected();
-
+        DisableSelectable();
+        UnitDestroyed?.Invoke(this);
         // free the tile this unit was occupying
         _movement?.ReleaseOccupiedNode();
 
@@ -149,5 +156,16 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     {
         yield return new WaitForSeconds(delay);
         Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        UnitDestroyed?.Invoke(this);
+    }
+
+    private void DisableSelectable()
+    {
+        if (_selectCollider != null)
+            _selectCollider.enabled = false; 
     }
 }

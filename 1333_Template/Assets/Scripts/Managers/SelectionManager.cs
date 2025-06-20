@@ -145,8 +145,15 @@ public class SelectionManager : MonoBehaviour
     {
         _uiManager.HideAll();
 
-        foreach (var sel in _selected)
-            sel.OnDeselected();
+        for (int i = _selected.Count - 1; i >= 0; i--)
+        {
+            if (_selected[i] == null)        // already destroyed
+            {
+                _selected.RemoveAt(i);
+                continue;
+            }
+            _selected[i].OnDeselected();
+        }
 
         _selected.Clear();
     }
@@ -189,5 +196,19 @@ public class SelectionManager : MonoBehaviour
             u.SetReservedDestination(destNode);
             u.MoveTo(destNode);
         }
+    }
+
+    private void OnEnable()
+    {
+        UnitBase.UnitDestroyed += HandleSelectableDestroyed;
+    }
+    private void OnDisable()
+    {
+        UnitBase.UnitDestroyed -= HandleSelectableDestroyed;
+    }
+
+    private void HandleSelectableDestroyed(ISelectable dead)
+    {
+        _selected.Remove(dead);
     }
 }
