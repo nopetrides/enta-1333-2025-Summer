@@ -87,6 +87,8 @@ public class UnitMovement : MonoBehaviour
     {
         if (_grid == null || _pathfinder == null || targetNode == null) return;
 
+        _currentNode = null;
+
         // --- 0) Reject if someone else has already reserved this node -------------
         if (_grid.IsNodeReserved(targetNode) && _reservedDest != targetNode)
             return;
@@ -185,6 +187,13 @@ public class UnitMovement : MonoBehaviour
         _grid.UnreserveNode(_currentNode);  // just in case
 
         _currentNode = null;
+
+        // if unit died mid-move, destination might still be reserved
+           if (_reservedDest != null)
+           {
+                _grid.UnreserveNode(_reservedDest);
+                _reservedDest = null;
+           }
     }
 
     private void OnDisable()

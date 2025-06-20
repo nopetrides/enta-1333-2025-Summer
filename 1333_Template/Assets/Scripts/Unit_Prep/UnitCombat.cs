@@ -84,6 +84,17 @@ public class UnitCombat : MonoBehaviour
 
         while (tries < _repositionTriesMax && !reached)
         {
+            if (!IsRepositionContextValid())
+                break;
+
+            if (_currentTarget == null || _currentTarget.CurrentState == UnitState.Dead)
+            {
+                Log("Target vanished during reposition");
+                   break;                          // Stop loop and go LoseTarget()
+            }
+            if (_movement == null || _movement.Grid == null)
+                yield break;
+            
             tries++;
 
             // 1) Collect nearby free nodes *within attack range*
@@ -94,8 +105,8 @@ public class UnitCombat : MonoBehaviour
             if (candidates.Count > 0) candidates.Remove(start);
 
             // filter by distance to current target
-            candidates.RemoveAll(n =>
-                Vector3.Distance(n.worldPosition, _currentTarget.transform.position) > _attackRange);
+            Vector3 tgtPos = _currentTarget.transform.position;
+            candidates.RemoveAll(n => Vector3.Distance(n.worldPosition, tgtPos) > _attackRange);
 
             if (candidates.Count == 0)
             {
@@ -108,29 +119,37 @@ public class UnitCombat : MonoBehaviour
             _movement.PlanAndReserveDestination(pick);
             _movement.MoveTo(pick);
 
-            // Stay
+            // Wait until movement finished
             while (_core.CurrentState == UnitState.Moving)
+            {
+                if (!IsRepositionContextValid())
+                    break;
                 yield return null;
+            }
+
+            if (!IsRepositionContextValid())
+                break;
 
             yield return new WaitForSeconds(_repositionDelay);
 
-            float dist = Vector3.Distance(transform.position, _currentTarget.transform.position);
-            reached = dist <= _attackRange;
+            if (_currentTarget != null)
+            {
+                float dist = Vector3.Distance(transform.position, _currentTarget.transform.position);
+                reached = dist <= _attackRange;
+            }
+            else
+            {
+                break;       
+            }
         }
 
         _isRepositioning = false;
 
-        if (reached)
+        if (!IsRepositionContextValid())
         {
-            Log("Reposition success → Attack state");
-            _movement.Pause();
-            _core.InternalChangeState(UnitState.Attacking);
-        }
-        else
-        {
-            Log("Reposition failed → Resume movement / reacquire");
-            _movement.Resume();
-            LoseTarget();                     
+            Log("Context invalid → LoseTarget");
+            LoseTarget();           // target lost or self disabled
+            yield break;
         }
     }
 
@@ -140,12 +159,10 @@ public class UnitCombat : MonoBehaviour
         if (_unitManager == null) return;  // safety guard
 
         // 1) Validate current target
-        if (_currentTarget != null)
+        if (_currentTarget != null && (_currentTarget.CurrentState == UnitState.Dead ||
+                               Vector3.Distance(transform.position, _currentTarget.transform.position) > _attackRange))
         {
-            float dist = Vector3.Distance(transform.position,
-                                          _currentTarget.transform.position);
-            if (_currentTarget.CurrentState == UnitState.Dead || dist > _attackRange)
-                LoseTarget();
+            LoseTarget();
         }
 
         // 2) Search a new target
@@ -201,5 +218,18 @@ public class UnitCombat : MonoBehaviour
         _currentTarget = null;
         _movement?.Resume();
         _core.InternalChangeState(UnitState.Idle);
+    }
+
+    private bool IsRepositionContextValid()
+    {
+        // target still exists and alive?
+        if (_currentTarget == null || _currentTarget.CurrentState == UnitState.Dead)
+            return false;
+
+        // movement / grid still available?
+        if (_movement == null || _movement.Grid == null)
+            return false;
+
+        return true;
     }
 }
