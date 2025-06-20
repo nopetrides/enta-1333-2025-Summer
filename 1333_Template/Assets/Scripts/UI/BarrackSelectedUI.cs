@@ -77,4 +77,9 @@ public class BarrackSelectedUI : MonoBehaviour
             _spawnButtons.Add(btn);
         }
     }
+
+    public void DestroyBuilding()
+    {
+        _barrack.DestroySelf();
+    }
 }

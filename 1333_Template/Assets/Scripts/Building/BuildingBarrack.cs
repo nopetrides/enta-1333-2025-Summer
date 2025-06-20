@@ -17,14 +17,13 @@ public class BuildingBarrack : BuildingBase
 
     [Header("Selectable Army Types")]
     [Tooltip("ArmyTypes that this barrack can produce.")]
-    [SerializeField] private List<ArmyType> _spawnableTypes = new();   // ➜ UI 에게 노출
+    [SerializeField] private List<ArmyType> _spawnableTypes = new();   
 
     [Header("Renderers for Selection")]
     [SerializeField] private Renderer[] _selectionRenderers;
 
     private ArmyManager _armyManager;
     private ResourceManager _resourceManager;
-    private GridManager _gridManager;
     private readonly List<UnitBase> _spawnedUnits = new();
 
     /// <summary>Read-only access for UI script.</summary>
@@ -45,7 +44,7 @@ public class BuildingBarrack : BuildingBase
         StartCoroutine(SpawnAndFormWave(type));
     }
 
-    /// <summary>Optional default method (kept for hotkey/N키 호출 등).</summary>
+    /// <summary>Optional default method (Hot key spawning).</summary>
     public void SpawnUnit() => SpawnUnit(_spawnableTypes.Count > 0 ? _spawnableTypes[0] : ArmyType.Spearman);
 
     // -------------------- Internal --------------------
@@ -89,6 +88,19 @@ public class BuildingBarrack : BuildingBase
             unit.MoveTo(target);
         }
     }
+    public void DestroySelf()
+    {
+        if (_gridManager != null)
+        {
+            for (int dx = 0; dx < _footprint.x; dx++)
+                for (int dy = 0; dy < _footprint.y; dy++)
+                    _gridManager.SetWalkable(_baseIdx.x + dx, _baseIdx.y + dy, true);
+        }
+
+        Banner.BannerMoved -= OnBannerMoved;
+        Destroy(gameObject);
+    }
+
 
     private void OnBannerMoved(Vector3 _) => IssueFormationOrders();
 

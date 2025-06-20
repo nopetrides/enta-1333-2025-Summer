@@ -132,6 +132,9 @@ public class BuildingPlacementManager : MonoBehaviour
         realGO.transform.position = snapPos;
         MarkAreaOccupied(baseIdx, footprint, false);
 
+        // give building info for later demolition
+        realBase.SetupPlacement(_gridManager, baseIdx, footprint);
+
         Destroy(_previewInstance);
         _previewInstance = null;
         CreatePreview();

@@ -12,6 +12,11 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
 
     protected Renderer _renderer;          // Cached Renderer component
 
+    protected Vector2Int _baseIdx;     // bottom-left tile index
+    protected Vector2Int _footprint;   // size after rotation
+    protected GridManager _gridManager;
+
+
     /// <summary>
     /// Current health of the building.
     /// </summary>
@@ -38,6 +43,13 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable
     {
         MaxHealth = buildingData.Health;
         CurrentHealth = MaxHealth;
+    }
+
+    public void SetupPlacement(GridManager gm, Vector2Int baseIdx, Vector2Int footprint)
+    {
+        _gridManager = gm;
+        _baseIdx = baseIdx;
+        _footprint = footprint;
     }
 
     /// <summary>
