@@ -32,6 +32,7 @@ public class UnitCombat : MonoBehaviour
     private float _cooldown;
     private float _cooldownTimer;
     private UnitBase _currentTarget;
+    private float _visionRange;
     private bool _isInitialized = false;
 
     // ---------- Debug helper ----------
@@ -46,6 +47,7 @@ public class UnitCombat : MonoBehaviour
     {
         _unitManager = um;
         _attackRange = type.AttackRange;
+        _visionRange = type.VisionRange;
         _attackDamage = type.Damage;
         _cooldown = type.AttackCooldown;
 
@@ -107,16 +109,18 @@ public class UnitCombat : MonoBehaviour
             Vector3 tgtPos = _currentTarget.transform.position;
             float distNow = Vector3.Distance(transform.position, tgtPos);
 
-            // 2) Keep only nodes that (a) are within attack range AND (b) are closer to the target
+            // 2) Keep only nodes that are closer to the target by at least 
             nodes.RemoveAll(n =>
             {
                 float d = Vector3.Distance(n.worldPosition, tgtPos);
-                return d > _attackRange || (distNow - d) < _minDistanceGain;
+                return (distNow - d) < _minDistanceGain;
             });
 
             if (nodes.Count == 0)
             {
-                Log("No suitable node → stop reposition");
+                Log("No node but still far → direct chase");
+                GridNode tgtNode = gm.getNodeFromWorldPosition(tgtPos);
+                _movement.MoveTo(tgtNode);
                 break;  // Nothing would improve the situation
             }
 
@@ -158,17 +162,21 @@ public class UnitCombat : MonoBehaviour
         if (_unitManager == null) return;
 
         // Validate current target
-        if (_currentTarget != null &&
-            (_currentTarget.CurrentState == UnitState.Dead ||
-             Vector3.Distance(transform.position, _currentTarget.transform.position) > _attackRange))
+        if (_currentTarget != null)
         {
-            LoseTarget();
+            float dist = Vector3.Distance(transform.position, _currentTarget.transform.position);
+            
+                 // Lose only when target is dead OR completely outside vision range
+            if (_currentTarget.CurrentState == UnitState.Dead || dist > _visionRange)
+            {
+                LoseTarget();
+            }
         }
 
         // Search new target
         if (_currentTarget == null)
         {
-            _currentTarget = _unitManager.FindNearestEnemy(_core, _attackRange);
+            _currentTarget = _unitManager.FindNearestEnemy(_core, _visionRange);
             if (_currentTarget != null)
             {
                 Log($"Target acquired → {_currentTarget.name}");

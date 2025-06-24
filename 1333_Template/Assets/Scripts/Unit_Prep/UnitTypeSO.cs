@@ -34,6 +34,8 @@ public class UnitTypeSO : ScriptableObject
     [SerializeField] private AttackType _attackType = AttackType.Melee;
     [Tooltip("Maximum range (in grid cells) at which this unit can attack.")]
     [SerializeField] private int _attackRange = 1;
+    [Tooltip("Maximum range (in grid cells) at which this unit can see.")]
+    [SerializeField] private int _visionRange = 1;
     [Tooltip("Seconds between consecutive attacks.")]
     [SerializeField] private float _attackCooldown = 0.8f;
 
@@ -89,6 +91,10 @@ public class UnitTypeSO : ScriptableObject
     /// Attack type, such as Melee or Ranged.
     /// </summary>
     public AttackType AttackType => _attackType;
+    /// <summary>
+    /// Maximum vision range in grid cells.
+    /// </summary>
+    public int VisionRange => _visionRange;
 
     /// <summary>
     /// Maximum attack range in grid cells.
