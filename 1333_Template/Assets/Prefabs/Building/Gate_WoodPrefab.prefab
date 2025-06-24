@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gate_WoodPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 7ae56a8428b94f24b854dac395c7c925, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 100008, guid: 7ae56a8428b94f24b854dac395c7c925, type: 3}
       propertyPath: m_IsActive
       value: 1

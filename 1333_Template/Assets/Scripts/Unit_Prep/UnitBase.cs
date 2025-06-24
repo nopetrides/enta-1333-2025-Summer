@@ -104,11 +104,17 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
             _movement.PlanAndReserveDestination(node);
     }
 
-    public virtual void TakeDamage(float damageAmount)
+    public virtual void TakeDamage(int rawDamage)
     {
         if (_state == UnitState.Dead) return;
 
-        _currentHp -= damageAmount;
+        int defense = (_unitType != null) ? _unitType.Defense : 0;
+
+        // You can swap to percentage reduction if needed.
+        int final = Mathf.Max(1, rawDamage - defense);   // never below 1
+
+        _currentHp -= final;
+
         if (_currentHp <= 0f) Die();
     }
 

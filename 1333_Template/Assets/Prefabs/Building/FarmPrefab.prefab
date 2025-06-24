@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FarmPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 520e20395d1150a4c94174228bde0499, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 520e20395d1150a4c94174228bde0499, type: 3}
       propertyPath: m_RootOrder
       value: 14

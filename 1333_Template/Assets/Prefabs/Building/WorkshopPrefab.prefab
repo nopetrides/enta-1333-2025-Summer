@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: WorkshopPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 5573396f6b8833f4dbd78bbb53d56df5, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 5573396f6b8833f4dbd78bbb53d56df5, type: 3}
       propertyPath: m_RootOrder
       value: 23

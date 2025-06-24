@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall_StonePrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 6dc5d495c37d65043b022964d98631b9, type: 3}
       propertyPath: m_RootOrder
       value: 7

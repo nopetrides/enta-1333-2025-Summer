@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: StablesPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 0c6eb60ad59a81145839dbc6dedcbc3f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 0c6eb60ad59a81145839dbc6dedcbc3f, type: 3}
       propertyPath: m_RootOrder
       value: 16

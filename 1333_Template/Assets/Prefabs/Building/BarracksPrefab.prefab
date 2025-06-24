@@ -74,6 +74,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BarracksPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: e2f28d7d7478cb64597ebb9077abfe6e, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: e2f28d7d7478cb64597ebb9077abfe6e, type: 3}
       propertyPath: m_RootOrder
       value: 19

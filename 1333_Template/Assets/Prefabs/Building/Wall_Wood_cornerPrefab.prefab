@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall_Wood_cornerPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: cba5dcbe606db5c489d9a7269c56598a, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: cba5dcbe606db5c489d9a7269c56598a, type: 3}
       propertyPath: m_RootOrder
       value: 22

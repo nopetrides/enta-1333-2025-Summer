@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CastlePrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
       propertyPath: m_RootOrder
       value: 2
@@ -91,6 +95,9 @@ MonoBehaviour:
   buildingData: {fileID: 11400000, guid: 7df17a770459dbc4abc2f4a7c17880ba, type: 2}
   _selectionRenderers:
   - {fileID: 5749487885420387147}
+  _resourceType: {fileID: 0}
+  _productionAmount: 1
+  _productionInterval: 1
 --- !u!65 &-3959731937928551903
 BoxCollider:
   m_ObjectHideFlags: 0

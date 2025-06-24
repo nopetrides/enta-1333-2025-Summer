@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall_WoodPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: f46056aa6c238664bb6e0af30f681126, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: f46056aa6c238664bb6e0af30f681126, type: 3}
       propertyPath: m_RootOrder
       value: 17
