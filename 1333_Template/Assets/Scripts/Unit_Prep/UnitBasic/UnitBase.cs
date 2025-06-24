@@ -19,6 +19,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     [Tooltip("Component responsible for pathfinding and translation.")]
     [SerializeField] private UnitMovement _movement = null;
 
+    [Tooltip("Component responsible for combat.")]
+    [SerializeField] private UnitCombat _combat = null;
+
     // ---------- Runtime data ----------
     protected float _currentHp;
     protected UnitState _state = UnitState.Idle;
@@ -81,9 +84,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
 
         _movement.OccupyCurrentNode();
 
-        UnitCombat combat = GetComponent<UnitCombat>();
-        if (combat != null)
-            combat.Init(unitManager, unitType);
+        if (_combat != null)
+            _combat.Init(unitManager, unitType);
 
         // Apply team material
         Material teamMat = unitType.GetArmyMaterial(team);

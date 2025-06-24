@@ -159,6 +159,7 @@ MonoBehaviour:
   _unitType: {fileID: 11400000, guid: 2827deca50a8fc346a38d6148bd26ed4, type: 2}
   _animHandler: {fileID: 5132873535423462735}
   _movement: {fileID: 2962621376713237808}
+  _combat: {fileID: 2100524551763882525}
 --- !u!114 &8149209073686300128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -184,7 +185,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5611116250641804688}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fef32c9adcf5f7e48b49d5033b370c6e, type: 3}
+  m_Script: {fileID: 11500000, guid: f534438c5b664bb44901547630b1d37e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &2100524551763882525
@@ -196,10 +197,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5611116250641804688}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70cab208ce084be40a21926adcb1e6fc, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ab8a65a6a37a5047a94459164c101e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _scanInterval: 0.2
+  _repositionCandidates: 8
+  _repositionDelay: 0.05
+  _repositionTriesMax: 3
+  _enableDebug: 1
 --- !u!1001 &425883287896777512
 PrefabInstance:
   m_ObjectHideFlags: 0

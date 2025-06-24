@@ -36,6 +36,8 @@ public class UnitTypeSO : ScriptableObject
     [SerializeField] private int _attackRange = 1;
     [Tooltip("Seconds between consecutive attacks.")]
     [SerializeField] private float _attackCooldown = 0.8f;
+    [Tooltip("Maximum range (in grid cells) at which this unit can detect enemy")]
+    [SerializeField] private int _seeRange = 2;
 
     [Header("Faction Materials")]
     [Tooltip("Array of Materials, indexed by Team enum. e.g. [0] = Player, [1] = Enemy.")]
@@ -99,6 +101,11 @@ public class UnitTypeSO : ScriptableObject
     /// Seconds between consecutive attacks.
     /// </summary>
     public float AttackCooldown => _attackCooldown;
+
+    /// <summary>
+    /// Maximum detect range in grid cells.
+    /// </summary>
+    public int SeeRange => _seeRange;
 
     /// <summary>
     /// Whether this unit rides a mount (horse).
