@@ -21,8 +21,8 @@ MonoBehaviour:
   _damage: 5
   _defense: 2
   _attackType: 1
-  _attackRange: 8
-  _visionRange: 10
+  _attackRange: 9
+  _visionRange: 11
   _attackCooldown: 0.8
   _armyMaterials:
   - {fileID: 2100000, guid: 39e4c6d4cccc71a409be745df949a036, type: 2}
