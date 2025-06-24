@@ -52,7 +52,6 @@ MonoBehaviour:
   _unitType: {fileID: 11400000, guid: 1e37e25f0766d81488d5747f15337336, type: 2}
   _animHandler: {fileID: 8820816248296320353}
   _movement: {fileID: 7684351871108752714}
-  _combat: {fileID: 6468664601241276107}
 --- !u!114 &351732430680238777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,10 +93,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _scanInterval: 0.2
-  _repositionCandidates: 8
-  _repositionDelay: 0.05
-  _repositionTriesMax: 3
-  _enableDebug: 1
 --- !u!1 &8229715536276073624
 GameObject:
   m_ObjectHideFlags: 0
