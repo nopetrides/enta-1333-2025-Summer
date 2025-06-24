@@ -3,38 +3,45 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Handles enemy search, range checks, and attack execution.
+/// Handles target acquisition, smart repositioning, and attack execution.
+/// Guarantees the chosen node is always closer to the target, preventing
+/// units from drifting away and losing their enemy.
 /// </summary>
 [RequireComponent(typeof(UnitBase))]
 public class UnitCombat : MonoBehaviour
 {
-    [SerializeField] private float _scanInterval = 0.2f;
-    [SerializeField] private int _repositionCandidates = 8;   // how many nearby nodes to sample
-    [SerializeField] private float _repositionDelay = 0.05f;
-    [SerializeField] private int _repositionTriesMax = 3;   // NEW: max retries
+    [SerializeField] private float _scanInterval = 0.2f;          // How often to look for targets
+    [SerializeField] private int _repositionCandidates = 8;       // Nodes sampled around the unit
+    [SerializeField] private float _repositionDelay = 0.05f;      // Wait after movement before attack
+    [SerializeField] private int _repositionTriesMax = 3;         // Safety retry cap
 
+    [Header("Smart-reposition tuning")]
+    [Tooltip("Picked node must be at least this much closer to the target than the current position.")]
+    [SerializeField] private float _minDistanceGain = 0.25f;      // Guarantees real progress
 
-    [SerializeField] private bool _enableDebug = true; //Debug
+    [SerializeField] private bool _enableDebug = true;            // Editor only
 
     private bool _isRepositioning = false;
 
+    // --- Cached refs & runtime data ---
     private UnitBase _core;
     private UnitMovement _movement;
     private UnitManager _unitManager;
     private float _attackRange;
-    private int _attackDamage;  
+    private int _attackDamage;
     private float _cooldown;
     private float _cooldownTimer;
     private UnitBase _currentTarget;
-    private bool _isInitialized = false;   // flag to start scanning only after Init()
+    private bool _isInitialized = false;
 
+    // ---------- Debug helper ----------
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private void Log(string msg)
     {
         if (_enableDebug) Debug.Log($"[UnitCombat] {name}: {msg}");
     }
 
-
+    // ---------- Init ----------
     public void Init(UnitManager um, UnitTypeSO type)
     {
         _unitManager = um;
@@ -43,7 +50,7 @@ public class UnitCombat : MonoBehaviour
         _cooldown = type.AttackCooldown;
 
         _isInitialized = true;
-        StartCoroutine(ScanLoop());        // start scanning after fields are set
+        StartCoroutine(ScanLoop());
     }
 
     private void Awake()
@@ -55,13 +62,13 @@ public class UnitCombat : MonoBehaviour
     private void Update()
     {
         if (_cooldownTimer > 0f)
-            _cooldownTimer -= Time.deltaTime;  
+            _cooldownTimer -= Time.deltaTime;
     }
 
+    // ---------- Scan loop ----------
     private IEnumerator ScanLoop()
     {
-        while (!_isInitialized)
-            yield return null;
+        while (!_isInitialized) yield return null;
 
         while (true)
         {
@@ -71,8 +78,10 @@ public class UnitCombat : MonoBehaviour
         }
     }
 
+    // ---------- Smart reposition ----------
     /// <summary>
-    /// Picks a random nearby free node, moves there, then enables attacking.
+    /// Moves to a free node that is demonstrably closer to the target.
+    /// Aborts immediately when inside attack range.
     /// </summary>
     private IEnumerator RepositionThenAttack()
     {
@@ -80,92 +89,83 @@ public class UnitCombat : MonoBehaviour
         Log("Reposition start");
 
         int tries = 0;
-        bool reached = false;
 
-        while (tries < _repositionTriesMax && !reached)
+        while (tries < _repositionTriesMax)
         {
             if (!IsRepositionContextValid())
                 break;
 
-            if (_currentTarget == null || _currentTarget.CurrentState == UnitState.Dead)
-            {
-                Log("Target vanished during reposition");
-                   break;                          // Stop loop and go LoseTarget()
-            }
-            if (_movement == null || _movement.Grid == null)
-                yield break;
-            
             tries++;
 
-            // 1) Collect nearby free nodes *within attack range*
             GridManager gm = _movement.Grid;
-            GridNode start = gm.getNodeFromWorldPosition(transform.position);
+            GridNode from = gm.getNodeFromWorldPosition(transform.position);
 
-            List<GridNode> candidates = gm.FindNearestFreeNodes(start, _repositionCandidates);
-            if (candidates.Count > 0) candidates.Remove(start);
+            // 1) Sample neighbour nodes
+            List<GridNode> nodes = gm.FindNearestFreeNodes(from, _repositionCandidates);
+            if (nodes.Count > 0) nodes.Remove(from);
 
-            // filter by distance to current target
             Vector3 tgtPos = _currentTarget.transform.position;
-            candidates.RemoveAll(n => Vector3.Distance(n.worldPosition, tgtPos) > _attackRange);
+            float distNow = Vector3.Distance(transform.position, tgtPos);
 
-            if (candidates.Count == 0)
+            // 2) Keep only nodes that (a) are within attack range AND (b) are closer to the target
+            nodes.RemoveAll(n =>
             {
-                Log("No in-range candidate — break.");
-                break;                       
+                float d = Vector3.Distance(n.worldPosition, tgtPos);
+                return d > _attackRange || (distNow - d) < _minDistanceGain;
+            });
+
+            if (nodes.Count == 0)
+            {
+                Log("No suitable node → stop reposition");
+                break;  // Nothing would improve the situation
             }
 
-            GridNode pick = candidates[Random.Range(0, candidates.Count)];
-            Log($"Try {tries}: move to {pick.worldPosition}");
+            // 3) Pick the closest node to the target
+            nodes.Sort((a, b) =>
+                Vector3.Distance(a.worldPosition, tgtPos)
+                .CompareTo(Vector3.Distance(b.worldPosition, tgtPos)));
+
+            GridNode pick = nodes[0];
             _movement.PlanAndReserveDestination(pick);
             _movement.MoveTo(pick);
 
-            // Wait until movement finished
+            Log($"Moving to better spot {pick.worldPosition}");
+
+            // 4) Wait until movement is done
             while (_core.CurrentState == UnitState.Moving)
             {
-                if (!IsRepositionContextValid())
-                    break;
+                if (!IsRepositionContextValid()) break;
                 yield return null;
             }
 
-            if (!IsRepositionContextValid())
-                break;
-
+            if (!IsRepositionContextValid()) break;
             yield return new WaitForSeconds(_repositionDelay);
 
-            if (_currentTarget != null)
-            {
-                float dist = Vector3.Distance(transform.position, _currentTarget.transform.position);
-                reached = dist <= _attackRange;
-            }
-            else
-            {
-                break;       
-            }
+            // 5) Finished moving and now inside range? → break loop
+            if (Vector3.Distance(transform.position, tgtPos) <= _attackRange)
+                break;
         }
 
         _isRepositioning = false;
 
         if (!IsRepositionContextValid())
-        {
-            Log("Context invalid → LoseTarget");
-            LoseTarget();           // target lost or self disabled
-            yield break;
-        }
+            LoseTarget();   // Target died or self disabled
     }
 
-
+    // ---------- Targeting & attack ----------
     private void AcquireOrUpdateTarget()
     {
-        if (_unitManager == null) return;  // safety guard
+        if (_unitManager == null) return;
 
-        // 1) Validate current target
-        if (_currentTarget != null && (_currentTarget.CurrentState == UnitState.Dead ||
-                               Vector3.Distance(transform.position, _currentTarget.transform.position) > _attackRange))
+        // Validate current target
+        if (_currentTarget != null &&
+            (_currentTarget.CurrentState == UnitState.Dead ||
+             Vector3.Distance(transform.position, _currentTarget.transform.position) > _attackRange))
         {
             LoseTarget();
         }
 
-        // 2) Search a new target
+        // Search new target
         if (_currentTarget == null)
         {
             _currentTarget = _unitManager.FindNearestEnemy(_core, _attackRange);
@@ -176,22 +176,22 @@ public class UnitCombat : MonoBehaviour
             }
         }
 
-        // 3) Attack attempt
+        // Attack
         if (_currentTarget != null && !_isRepositioning && _cooldownTimer <= 0f)
-            {
+        {
             float dist = Vector3.Distance(transform.position, _currentTarget.transform.position);
-               if (dist <= _attackRange)
+            if (dist <= _attackRange)
                 PerformAttack();
-               else
-                OnAttackStarted();      
-            }
+            else
+                OnAttackStarted();   // Still out of range → reposition again
+        }
     }
 
+    /// <summary>Deals damage and triggers animation.</summary>
     private void PerformAttack()
     {
-        Debug.Log(""); // game object name: is just perform attacked
         _cooldownTimer = _cooldown;
-        Log($"Attack → {_currentTarget.name} for {_attackDamage} dmg (CD {_cooldown}s)");
+        Log($"Attack → {_currentTarget.name} for {_attackDamage}");
 
         // Face target
         Vector3 dir = _currentTarget.transform.position - transform.position;
@@ -199,10 +199,7 @@ public class UnitCombat : MonoBehaviour
         if (dir.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
 
-        // Apply damage
-        _currentTarget.TakeDamage(_attackDamage); 
-
-        // Animation trigger
+        _currentTarget.TakeDamage(_attackDamage);
         _core.InternalChangeState(UnitState.Attacking);
     }
 
@@ -222,14 +219,10 @@ public class UnitCombat : MonoBehaviour
 
     private bool IsRepositionContextValid()
     {
-        // target still exists and alive?
         if (_currentTarget == null || _currentTarget.CurrentState == UnitState.Dead)
             return false;
-
-        // movement / grid still available?
         if (_movement == null || _movement.Grid == null)
             return false;
-
         return true;
     }
 }
