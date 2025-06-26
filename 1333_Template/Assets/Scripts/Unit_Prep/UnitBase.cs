@@ -46,6 +46,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     public bool IsAlive => _state != UnitState.Dead;
     public Transform Tr => transform;
 
+    private HealthBarUI _hpBar;
+
     // ---------- MonoBehaviour ----------
     protected virtual void Awake()
     {
@@ -54,6 +56,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
             _movement = gameObject.AddComponent<UnitMovement>();
 
         _selectCollider = GetComponent<Collider>();
+        _hpBar = GetComponentInChildren<HealthBarUI>(true);
     }
 
     protected virtual void Update()
@@ -121,6 +124,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
 
         _currentHp -= final;
 
+        // Update bar
+        _hpBar?.SetRatio(_currentHp / (float)_unitType.MaxHp);
         if (_currentHp <= 0f) Die();
     }
 

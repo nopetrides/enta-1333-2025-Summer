@@ -132,7 +132,6 @@ public class BuildingPlacementManager : MonoBehaviour
         if (realBase is BuildingResource br && _resourceManager != null)
         {
             br.Initialize(_resourceManager);
-            br.team = Team.Enemy;
         }
 
         Vector3 snapPos = CalculateSnapPosition(baseIdx, _currentBuildingData, _currentYRotation);

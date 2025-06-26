@@ -26,6 +26,8 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     public int CurrentHealth { get; private set; }
     public int MaxHealth { get; private set; }
 
+    private HealthBarUI _hpBar;
+
     // IDamageable implementation
     public Team Team => team;
     public bool IsAlive => CurrentHealth > 0;
@@ -35,6 +37,7 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     protected virtual void Awake()
     {
         _renderer = GetComponent<Renderer>();
+        _hpBar = GetComponentInChildren<HealthBarUI>(true);
         InitializeHealth();
     }
 
@@ -58,6 +61,8 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
         if (!IsAlive) return;
 
         CurrentHealth -= amount;
+        _hpBar?.SetRatio(CurrentHealth / (float)MaxHealth);   // update health bar
+
         if (CurrentHealth <= 0)
             DestroySelf();                 // delegate to custom destroy
     }
