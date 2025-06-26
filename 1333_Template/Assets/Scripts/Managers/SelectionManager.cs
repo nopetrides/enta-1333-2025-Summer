@@ -176,7 +176,10 @@ public class SelectionManager : MonoBehaviour
         var units = new List<UnitBase>();
         foreach (var sel in _selected)
             if (sel is UnitBase unit)
+            {
+                if(unit.CurrentState == UnitState.Attacking) continue;
                 units.Add(unit);
+            }
 
         // 1) Free all start cells so no unit blocks pathfinding
         foreach (var u in units)

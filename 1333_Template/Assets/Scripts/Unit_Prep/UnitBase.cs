@@ -99,6 +99,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     // ---------- Public API ----------
     public virtual void MoveTo(GridNode targetNode)
     {
+        if (_movement == null || _movement.Equals(null)) return;   // component gone
         _movement.MoveTo(targetNode);
     }
 

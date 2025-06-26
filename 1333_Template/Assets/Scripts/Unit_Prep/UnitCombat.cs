@@ -242,10 +242,45 @@ public class UnitCombat : MonoBehaviour
         return _movement != null && _movement.Grid != null;
     }
 
+    /// <summary>
+    /// Clears the current target and makes sure the unit
+    /// ends up centered on a walkable, blocked-for-others node.
+    /// </summary>
     private void LoseTarget()
     {
-        Log("Lost target");
         _currentTarget = null;
+
+        // If the combat just ended between two cells, nudge the unit
+        // onto the nearest free node so path-finding stays consistent.
+        if (_movement != null && _movement.Grid != null)
+        {
+            GridManager grid = _movement.Grid;
+            GridNode here = grid.getNodeFromWorldPosition(transform.position);
+
+            bool cellAlreadyBlocked = !here.walkable || grid.IsNodeReserved(here);
+            float toCenter = Vector3.Distance(transform.position,
+                                                       here.worldPosition);
+
+            // When the unit is off-center or the cell is not yet blocked,
+            // find the closest free node and walk there.
+            if (!cellAlreadyBlocked ||
+                toCenter > grid.GridSettings.NodeSize * 0.25f)
+            {
+                List<GridNode> free = grid.FindNearestFreeNodes(here, 1);
+                if (free.Count > 0)
+                {
+                    GridNode dst = free[0];
+                    _movement.PlanAndReserveDestination(dst);
+                    _movement.MoveTo(dst);
+                    // FinishMovement() will set Idle after the move completes.
+                    return;
+                }
+            }
+
+            // Otherwise simply claim the cell we are standing on.
+            _movement.OccupyCurrentNode();
+        }
+
         _movement?.Resume();
         _core.InternalChangeState(UnitState.Idle);
     }
