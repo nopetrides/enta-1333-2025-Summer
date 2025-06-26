@@ -285,6 +285,23 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Converts a grid index (tile origin) to world-space position.
+    /// If <paramref name="center"/> is true, returns the cell center,
+    /// otherwise the bottom-left (XZ) or bottom-left-front (XY) corner.
+    /// </summary>
+    public Vector3 IdxToWorld(Vector2Int idx, bool center = false)
+    {
+        float s = _gridSettings.NodeSize;
+        float hs = center ? s * 0.5f : 0f;
+
+        if (_gridSettings.UseXZPlane)
+            return new Vector3(idx.x * s + hs, 0f, idx.y * s + hs);
+
+        // XY plane
+        return new Vector3(idx.x * s + hs, idx.y * s + hs, 0f);
+    }
+
+    /// <summary>
     /// Draws gizmos in the editor to visualize the grid and node colors.
     /// Only runs if the grid is initialized and showGizmos is true.
     /// </summary>

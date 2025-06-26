@@ -71,7 +71,7 @@ public class ResourceManager : MonoBehaviour
             _resources[data] = 0;
 
         _resources[data] += amount;
-        Debug.Log($"ResourceManager: Added {amount}x {data.DisplayName}. New total: {_resources[data]}");
+        //Debug.Log($"ResourceManager: Added {amount}x {data.DisplayName}. New total: {_resources[data]}");
 
 #if UNITY_EDITOR
         UpdateDebugList();

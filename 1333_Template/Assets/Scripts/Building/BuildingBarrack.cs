@@ -88,7 +88,7 @@ public class BuildingBarrack : BuildingBase
             unit.MoveTo(target);
         }
     }
-    public void DestroySelf()
+    public override void DestroySelf()
     {
         if (_gridManager != null)
         {

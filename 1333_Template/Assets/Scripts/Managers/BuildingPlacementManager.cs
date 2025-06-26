@@ -26,15 +26,17 @@ public class BuildingPlacementManager : MonoBehaviour
     private ResourceManager _resourceManager;
     private ArmyManager _armyManager;
     private GridManager _gridManager;
+    private UnitManager _unitManager;
 
     /// <summary>
     /// Injects ResourceManager and ArmyManager. Called by GameManager at startup.
     /// </summary>
-    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager)
+    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager, UnitManager unitManager)
     {
         _resourceManager = resourceManager;
         _armyManager = armyManager;
         _gridManager = gridManager;
+        _unitManager = unitManager;
 
         if (_gridManager == null)
             Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
@@ -42,6 +44,8 @@ public class BuildingPlacementManager : MonoBehaviour
             Debug.LogError("BuildingPlacementManager: ArmyManager is not assigned.");
         if (_resourceManager == null)
             Debug.LogError("BuildingPlacementManager: ResourceManager is not assigned.");
+        if (_unitManager == null)
+            Debug.LogError("BuildingPlacementManager: UnitManager is not assigned.");
     }
 
     private void Awake()
@@ -126,14 +130,17 @@ public class BuildingPlacementManager : MonoBehaviour
 
         // If it produces resources, inject manager
         if (realBase is BuildingResource br && _resourceManager != null)
+        {
             br.Initialize(_resourceManager);
+            br.team = Team.Enemy;
+        }
 
         Vector3 snapPos = CalculateSnapPosition(baseIdx, _currentBuildingData, _currentYRotation);
         realGO.transform.position = snapPos;
         MarkAreaOccupied(baseIdx, footprint, false);
 
         // give building info for later demolition
-        realBase.SetupPlacement(_gridManager, baseIdx, footprint);
+        realBase.SetupPlacement(_gridManager, baseIdx, footprint, _unitManager);
 
         Destroy(_previewInstance);
         _previewInstance = null;

@@ -6,7 +6,7 @@ using UnityEngine;
 /// Holds HP, team, state, animation, and selection logic.
 /// Delegates pathfinding and movement to the attached UnitMovement component.
 /// </summary>
-public abstract class UnitBase : MonoBehaviour, ISelectable
+public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
 {
     // ---------- Serialized references ----------
     [Header("References")]
@@ -40,6 +40,11 @@ public abstract class UnitBase : MonoBehaviour, ISelectable
     public Team UnitTeam => _team;
     public UnitTypeSO UnitType => _unitType;
     public float CurrentHp => _currentHp;
+
+    // Damageable
+    public Team Team => _team;
+    public bool IsAlive => _state != UnitState.Dead;
+    public Transform Tr => transform;
 
     // ---------- MonoBehaviour ----------
     protected virtual void Awake()
