@@ -177,29 +177,51 @@ public class UnitMovement : MonoBehaviour
         _unit.InternalChangeState(UnitState.Idle);
     }
 
+    /// <summary>
+    /// Frees every grid cell this unit currently blocks or has reserved.
+    /// Handles any footprint size and also releases a not-yet-reached
+    /// reserved destination if the unit dies mid-move.
+    /// </summary>
     public void ReleaseOccupiedNode()
     {
-        if (_grid == null || _currentNode == null) return;
+        if (_grid == null) return;
 
-        int x = Mathf.RoundToInt(_currentNode.worldPosition.x / _grid.GridSettings.NodeSize);
-        int y = Mathf.RoundToInt(_currentNode.worldPosition.z / _grid.GridSettings.NodeSize);
-        _grid.SetWalkable(x, y, true);      // open path-finding again
-        _grid.UnreserveNode(_currentNode);  // just in case
+        float size = _grid.GridSettings.NodeSize;
+        bool useXZ = _grid.GridSettings.UseXZPlane;
 
-        _currentNode = null;
+        // ───────── 1) clear the tile we were standing on ─────────
+        if (_currentNode != null)
+        {
+            int baseX = Mathf.RoundToInt(_currentNode.worldPosition.x / size);
+            int baseY = Mathf.RoundToInt(
+                useXZ ? _currentNode.worldPosition.z / size
+                      : _currentNode.worldPosition.y / size);
 
-        // if unit died mid-move, destination might still be reserved
-           if (_reservedDest != null)
-           {
-                _grid.UnreserveNode(_reservedDest);
-                _reservedDest = null;
-           }
+            for (int dx = 0; dx < _unit.Width; dx++)
+                for (int dy = 0; dy < _unit.Height; dy++)
+                {
+                    int gx = baseX + dx;
+                    int gy = baseY + dy;
+
+                    _grid.SetWalkable(gx, gy, true);
+                    _grid.UnreserveNode(_grid.GetNode(gx, gy));
+                }
+            _currentNode = null;
+        }
+
+        // ───────── 2) clear an unreached reserved destination ───
+        if (_reservedDest != null)
+        {
+            _grid.UnreserveNode(_reservedDest);
+            _reservedDest = null;
+        }
     }
 
     private void OnDisable()
     {
         if (_reservedDest != null && _grid != null)
             _grid.UnreserveNode(_reservedDest);
+        ReleaseOccupiedNode();   // ensure grid is always cleaned
     }
 
     // ---------- Gizmos ----------
