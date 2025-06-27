@@ -169,7 +169,7 @@ public class SelectionManager : MonoBehaviour
         if (!ground.Raycast(ray, out var enter)) return;
 
         Vector3 hitPoint = ray.GetPoint(enter);
-        GridNode targetNode = _gridManager.getNodeFromWorldPosition(hitPoint);
+        GridNode targetNode = _gridManager.GetNodeFromWorldPosition(hitPoint);
         if (!targetNode.walkable) return;
 
         // Gather selected units
@@ -184,7 +184,7 @@ public class SelectionManager : MonoBehaviour
         // 1) Free all start cells so no unit blocks pathfinding
         foreach (var u in units)
         {
-            GridNode startNode = _gridManager.getNodeFromWorldPosition(u.transform.position);
+            GridNode startNode = _gridManager.GetNodeFromWorldPosition(u.transform.position);
             startNode.walkable = true;
         }
 

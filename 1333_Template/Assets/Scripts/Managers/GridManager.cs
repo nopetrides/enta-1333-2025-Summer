@@ -1,74 +1,170 @@
+#if UNITY_EDITOR
+using UnityEditor;                            // add at top of file
+#endif
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Manages the creation and querying of a grid composed of GridNode instances.
-/// Generates grid nodes based on settings and provides methods to access nodes by world position or random selection.
+/// Creates and manages a grid of GridNode objects.
+/// If a map texture is supplied, each pixel colour maps to a TerrainType,
+/// otherwise the grid is filled randomly (legacy behaviour).
 /// </summary>
 public class GridManager : MonoBehaviour
 {
-    [SerializeField] private GridSettings _gridSettings;
-    [SerializeField] private TerrainType[] _terrainTypes;
+    [Header("Grid Settings")]
+    [SerializeField] private GridSettings _gridSettings = null;
 
-    private GridNode[,] _gridNodes;
-    private bool _showGizmos = false; // Toggle flag for drawing gizmos
-    public bool isInitialized { get; private set; }
+    [Header("Terrain Types (index-matching)")]
+    [Tooltip("0 Grass, 1 Sand, 2 Water, 3 Road, 4 Forest, 5 Rock, 6 Lava")]
+    [SerializeField] private TerrainType[] _terrainTypes = null;
 
-    private HashSet<GridNode> _reservedNodes = new HashSet<GridNode>(); // Reserved node
+    [Header("Optional map texture (painted in Aseprite)")]
+    [SerializeField] private Texture2D _mapTexture = null;
 
-    /// <summary>
-    /// Exposes the GridSettings so other classes can access configuration values.
-    /// </summary>
+    [Tooltip("Exact colours in the same order as _terrainTypes")]
+    [SerializeField] private List<Color32> _colorTable = new();   // size = 7
+
+    /// Exposes grid-wide settings (node size, grid size, plane).
     public GridSettings GridSettings => _gridSettings;
 
-    /// <summary>
-    /// Called when the script instance is being loaded.
-    /// Ensures that the grid is initialized on startup.
-    /// </summary>
+    /* -------- runtime data ---------------------------------- */
+    private GridNode[,] _gridNodes;
+    private readonly HashSet<GridNode> _reservedNodes = new();
+    private bool _showGizmos = false;
+    public bool isInitialized { get; private set; }
+
+    /* ======================================================== */
+    /*  Unity lifecycle                                         */
+    /* ======================================================== */
+
     private void Awake()
     {
+#if UNITY_EDITOR
+        // Editor-only sanity check: warn if the texture's sRGB flag is still on
+        if (_mapTexture != null)
+        {
+            string path = AssetDatabase.GetAssetPath(_mapTexture);
+            if (AssetImporter.GetAtPath(path) is TextureImporter ti && ti.sRGBTexture)
+            {
+                Debug.LogWarning(
+                    $"[GridManager] Map texture \"{_mapTexture.name}\" has “sRGB (Color Texture)” enabled. " +
+                    "Disable it in the Inspector for exact colour matching.");
+            }
+        }
+#endif
+        PopulateDefaultColors();
         InitializeGrid();
     }
 
-    /// <summary>
-    /// Called once per frame.
-    /// Allows reinitialization of the grid when the "O" key is pressed.
-    /// </summary>
+
     private void Update()
     {
-        // Press 'X' to toggle grid gizmos on/off
-        if (Input.GetKeyDown(KeyCode.X))
-        {
-            _showGizmos = !_showGizmos;
-        }
-        if (!_showGizmos || !isInitialized) return;
+        if (Input.GetKeyDown(KeyCode.X)) _showGizmos = !_showGizmos;
+    }
+
+    /* ======================================================== */
+    /*  Grid creation                                           */
+    /* ======================================================== */
+
+    public void InitializeGrid()
+    {
+        if (_mapTexture != null) InitializeGridFromTexture();
+        else InitializeRandomGrid();
     }
 
     /// <summary>
-    /// Initializes or recreates the grid based on the current GridSettings and TerrainTypes.
-    /// Fills the internal _gridNodes array with new GridNode instances.
+    /// Fills the grid by reading each pixel of _mapTexture.
+    /// One pixel equals one tile.
     /// </summary>
-    public void InitializeGrid()
+    private void InitializeGridFromTexture()
     {
         int sizeX = _gridSettings.GridSizeX;
         int sizeY = _gridSettings.GridSizeY;
         _gridNodes = new GridNode[sizeX, sizeY];
 
-        // Loop through each cell coordinate to create a GridNode
-        for (int x = 0; x < sizeX; x++)
+        Color32[] pixels = _mapTexture.GetPixels32();
+        int texWidth = _mapTexture.width;
+        int texHeight = _mapTexture.height;
+
+        // helper that ignores alpha and allows ±1 RGB difference
+        bool Matches(Color32 a, Color32 b) =>
+            Mathf.Abs(a.r - b.r) <= 1 &&
+            Mathf.Abs(a.g - b.g) <= 1 &&
+            Mathf.Abs(a.b - b.b) <= 1;
+
+        for (int y = 0; y < sizeY; y++)
         {
+            for (int x = 0; x < sizeX; x++)
+            {
+                int px = Mathf.Clamp(x, 0, texWidth - 1);
+                int py = Mathf.Clamp(y, 0, texHeight - 1);
+                Color32 pix = pixels[py * texWidth + px];
+
+                // find the matching colour in the table
+                int id = 0;                                   // default to grass
+                for (int i = 0; i < _colorTable.Count; i++)
+                {
+                    if (Matches(pix, _colorTable[i]))
+                    {
+                        id = i;
+                        break;
+                    }
+                }
+
+                TerrainType terrain = _terrainTypes[
+                    Mathf.Clamp(id, 0, _terrainTypes.Length - 1)];
+
+                Vector3 world = _gridSettings.UseXZPlane
+                    ? new Vector3(x, 0f, y) * _gridSettings.NodeSize
+                    : new Vector3(x, y, 0f) * _gridSettings.NodeSize;
+
+                _gridNodes[x, y] = new GridNode
+                {
+                    name = $"{terrain.TerrainName}_{x}_{y}",
+                    worldPosition = world,
+                    terrainType = terrain,
+                    walkable = terrain.Walkable,
+                    weight = terrain.MovementCost
+                };
+            }
+        }
+        isInitialized = true;
+    }
+
+    private void PopulateDefaultColors()
+    {
+        _colorTable = new List<Color32>
+    {
+        new Color32(0x4C, 0xAF, 0x50, 0xFF), // Grass
+        new Color32(0xE4, 0xC0, 0x7A, 0xFF), // Sand
+        new Color32(0x29, 0x62, 0xFF, 0xFF), // Water
+        new Color32(0x6D, 0x4C, 0x41, 0xFF), // Road
+        new Color32(0x3E, 0x6B, 0x2F, 0xFF), // Forest
+        new Color32(0x8B, 0x8B, 0x8B, 0xFF), // Rock
+        new Color32(0xFF, 0x57, 0x22, 0xFF)  // Lava
+    };
+    }
+
+
+    /// <summary>
+    /// Legacy fallback: randomly assigns each node a terrain from _terrainTypes.
+    /// </summary>
+    private void InitializeRandomGrid()
+    {
+        int sizeX = _gridSettings.GridSizeX;
+        int sizeY = _gridSettings.GridSizeY;
+        _gridNodes = new GridNode[sizeX, sizeY];
+
+        for (int x = 0; x < sizeX; x++)
             for (int y = 0; y < sizeY; y++)
             {
-                // Determine world position based on whether the grid uses XZ or XY plane
-                Vector3 worldPos = _gridSettings.UseXZPlane
-                    ? new Vector3(x, 0, y) * _gridSettings.NodeSize
-                    : new Vector3(x, y, 0) * _gridSettings.NodeSize;
-
-                // Select a random TerrainType from the provided array
                 TerrainType terrain = _terrainTypes[Random.Range(0, _terrainTypes.Length)];
 
-                // Create and configure a new GridNode
-                GridNode node = new GridNode
+                Vector3 worldPos = _gridSettings.UseXZPlane
+                    ? new Vector3(x, 0f, y) * _gridSettings.NodeSize
+                    : new Vector3(x, y, 0f) * _gridSettings.NodeSize;
+
+                _gridNodes[x, y] = new GridNode
                 {
                     name = $"{terrain.TerrainName}_{x}_{y}",
                     worldPosition = worldPos,
@@ -76,258 +172,138 @@ public class GridManager : MonoBehaviour
                     walkable = terrain.Walkable,
                     weight = terrain.MovementCost
                 };
-
-                _gridNodes[x, y] = node;
             }
-        }
-
-        // Mark the grid as initialized
         isInitialized = true;
     }
-    /// <summary>
-    /// Add node to reservedNodes harshset
-    /// </summary>
-    /// <param name="node"></param>
-    public void ReserveNode(GridNode node)
+
+    /* ======================================================== */
+    /*  Reservation system                                      */
+    /* ======================================================== */
+
+    public void ReserveNode(GridNode n)
     {
-        if (node != null && !_reservedNodes.Contains(node))
-            _reservedNodes.Add(node);
+        if (n != null) _reservedNodes.Add(n);
     }
 
-    /// <summary>
-    /// Remove node to reservedNodes harshset
-    /// </summary>
-    /// <param name="node"></param>
-    public void UnreserveNode(GridNode node)
+    public void UnreserveNode(GridNode n)
     {
-        if (node != null)
-            _reservedNodes.Remove(node);
+        if (n != null) _reservedNodes.Remove(n);
     }
 
-    /// <summary>
-    /// Check if the node is reserved
-    /// </summary>
-    /// <param name="node"></param>
-    /// <returns></returns>
-    public bool IsNodeReserved(GridNode node)
-    {
-        return _reservedNodes.Contains(node);
-    }
+    public bool IsNodeReserved(GridNode n) => _reservedNodes.Contains(n);
 
-    /// <summary>
-    /// Clear all reserved nodes
-    /// </summary>
-    public void ClearAllReservations()
-    {
-        _reservedNodes.Clear();
-    }
+    public void ClearAllReservations() => _reservedNodes.Clear();
 
-    /// <summary>
-    /// Returns the four direct neighbors (up, down, left, right) of a given node within grid bounds.
-    /// </summary>
-    /// <param name="node">The GridNode whose neighbors you want to retrieve.</param>
-    /// <returns>An IEnumerable of adjacent GridNode objects.</returns>
-    public IEnumerable<GridNode> GetNeighbors(GridNode node)
-    {
-        // Convert world position to grid indices
-        int x = Mathf.RoundToInt(node.worldPosition.x / _gridSettings.NodeSize);
-        int y = Mathf.RoundToInt(node.worldPosition.z / _gridSettings.NodeSize);
+    /* ======================================================== */
+    /*  Node helpers                                            */
+    /* ======================================================== */
 
-        // Yield the node above if within bounds
-        if (y + 1 < _gridSettings.GridSizeY)
-            yield return GetNode(x, y + 1);
-
-        // Yield the node below if within bounds
-        if (y - 1 >= 0)
-            yield return GetNode(x, y - 1);
-
-        // Yield the node to the right if within bounds
-        if (x + 1 < _gridSettings.GridSizeX)
-            yield return GetNode(x + 1, y);
-
-        // Yield the node to the left if within bounds
-        if (x - 1 >= 0)
-            yield return GetNode(x - 1, y);
-    }
-
-    /// <summary>
-    /// Finds up to a specified number of free nodes (walkable and not reserved) 
-    /// starting from a center node, using breadth-first search.
-    /// </summary>
-    /// <param name="center">The starting GridNode for the search.</param>
-    /// <param name="count">The maximum number of free nodes to return.</param>
-    /// <returns>A list of GridNode objects that are walkable and not reserved.</returns>
-    public List<GridNode> FindNearestFreeNodes(GridNode center, int count)
-    {
-        List<GridNode> result = new List<GridNode>();
-        HashSet<GridNode> checkedNodes = new HashSet<GridNode>();
-        Queue<GridNode> queue = new Queue<GridNode>();
-
-        // Begin BFS from the center node
-        queue.Enqueue(center);
-        checkedNodes.Add(center);
-
-        // Continue until queue is empty or desired count is reached
-        while (queue.Count > 0 && result.Count < count)
-        {
-            GridNode node = queue.Dequeue();
-
-            // If this node is walkable and not reserved, add to results
-            if (node.walkable && !IsNodeReserved(node))
-                result.Add(node);
-
-            // Enqueue each neighbor that has not yet been checked
-            foreach (GridNode neighbor in GetNeighbors(node))
-            {
-                if (!checkedNodes.Contains(neighbor))
-                {
-                    checkedNodes.Add(neighbor);
-                    queue.Enqueue(neighbor);
-                }
-            }
-        }
-
-        return result;
-    }
-
-
-    /// <summary>
-    /// Converts a world-space position to the nearest GridNode.
-    /// Calculates grid indices by dividing by NodeSize, rounding to the nearest integer, and clamping to valid ranges.
-    /// </summary>
-    /// <param name="position">The world-space position to query.</param>
-    /// <returns>The GridNode instance closest to the given position.</returns>
-    public GridNode getNodeFromWorldPosition(Vector3 position)
-    {
-        int x = Mathf.RoundToInt(position.x / _gridSettings.NodeSize);
-        int y = Mathf.RoundToInt(
-            _gridSettings.UseXZPlane
-                ? position.z / _gridSettings.NodeSize
-                : position.y / _gridSettings.NodeSize
-        );
-
-        // Clamp indices to ensure they fall within the grid bounds
-        x = Mathf.Clamp(x, 0, _gridSettings.GridSizeX - 1);
-        y = Mathf.Clamp(y, 0, _gridSettings.GridSizeY - 1);
-
-        return GetNode(x, y);
-    }
-
-    /// <summary>
-    /// Returns the GridNode at the specified grid coordinates.
-    /// If the grid is not yet initialized, this method will initialize it first.
-    /// </summary>
-    /// <param name="x">The x-coordinate index in the grid.</param>
-    /// <param name="y">The y-coordinate index in the grid.</param>
-    /// <returns>The GridNode located at (x, y).</returns>
     public GridNode GetNode(int x, int y)
     {
         if (!isInitialized) InitializeGrid();
-
-        if (x < 0 || x >= _gridSettings.GridSizeX || y < 0 || y >= _gridSettings.GridSizeY)
-            return null;
-
+        if (x < 0 || x >= _gridSettings.GridSizeX ||
+            y < 0 || y >= _gridSettings.GridSizeY) return null;
         return _gridNodes[x, y];
     }
 
-    /// <summary>
-    /// Marks a given cell as walkable or not. 
-    /// </summary>
-    public void SetWalkable(int x, int y, bool isWalkable)
+    public GridNode GetNodeFromWorldPosition(Vector3 pos)
+    {
+        float s = _gridSettings.NodeSize;
+        int x = Mathf.RoundToInt(pos.x / s);
+        int y = Mathf.RoundToInt(_gridSettings.UseXZPlane ? pos.z / s : pos.y / s);
+        return GetNode(Mathf.Clamp(x, 0, _gridSettings.GridSizeX - 1),
+                       Mathf.Clamp(y, 0, _gridSettings.GridSizeY - 1));
+    }
+
+    public void SetWalkable(int x, int y, bool walk)
     {
         if (!isInitialized) InitializeGrid();
-
-        // guard against out of bound
         if (x < 0 || x >= _gridSettings.GridSizeX ||
-            y < 0 || y >= _gridSettings.GridSizeY)
-        {
-            Debug.LogWarning($"SetWalkable: ({x},{y}) is outside grid bounds.");
-            return;
-        }
-
-        _gridNodes[x, y].walkable = isWalkable;
+            y < 0 || y >= _gridSettings.GridSizeY) return;
+        _gridNodes[x, y].walkable = walk;
     }
 
-    /// <summary>
-    /// Finds and returns a random walkable GridNode from the entire grid.
-    /// Returns null if no walkable nodes are available.
-    /// </summary>
-    /// <returns>A randomly selected walkable GridNode, or null if none are walkable.</returns>
-    public GridNode GetRandomWalkableNode()
+    public IEnumerable<GridNode> GetNeighbors(GridNode node)
     {
-        int gridWidth = _gridSettings.GridSizeX;
-        int gridHeight = _gridSettings.GridSizeY;
+        int x = Mathf.RoundToInt(node.worldPosition.x / _gridSettings.NodeSize);
+        int y = Mathf.RoundToInt(_gridSettings.UseXZPlane ? node.worldPosition.z / _gridSettings.NodeSize
+                                                          : node.worldPosition.y / _gridSettings.NodeSize);
 
-        List<GridNode> walkableNodes = new List<GridNode>();
+        if (y + 1 < _gridSettings.GridSizeY) yield return GetNode(x, y + 1);
+        if (y - 1 >= 0) yield return GetNode(x, y - 1);
+        if (x + 1 < _gridSettings.GridSizeX) yield return GetNode(x + 1, y);
+        if (x - 1 >= 0) yield return GetNode(x - 1, y);
+    }
 
-        // Collect all walkable nodes into a list
-        for (int x = 0; x < gridWidth; x++)
+    public List<GridNode> FindNearestFreeNodes(GridNode center, int count)
+    {
+        List<GridNode> result = new List<GridNode>();
+        HashSet<GridNode> visited = new HashSet<GridNode>();
+        Queue<GridNode> q = new Queue<GridNode>();
+
+        q.Enqueue(center);
+        visited.Add(center);
+
+        while (q.Count > 0 && result.Count < count)
         {
-            for (int y = 0; y < gridHeight; y++)
-            {
-                GridNode node = _gridNodes[x, y];
-                if (node.walkable)
-                {
-                    walkableNodes.Add(node);
-                }
-            }
-        }
+            GridNode n = q.Dequeue();
+            if (n.walkable && !IsNodeReserved(n)) result.Add(n);
 
-        // If there are no walkable nodes, return null
-        if (walkableNodes.Count == 0)
-        {
-            return null;
+            foreach (GridNode nb in GetNeighbors(n))
+                if (visited.Add(nb)) q.Enqueue(nb);
         }
-
-        // Choose a random index from the list of walkable nodes
-        int index = Random.Range(0, walkableNodes.Count);
-        return walkableNodes[index];
+        return result;
     }
 
     /// <summary>
-    /// Converts a grid index (tile origin) to world-space position.
-    /// If <paramref name="center"/> is true, returns the cell center,
-    /// otherwise the bottom-left (XZ) or bottom-left-front (XY) corner.
+    /// Converts a grid index to a world-space position.
+    /// If <paramref name="center"/> is true, returns the cell centre;
+    /// otherwise returns the bottom-left (XZ) or bottom-left-front (XY) corner.
     /// </summary>
     public Vector3 IdxToWorld(Vector2Int idx, bool center = false)
     {
-        float s = _gridSettings.NodeSize;
-        float hs = center ? s * 0.5f : 0f;
+        float size = _gridSettings.NodeSize;
+        float half = center ? size * 0.5f : 0f;
 
         if (_gridSettings.UseXZPlane)
-            return new Vector3(idx.x * s + hs, 0f, idx.y * s + hs);
+            return new Vector3(idx.x * size + half,
+                               0f,
+                               idx.y * size + half);
 
         // XY plane
-        return new Vector3(idx.x * s + hs, idx.y * s + hs, 0f);
+        return new Vector3(idx.x * size + half,
+                           idx.y * size + half,
+                           0f);
     }
 
     /// <summary>
-    /// Draws gizmos in the editor to visualize the grid and node colors.
-    /// Only runs if the grid is initialized and showGizmos is true.
+    /// Overload that takes separate x, y indices.
     /// </summary>
+    public Vector3 IdxToWorld(int x, int y, bool center = false) =>
+        IdxToWorld(new Vector2Int(x, y), center);
+
+    /* ======================================================== */
+    /*  Gizmos                                                  */
+    /* ======================================================== */
+
     private void OnDrawGizmos()
     {
-        if (!isInitialized || _gridNodes == null || !_showGizmos) return;
+        if (!_showGizmos || !isInitialized || _gridNodes == null) return;
 
         float size = _gridSettings.NodeSize * 0.9f;
-        Vector3 halfOffset = Vector3.one * (_gridSettings.NodeSize * 0.5f);
-
         for (int x = 0; x < _gridSettings.GridSizeX; x++)
             for (int y = 0; y < _gridSettings.GridSizeY; y++)
             {
-                var node = _gridNodes[x, y];
-                Vector3 center = node.worldPosition;
-
-                if (!node.walkable)
+                GridNode n = _gridNodes[x, y];
+                Vector3 center = n.worldPosition;
+                if (!n.walkable)
                 {
-                    // draw solid red cube for blocked nodes
                     Gizmos.color = Color.red;
                     Gizmos.DrawCube(center, Vector3.one * size);
                 }
-                else if (_showGizmos)
+                else
                 {
-                    // draw your normal wireframe for walkable nodes
-                    Gizmos.color = node.GizmoColor;
+                    Gizmos.color = n.GizmoColor;
                     Gizmos.DrawWireCube(center, Vector3.one * size);
                 }
             }

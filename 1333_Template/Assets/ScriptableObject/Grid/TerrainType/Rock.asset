@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 643d05d9ee600ce498bf6b36903992e3, type: 3}
-  m_Name: GridSettings
+  m_Script: {fileID: 11500000, guid: 38b7b8cda22fdba4096687ce5122ba01, type: 3}
+  m_Name: Rock
   m_EditorClassIdentifier: 
-  _gridSizeX: 256
-  _gridSizeY: 256
-  _nodeSize: 1
-  _useXZPlane: 1
+  _terrainName: Rock
+  _gizmoColor: {r: 0.24313726, g: 0.41960785, b: 0.18431373, a: 1}
+  _walkable: 1
+  _movementCost: 3

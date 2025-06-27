@@ -114,7 +114,7 @@ public class ArmyManager : MonoBehaviour
 
         // 2) Determine total count and candidate nodes
         int totalCount = GetCompositionCount(type);
-        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+        GridNode centerNode = _gridManager.GetNodeFromWorldPosition(spawnPosition);
         List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);
 
         Debug.Log($"[ArmyManager] Spawning {totalCount} x {type} at {spawnPosition}");
@@ -174,7 +174,7 @@ public class ArmyManager : MonoBehaviour
         int totalCount = GetCompositionCount(type);
 
         // Find the grid node at the barrack’s spawn point
-        GridNode centerNode = _gridManager.getNodeFromWorldPosition(spawnPosition);
+        GridNode centerNode = _gridManager.GetNodeFromWorldPosition(spawnPosition);
 
         // Get up to totalCount nearest free nodes (walkable & not reserved)
         List<GridNode> spawnNodes = _gridManager.FindNearestFreeNodes(centerNode, totalCount);

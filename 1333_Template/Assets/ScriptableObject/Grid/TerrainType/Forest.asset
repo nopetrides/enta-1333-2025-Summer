@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38b7b8cda22fdba4096687ce5122ba01, type: 3}
-  m_Name: Dangers
+  m_Name: Forest
   m_EditorClassIdentifier: 
-  _terrainName: Dangers
-  _gizmoColor: {r: 0.23889586, g: 0, b: 0.23899364, a: 1}
-  _walkable: 0
-  _movementCost: 99
+  _terrainName: Forest
+  _gizmoColor: {r: 0.24313726, g: 0.41960785, b: 0.18431373, a: 1}
+  _walkable: 1
+  _movementCost: 3

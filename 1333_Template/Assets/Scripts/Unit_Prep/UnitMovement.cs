@@ -49,7 +49,7 @@ public class UnitMovement : MonoBehaviour
     {
         if (_grid == null) return;
 
-        _currentNode = _grid.getNodeFromWorldPosition(transform.position);
+        _currentNode = _grid.GetNodeFromWorldPosition(transform.position);
         if (_currentNode == null) return;
 
         _grid.ReserveNode(_currentNode);    // prevent others reserving the same
@@ -100,7 +100,7 @@ public class UnitMovement : MonoBehaviour
             _grid.UnreserveNode(targetNode); // make it walkable for A*
 
         // --- 2) Free our current tile so others can include it in their planning --
-        GridNode start = _grid.getNodeFromWorldPosition(transform.position);
+        GridNode start = _grid.GetNodeFromWorldPosition(transform.position);
         int sx = Mathf.RoundToInt(start.worldPosition.x / _grid.GridSettings.NodeSize);
         int sy = Mathf.RoundToInt(start.worldPosition.z / _grid.GridSettings.NodeSize);
         _grid.SetWalkable(sx, sy, true);

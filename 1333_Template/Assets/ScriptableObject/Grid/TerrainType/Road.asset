@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b7b8cda22fdba4096687ce5122ba01, type: 3}
   m_Name: Road
   m_EditorClassIdentifier: 
-  _terrainName: Default
-  _gizmoColor: {r: 0.84877175, g: 0.8679245, b: 0, a: 1}
+  _terrainName: Road
+  _gizmoColor: {r: 0.42745098, g: 0.29803923, b: 0.25490198, a: 1}
   _walkable: 1
   _movementCost: 1

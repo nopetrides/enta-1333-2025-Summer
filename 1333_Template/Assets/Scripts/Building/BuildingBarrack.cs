@@ -75,7 +75,7 @@ public class BuildingBarrack : BuildingBase
         Banner banner = Object.FindAnyObjectByType<Banner>();
         Vector3 centerPos = banner != null ? banner.transform.position : _spawnPoint.position;
 
-        GridNode centerNode = _gridManager.getNodeFromWorldPosition(centerPos);
+        GridNode centerNode = _gridManager.GetNodeFromWorldPosition(centerPos);
         List<GridNode> nodes = _gridManager.FindNearestFreeNodes(centerNode, _spawnedUnits.Count);
 
         for (int i = 0; i < _spawnedUnits.Count; i++)

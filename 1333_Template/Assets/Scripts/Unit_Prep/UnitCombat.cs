@@ -186,7 +186,7 @@ public class UnitCombat : MonoBehaviour
         {
             tries++;
 
-            GridNode from = gm.getNodeFromWorldPosition(transform.position);
+            GridNode from = gm.GetNodeFromWorldPosition(transform.position);
 
             // 1) sample neighbour nodes
             List<GridNode> nodes = gm.FindNearestFreeNodes(from, _repositionCandidates);
@@ -206,7 +206,7 @@ public class UnitCombat : MonoBehaviour
             if (nodes.Count == 0)
             {
                 Log("No node but still far → direct chase");
-                GridNode tgtNode = gm.getNodeFromWorldPosition(tgtPos);
+                GridNode tgtNode = gm.GetNodeFromWorldPosition(tgtPos);
                 _movement.PlanAndReserveDestination(tgtNode);
                 _movement.MoveTo(tgtNode);
                 break;
@@ -311,7 +311,7 @@ public class UnitCombat : MonoBehaviour
         if (_movement != null && _movement.Grid != null)
         {
             GridManager grid = _movement.Grid;
-            GridNode here = grid.getNodeFromWorldPosition(transform.position);
+            GridNode here = grid.GetNodeFromWorldPosition(transform.position);
 
             bool cellAlreadyBlocked = !here.walkable || grid.IsNodeReserved(here);
             float toCenter = Vector3.Distance(transform.position,

@@ -61,13 +61,13 @@ public class BuildingWall : BuildingBase
         if (unit == null || HasGarrison) return;
 
         UnitMovement move = unit.GetComponent<UnitMovement>();
-        _prevNode = _gridManager.getNodeFromWorldPosition(unit.transform.position);
+        _prevNode = _gridManager.GetNodeFromWorldPosition(unit.transform.position);
         _prevPos = unit.transform.position;
 
         move.ReleaseOccupiedNode();
 
         /* 1) reserve the center cell */
-        _reservedCell = _gridManager.getNodeFromWorldPosition(_spawnPoint.position);
+        _reservedCell = _gridManager.GetNodeFromWorldPosition(_spawnPoint.position);
         _gridManager.ReserveNode(_reservedCell);
         _gridManager.SetWalkable(
             Mathf.RoundToInt(_reservedCell.worldPosition.x / _gridManager.GridSettings.NodeSize),
@@ -129,12 +129,12 @@ public class BuildingWall : BuildingBase
 
         // (b) explicit return point
         else if (_defaultReturnPoint != null)
-            dst = _gridManager.getNodeFromWorldPosition(_defaultReturnPoint.position);
+            dst = _gridManager.GetNodeFromWorldPosition(_defaultReturnPoint.position);
 
         // (c) nearest free node around wall
         if (dst == null || !dst.walkable)
         {
-            GridNode here = _gridManager.getNodeFromWorldPosition(transform.position);
+            GridNode here = _gridManager.GetNodeFromWorldPosition(transform.position);
             List<GridNode> free = _gridManager.FindNearestFreeNodes(here, 1);
             if (free.Count > 0) dst = free[0];
         }

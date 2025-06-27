@@ -207,7 +207,7 @@ public class BuildingPlacementManager : MonoBehaviour
 
     private Vector2Int GetBaseIndices(Vector3 worldPos)
     {
-        var node = _gridManager.getNodeFromWorldPosition(worldPos);
+        var node = _gridManager.GetNodeFromWorldPosition(worldPos);
         float sz = _gridManager.GridSettings.NodeSize;
         return new Vector2Int(
             Mathf.RoundToInt(node.worldPosition.x / sz),
@@ -220,7 +220,7 @@ public class BuildingPlacementManager : MonoBehaviour
         float sz = _gridManager.GridSettings.NodeSize;
         var fp = GetRotatedSize(data, rot);
         float w = fp.x * sz, d = fp.y * sz;
-        float y = _gridManager.getNodeFromWorldPosition(
+        float y = _gridManager.GetNodeFromWorldPosition(
             new Vector3(idx.x * sz, 0, idx.y * sz)
         ).worldPosition.y;
         return new Vector3(

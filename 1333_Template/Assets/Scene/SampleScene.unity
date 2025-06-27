@@ -151,8 +151,14 @@ MonoBehaviour:
   _gridSettings: {fileID: 11400000, guid: b1e1281df0544f7478b759f1071baeb4, type: 2}
   _terrainTypes:
   - {fileID: 11400000, guid: e56886e6bc497a54f9164e3bd06409ea, type: 2}
-  - {fileID: 11400000, guid: 4f3a77f8614cd0249b388bb4a4795425, type: 2}
+  - {fileID: 11400000, guid: e3e081b02016413409c37ac3c079a2bd, type: 2}
+  - {fileID: 11400000, guid: 1187fa65e0ca78240b37fc938052dad0, type: 2}
   - {fileID: 11400000, guid: 6d6e9d516618a1f44bfec20356ea10b6, type: 2}
+  - {fileID: 11400000, guid: 2c235f89ce1f2f240b9b60ff2a791a79, type: 2}
+  - {fileID: 11400000, guid: eb7446ab2de06f347a1a637724fde7ca, type: 2}
+  - {fileID: 11400000, guid: 5f432fa6749605446a8b8739693f3680, type: 2}
+  _mapTexture: {fileID: 2800000, guid: 9e72942b675c5df4186d49db582d8867, type: 3}
+  _colorTable: []
 --- !u!4 &98548993
 Transform:
   m_ObjectHideFlags: 0

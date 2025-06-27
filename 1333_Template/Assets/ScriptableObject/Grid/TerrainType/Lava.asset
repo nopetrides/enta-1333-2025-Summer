@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38b7b8cda22fdba4096687ce5122ba01, type: 3}
-  m_Name: Rocks
+  m_Name: Lava
   m_EditorClassIdentifier: 
-  _terrainName: Rocks
-  _gizmoColor: {r: 0.5283019, g: 0.19487634, b: 0, a: 1}
-  _walkable: 1
-  _movementCost: 8
+  _terrainName: Lava
+  _gizmoColor: {r: 1, g: 0.34117648, b: 0.13333334, a: 1}
+  _walkable: 0
+  _movementCost: 99
