@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _buildingName: Farm
   _buttonImage: {fileID: 21300000, guid: 8579decf104d88749ad879ec0993340d, type: 3}
-  _description: Example description
+  _description: A humble fieldstead that turns golden grain into fresh bread every
+    5 seconds.
   _buildingPrefab: {fileID: 1821611569497435189, guid: 99f0c89314a2cb0438b286d5135e3cc2, type: 3}
   _buildingModel: {fileID: 1821611569497435189, guid: 4f98f9d5bac51e146baa6fda465f3a65, type: 3}
   _health: 100

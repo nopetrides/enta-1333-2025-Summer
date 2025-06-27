@@ -27,6 +27,9 @@ public class ResourcePanelUI : MonoBehaviour
     [Tooltip("Unit capacity or unit resource text")]
     [SerializeField] private TMP_Text _unitText = null;
 
+    [Tooltip("Horse amount text")]
+    [SerializeField] private TMP_Text _horseText = null;
+
     /// <summary>
     /// Runtime lookup: Resource enum → TMP text component.
     /// </summary>
@@ -41,7 +44,8 @@ public class ResourcePanelUI : MonoBehaviour
             { ResourceList.Rock,  _rockText  },
             { ResourceList.Iron,  _ironText  },
             { ResourceList.Wood,  _woodText  },
-            { ResourceList.Units, _unitText  }
+            { ResourceList.Units, _unitText  },
+            { ResourceList.Horse, _horseText }
         };
     }
 

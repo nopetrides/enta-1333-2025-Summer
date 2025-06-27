@@ -21,6 +21,10 @@ public class BuildingResource : BuildingBase
     private ResourceManager _resourceManager;
     private float _productionTimer;
 
+    public ResourceDataSO ResourceType => _resourceType;
+    public int ProductionAmount => _productionAmount;
+    public float ProductionInterval => _productionInterval;
+
     protected override void Awake()
     {
         base.Awake();

@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _resourceType: 5
   _displayName: Iron
-  _icon: {fileID: 21300000, guid: d1546f8db185caf4dafcfa58efa3ba2c, type: 3}
+  _icon: {fileID: 21300000, guid: 83fe52a1e6018fd47b818b91cf609071, type: 3}
   _description: For upgrade units(Commander, CrossbowMan, HighMage, Archer, Mage,
     SpearMan)

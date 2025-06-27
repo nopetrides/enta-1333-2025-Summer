@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _buildingName: Stable
   _buttonImage: {fileID: 21300000, guid: a28e380f496d8ca4a98c0858e551fb0a, type: 3}
-  _description: Example description
+  _description: ' Well-kept paddocks raise swift warhorses for your army, producing
+    one mount every 2 minutes.'
   _buildingPrefab: {fileID: 6073670004235650993, guid: 7d4e682abf16fa8488eae6d54e194804, type: 3}
   _buildingModel: {fileID: 6073670004235650993, guid: 506bf655189c82042a7a9e9c216c3dbd, type: 3}
   _health: 100
