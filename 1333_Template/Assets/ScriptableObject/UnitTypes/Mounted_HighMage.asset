@@ -18,12 +18,12 @@ MonoBehaviour:
   _maxHp: 30
   _currentHp: 30
   _moveSpeed: 5
-  _damage: 5
-  _defense: 2
+  _damage: 20
+  _defense: 5
   _attackType: 2
   _attackRange: 12
   _visionRange: 15
-  _attackCooldown: 0.8
+  _attackCooldown: 3
   _armyMaterials:
   - {fileID: 2100000, guid: 39e4c6d4cccc71a409be745df949a036, type: 2}
   - {fileID: 2100000, guid: 8af1c123c31c46544965fc4e0490bf05, type: 2}
