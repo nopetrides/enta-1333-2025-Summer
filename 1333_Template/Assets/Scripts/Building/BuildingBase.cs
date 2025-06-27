@@ -139,6 +139,8 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     // ---------- Visuals --------------------------------------
     public virtual void ApplyTeamMaterial()
     {
+        if (_renderer == null || _renderer.Equals(null)) return;
+
         int idx = (int)team;
         if (teamMaterials != null && idx >= 0 && idx < teamMaterials.Length)
             _renderer.material = teamMaterials[idx];

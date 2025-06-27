@@ -165,7 +165,10 @@ public class UnitManager : MonoBehaviour
             Vector3 tgtPos = GetDamageablePos(t, seekerPos);
             float d = Vector3.Distance(seekerPos, tgtPos);
             if (d > range || d >= best) continue;
-            if (!HasLineOfSight(seekerPos, tgtPos)) continue;
+            if (t is UnitBase)
+            {
+                if (!HasLineOfSight(seekerPos, tgtPos)) continue;
+            }
 
             best = d;
             pick = t;
