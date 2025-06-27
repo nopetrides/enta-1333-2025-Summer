@@ -19,6 +19,9 @@ public class SelectedUIManager : MonoBehaviour
     [Tooltip("Panel that shows resource building info.")]
     [SerializeField] private ResourceBuildingSelectedUI _resourceUI = null;
 
+    [Header("Gate UI")]
+    [SerializeField] private GateSelectedUI _gateUI = null;
+
     /// <summary>
     /// Displays the appropriate panel for the selectable that was clicked.
     /// </summary>
@@ -40,6 +43,10 @@ public class SelectedUIManager : MonoBehaviour
             case BuildingResource res:
                 _resourceUI.Bind(res, res.buildingData);
                 break;
+
+            case BuildingGate gate:
+                _gateUI.Bind(gate, gate.buildingData);
+                break;
         }
     }
 
@@ -51,5 +58,6 @@ public class SelectedUIManager : MonoBehaviour
         if (_unitUI != null) _unitUI.Hide();
         if (_barrackUI != null) _barrackUI.Hide();
         if (_resourceUI != null) _resourceUI.Clear();
+        if (_gateUI != null) _gateUI.Clear();   
     }
 }
