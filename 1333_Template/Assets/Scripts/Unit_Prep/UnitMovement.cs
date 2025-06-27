@@ -55,6 +55,7 @@ public class UnitMovement : MonoBehaviour
         _grid.ReserveNode(_currentNode);    // prevent others reserving the same
     }
 
+
     public void Pause() { _isPaused = true; }   // called by UnitCombat
     public void Resume() { _isPaused = false; }   // called by UnitCombat
 

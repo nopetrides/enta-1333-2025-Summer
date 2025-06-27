@@ -38,6 +38,8 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     {
         _renderer = GetComponent<Renderer>();
         _hpBar = GetComponentInChildren<HealthBarUI>(true);
+        _hpBar?.gameObject.SetActive(false);
+
         InitializeHealth();
     }
 
@@ -134,8 +136,6 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     }
 
 
-
-
     // ---------- Visuals --------------------------------------
     public virtual void ApplyTeamMaterial()
     {
@@ -167,4 +167,16 @@ public abstract class BuildingBase : MonoBehaviour, ISelectable, IDamageable
     // ---------- Selection (to be implemented by subclasses) --
     public abstract void OnSelected();
     public abstract void OnDeselected();
+
+    protected void ShowHpBar()
+    {
+        if (_hpBar != null)
+            _hpBar.gameObject.SetActive(true);
+    }
+
+    protected void HideHpBar()
+    {
+        if (_hpBar != null)
+            _hpBar.gameObject.SetActive(false);
+    }
 }

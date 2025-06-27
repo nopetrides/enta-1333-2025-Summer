@@ -97,7 +97,7 @@ public class UnitManager : MonoBehaviour
         _allUnits.Remove(unit);
     }
 
-    public UnitBase FindNearestEnemy(UnitBase seeker, float range)
+    /*public UnitBase FindNearestEnemy(UnitBase seeker, float range)
     {
         float bestDist = float.MaxValue;
         UnitBase best = null;
@@ -117,7 +117,7 @@ public class UnitManager : MonoBehaviour
             best = u;
         }
         return best;
-    }
+    }*/
 
     /// <summary>
     /// Returns true when no obstacle collider exists between the two points.
@@ -149,13 +149,18 @@ public class UnitManager : MonoBehaviour
             : dmg.Tr.position;                 // Unit: Pivot
     }
 
+    /// Looks for the nearest enemy in <paramref name="list"/> within <paramref name="range"/>.
+    /// A garrisoned unit (on a wall) ignores LOS blocking so it can shoot over its own wall.
     private IDamageable FindNearest(
-        Team seekerTeam,
-        Vector3 seekerPos,
+        UnitBase seeker,
         float range,
         List<IDamageable> list)
     {
-        float best = float.MaxValue;
+        Team seekerTeam = seeker.UnitTeam;
+        Vector3 seekerPos = seeker.transform.position;
+        bool skipLOS = seeker.GetComponent<UnitCombat>()?.IsGarrisoned ?? false;
+
+        float bestDist = float.MaxValue;
         IDamageable pick = null;
 
         foreach (var t in list)
@@ -164,29 +169,23 @@ public class UnitManager : MonoBehaviour
 
             Vector3 tgtPos = GetDamageablePos(t, seekerPos);
             float d = Vector3.Distance(seekerPos, tgtPos);
-            if (d > range || d >= best) continue;
-            if (t is UnitBase)
+            if (d > range || d >= bestDist) continue;
+
+            // Only units are blocked by obstacles and only when not garrisoned.
+            if (t is UnitBase && !skipLOS)
             {
                 if (!HasLineOfSight(seekerPos, tgtPos)) continue;
             }
 
-            best = d;
+            bestDist = d;
             pick = t;
         }
         return pick;
     }
 
     public IDamageable FindNearestEnemyUnit(UnitBase seeker, float range) =>
-        FindNearest(
-            seeker.UnitTeam,
-            seeker.transform.position,
-            range,
-            _allUnits.ConvertAll<IDamageable>(u => u));
+    FindNearest(seeker, range, _allUnits.ConvertAll<IDamageable>(u => u));
 
     public IDamageable FindNearestEnemyBuilding(UnitBase seeker, float range) =>
-        FindNearest(
-            seeker.UnitTeam,
-            seeker.transform.position,
-            range,
-            _allBuildings.ConvertAll<IDamageable>(u => u));
+        FindNearest(seeker, range, _allBuildings.ConvertAll<IDamageable>(b => b));
 }

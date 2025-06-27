@@ -56,6 +56,7 @@ public class BuildingResource : BuildingBase
 
     public override void OnSelected()
     {
+        ShowHpBar();
         foreach (var r in _selectionRenderers)
             if (r != null)
                 r.material.color = Color.gray;
@@ -63,6 +64,7 @@ public class BuildingResource : BuildingBase
 
     public override void OnDeselected()
     {
+        HideHpBar();
         ApplyTeamMaterial();
     }
 }

@@ -109,9 +109,14 @@ public class BuildingBarrack : BuildingBase
     // -------------------- ISelectable --------------------
     public override void OnSelected()
     {
+        ShowHpBar();
         foreach (Renderer r in _selectionRenderers)
             if (r != null) r.material.color = Color.gray;
     }
 
-    public override void OnDeselected() => ApplyTeamMaterial();
+    public override void OnDeselected()
+    {
+        HideHpBar();
+        ApplyTeamMaterial();
+    }
 }

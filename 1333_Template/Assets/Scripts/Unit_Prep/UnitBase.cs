@@ -56,7 +56,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
             _movement = gameObject.AddComponent<UnitMovement>();
 
         _selectCollider = GetComponent<Collider>();
+
         _hpBar = GetComponentInChildren<HealthBarUI>(true);
+        _hpBar?.gameObject.SetActive(false);   // hidden by default
     }
 
     protected virtual void Update()
@@ -132,6 +134,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     public virtual void OnSelected()
     {
         IsSelected = true;
+        _hpBar?.gameObject.SetActive(true);                  // show bar
+        _hpBar?.SetRatio(_currentHp / (float)_unitType.MaxHp);
+
         if (TryGetComponent<UnitVisualController>(out var vc))
             vc.ShowSelectionIndicator();
     }
@@ -140,6 +145,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     {
         if (this == null) return;   // object already destroyed
         IsSelected = false;
+        _hpBar?.gameObject.SetActive(false);                 // hide bar
         if (TryGetComponent<UnitVisualController>(out var vc))
             vc.HideSelectionIndicator();
     }

@@ -27,6 +27,12 @@ public class UnitCombat : MonoBehaviour
 
     private float _attackRange;
     private float _visionRange;
+    // base values copied from UnitTypeSO, never modified
+    private float _baseAttackRange;
+    private float _baseVisionRange;
+
+    // runtime multiplier, 1 = normal
+    private float _rangeMul = 1f;
     private int _attackDamage;
     private float _cooldown;
     private float _cooldownTimer;
@@ -34,6 +40,13 @@ public class UnitCombat : MonoBehaviour
     private IDamageable _currentTarget;
     private bool _isInitialized = false;
     private bool _isRepositioning = false;
+
+    // runtime flags
+    private bool _anchored = false;   // true = cannot move / reposition
+    private bool _isGarrisoned = false;
+
+    /// <summary>True while the unit is stationed on a wall.</summary>
+    public bool IsGarrisoned => _isGarrisoned;
 
     // ---------- debug helper ---------------------------------
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -46,10 +59,12 @@ public class UnitCombat : MonoBehaviour
     public void Init(UnitManager um, UnitTypeSO type)
     {
         _unitManager = um;
-        _attackRange = type.AttackRange;
-        _visionRange = Mathf.Max(type.VisionRange, _attackRange);
+        _baseAttackRange = type.AttackRange;   // store originals
+        _baseVisionRange = type.VisionRange;
         _attackDamage = type.Damage;
         _cooldown = type.AttackCooldown;
+
+        ApplyMultiplier();
 
         _isInitialized = true;
         StartCoroutine(ScanLoop());
@@ -121,9 +136,14 @@ public class UnitCombat : MonoBehaviour
         {
             float dist = Vector3.Distance(transform.position, TargetPos(_currentTarget));
             if (dist <= _attackRange)
+            {
                 PerformAttack();
+            }
             else
-                OnAttackStarted(); // move closer
+            {
+                if (!_anchored)
+                    OnAttackStarted(); // move closer
+            }
         }
     }
 
@@ -242,6 +262,35 @@ public class UnitCombat : MonoBehaviour
         return _movement != null && _movement.Grid != null;
     }
 
+    /// Locks or unlocks movement/reposition logic (used by walls).
+    public void SetAnchored(bool value)
+    {
+        _anchored = value;
+        if (value) _core.InternalChangeState(UnitState.Idle);
+    }
+    /// Called by BuildingWall to toggle the flag (used by walls).
+    public void SetGarrisoned(bool value)
+    {
+        _isGarrisoned = value;
+    }
+
+    /// <summary>
+    /// Sets a new range multiplier (e.g. 2 for walls) and recalculates the
+    /// effective attack / vision ranges used during combat.
+    /// </summary>
+    public void SetRangeMultiplier(float m)
+    {
+        _rangeMul = Mathf.Max(0.1f, m);
+        ApplyMultiplier();
+    }
+
+    /// Recalculates the effective ranges from base values and multiplier.
+    private void ApplyMultiplier()
+    {
+        _attackRange = _baseAttackRange * _rangeMul;
+        _visionRange = _baseVisionRange * _rangeMul;
+    }
+
     /// <summary>
     /// Clears the current target and makes sure the unit
     /// ends up centered on a walkable, blocked-for-others node.
@@ -249,6 +298,13 @@ public class UnitCombat : MonoBehaviour
     private void LoseTarget()
     {
         _currentTarget = null;
+
+        if (_anchored)
+        {
+            _movement?.OccupyCurrentNode();   // mark the tile we sit on
+            _core.InternalChangeState(UnitState.Idle);
+            return;
+        }
 
         // If the combat just ended between two cells, nudge the unit
         // onto the nearest free node so path-finding stays consistent.
