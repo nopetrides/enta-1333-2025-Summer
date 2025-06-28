@@ -159,6 +159,25 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5f432fa6749605446a8b8739693f3680, type: 2}
   _mapTexture: {fileID: 2800000, guid: 9e72942b675c5df4186d49db582d8867, type: 3}
   _colorTable: []
+  _terrainPrefabs:
+  - {fileID: 1348682534197004323, guid: b3ae69ab1d1be5e40bc7ceb875bb2636, type: 3}
+  - {fileID: 6912854052023659646, guid: aec3fb6d9afd024428b0920c5065764e, type: 3}
+  - {fileID: 2554754874127468361, guid: 80a79c9853d98d74e85d175f0f42da49, type: 3}
+  - {fileID: 6136899707209929980, guid: 52017a0ca4724aa4e90cb1705be61328, type: 3}
+  - {fileID: 6193978319234644110, guid: b830cc4848b2c574c9a0e88a0c80f079, type: 3}
+  - {fileID: 2367450037443332448, guid: 9bc87100cdc740346b311042f454e934, type: 3}
+  - {fileID: 6257308385057903248, guid: 7155fdc1ca905434d9fbe7d3ccaf5800, type: 3}
+  _simpleTerrainPrefabs:
+  - {fileID: 7495779192944313390, guid: 37d7f7a94a79d8e48adba08344058e9a, type: 3}
+  - {fileID: 6038254143025529582, guid: 7a99625ed86cb0a479023eaf4d957357, type: 3}
+  - {fileID: 5201803199863038624, guid: c5ed5d828438bd845a4ecd77a9459ca7, type: 3}
+  - {fileID: 8591013431228684806, guid: 99b43707275a7174a843374da5bdc86e, type: 3}
+  - {fileID: 6414131610160694621, guid: 80a7e0653d51835429d34aaaa72f853a, type: 3}
+  - {fileID: 5560780364201548892, guid: 8ecc27ab3f2530c40a804ec8046f7323, type: 3}
+  - {fileID: 5571267775635868410, guid: 1de8be98494695643bdd4302877eb2eb, type: 3}
+  _visualRoot: {fileID: 1436479152}
+  UseGridMap: 1
+  UseSimpleTexture: 1
 --- !u!4 &98548993
 Transform:
   m_ObjectHideFlags: 0
@@ -709,7 +728,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8455144842310662225, guid: 54c34db3839a2c748895738d52c5fe25, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 30
+      value: 36.53
       objectReference: {fileID: 0}
     - target: {fileID: 8455144842310662225, guid: 54c34db3839a2c748895738d52c5fe25, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5571,6 +5590,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1436479151
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1436479152}
+  m_Layer: 0
+  m_Name: TerrainCubes
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1436479152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1436479151}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1487062029
 GameObject:
   m_ObjectHideFlags: 0
@@ -8620,3 +8670,4 @@ SceneRoots:
   - {fileID: 1433302147}
   - {fileID: 1643927569}
   - {fileID: 246844054}
+  - {fileID: 1436479152}

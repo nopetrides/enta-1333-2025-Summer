@@ -24,6 +24,20 @@ public class GridManager : MonoBehaviour
     [Tooltip("Exact colours in the same order as _terrainTypes")]
     [SerializeField] private List<Color32> _colorTable = new();   // size = 7
 
+    [Header("Visual Prefabs")]
+    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
+    [SerializeField] private GameObject[] _terrainPrefabs = null;
+
+    [Header("Visual Prefabs")]
+    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
+    [SerializeField] private GameObject[] _simpleTerrainPrefabs = null;
+
+    [Tooltip("Optional parent to keep the hierarchy tidy.")]
+    [SerializeField] private Transform _visualRoot = null;
+
+    public bool UseGridMap = true; // Debug bool
+    public bool UseSimpleTexture = false; // Debug bool
+
     /// Exposes grid-wide settings (node size, grid size, plane).
     public GridSettings GridSettings => _gridSettings;
 
@@ -54,6 +68,19 @@ public class GridManager : MonoBehaviour
 #endif
         PopulateDefaultColors();
         InitializeGrid();
+
+        isInitialized = true;
+        if (UseGridMap)
+        {
+            if (UseSimpleTexture) 
+            {
+                SpawnSimpleTerrainVisuals();
+            }
+            else
+            {
+                SpawnTerrainVisuals();
+            }
+        }
     }
 
 
@@ -68,7 +95,7 @@ public class GridManager : MonoBehaviour
 
     public void InitializeGrid()
     {
-        if (_mapTexture != null) InitializeGridFromTexture();
+        if (UseGridMap) InitializeGridFromTexture();
         else InitializeRandomGrid();
     }
 
@@ -134,7 +161,7 @@ public class GridManager : MonoBehaviour
     private void PopulateDefaultColors()
     {
         _colorTable = new List<Color32>
-    {
+        {
         new Color32(0x4C, 0xAF, 0x50, 0xFF), // Grass
         new Color32(0xE4, 0xC0, 0x7A, 0xFF), // Sand
         new Color32(0x29, 0x62, 0xFF, 0xFF), // Water
@@ -142,7 +169,73 @@ public class GridManager : MonoBehaviour
         new Color32(0x3E, 0x6B, 0x2F, 0xFF), // Forest
         new Color32(0x8B, 0x8B, 0x8B, 0xFF), // Rock
         new Color32(0xFF, 0x57, 0x22, 0xFF)  // Lava
-    };
+        };
+    }
+
+    /// <summary>
+    /// Instantiates one 1×1 prefab on every tile,
+    /// choosing the prefab that matches the tile’s TerrainType.
+    /// </summary>
+    private void SpawnTerrainVisuals()
+    {
+        if (_terrainPrefabs == null || _terrainPrefabs.Length == 0) return;
+        if (!isInitialized) return;
+
+        // clear old visuals
+        if (_visualRoot != null)
+            foreach (Transform c in _visualRoot) Destroy(c.gameObject);
+
+        float half = _gridSettings.NodeSize * 0.5f; // lift cube so it sits on ground
+
+        int sizeX = _gridSettings.GridSizeX;
+        int sizeY = _gridSettings.GridSizeY;
+
+        for (int y = 0; y < sizeY; y++)
+            for (int x = 0; x < sizeX; x++)
+            {
+                TerrainType terrain = _gridNodes[x, y].terrainType;
+
+                // find index of this terrain in the _terrainTypes array
+                int id = System.Array.IndexOf(_terrainTypes, terrain);
+                if (id < 0 || id >= _terrainPrefabs.Length) continue;
+
+                GameObject prefab = _terrainPrefabs[id];
+                if (prefab == null) continue;
+
+                Vector3 pos = _gridNodes[x, y].worldPosition + Vector3.down;
+                Instantiate(prefab, pos, Quaternion.identity, _visualRoot);
+            }
+    }
+
+    private void SpawnSimpleTerrainVisuals()
+    {
+        if (_simpleTerrainPrefabs == null || _simpleTerrainPrefabs.Length == 0) return;
+        if (!isInitialized) return;
+
+        // clear old visuals
+        if (_visualRoot != null)
+            foreach (Transform c in _visualRoot) Destroy(c.gameObject);
+
+        float half = _gridSettings.NodeSize * 0.5f; // lift cube so it sits on ground
+
+        int sizeX = _gridSettings.GridSizeX;
+        int sizeY = _gridSettings.GridSizeY;
+
+        for (int y = 0; y < sizeY; y++)
+            for (int x = 0; x < sizeX; x++)
+            {
+                TerrainType terrain = _gridNodes[x, y].terrainType;
+
+                // find index of this terrain in the _terrainTypes array
+                int id = System.Array.IndexOf(_terrainTypes, terrain);
+                if (id < 0 || id >= _simpleTerrainPrefabs.Length) continue;
+
+                GameObject prefab = _simpleTerrainPrefabs[id];
+                if (prefab == null) continue;
+
+                Vector3 pos = _gridNodes[x, y].worldPosition + Vector3.down;
+                Instantiate(prefab, pos, Quaternion.identity, _visualRoot);
+            }
     }
 
 
@@ -151,29 +244,33 @@ public class GridManager : MonoBehaviour
     /// </summary>
     private void InitializeRandomGrid()
     {
-        int sizeX = _gridSettings.GridSizeX;
-        int sizeY = _gridSettings.GridSizeY;
-        _gridNodes = new GridNode[sizeX, sizeY];
+        int sx = _gridSettings.GridSizeX;
+        int sy = _gridSettings.GridSizeY;
+        _gridNodes = new GridNode[sx, sy];
 
-        for (int x = 0; x < sizeX; x++)
-            for (int y = 0; y < sizeY; y++)
+        // collect walkable terrain types once
+        List<TerrainType> walkable = new();
+        foreach (var t in _terrainTypes)
+            if (t.Walkable) walkable.Add(t);
+
+        for (int x = 0; x < sx; x++)
+            for (int y = 0; y < sy; y++)
             {
-                TerrainType terrain = _terrainTypes[Random.Range(0, _terrainTypes.Length)];
+                TerrainType terrain = walkable[Random.Range(0, walkable.Count)];
 
-                Vector3 worldPos = _gridSettings.UseXZPlane
+                Vector3 world = _gridSettings.UseXZPlane
                     ? new Vector3(x, 0f, y) * _gridSettings.NodeSize
                     : new Vector3(x, y, 0f) * _gridSettings.NodeSize;
 
                 _gridNodes[x, y] = new GridNode
                 {
                     name = $"{terrain.TerrainName}_{x}_{y}",
-                    worldPosition = worldPos,
+                    worldPosition = world,
                     terrainType = terrain,
-                    walkable = terrain.Walkable,
+                    walkable = true,             // always walkable
                     weight = terrain.MovementCost
                 };
             }
-        isInitialized = true;
     }
 
     /* ======================================================== */
