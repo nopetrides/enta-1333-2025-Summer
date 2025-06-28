@@ -8,19 +8,13 @@ using UnityEngine;
 /// </summary>
 public class UnitManager : MonoBehaviour
 {
-    // Internal list of all registered buildings.
-    private readonly List<BuildingBase> _allBuildings = new();
-
-    // Internal list of all registered units.
-    private readonly List<UnitBase> _allUnits = new List<UnitBase>();
+    private readonly HashSet<UnitBase> _allUnits = new(256);      // capacity hint
+    private readonly HashSet<BuildingBase> _allBuildings = new(64);
 
     [SerializeField] private LayerMask _visionBlockMask; // Obstacle layer
 
-    /// <summary>Read-only view of all currently registered units.</summary>
-    public IReadOnlyList<UnitBase> AllUnits => _allUnits;
-
-    /// <summary>Read-only view of all currently registered buildings.</summary>
-    public IReadOnlyList<IDamageable> AllBuildings => _allBuildings;
+    public IReadOnlyCollection<UnitBase> AllUnits => _allUnits;
+    public IReadOnlyCollection<BuildingBase> AllBuildings => _allBuildings;
 
     [SerializeField] private float _spatialCellSize = 1.5f;  
     private SpatialHash _spatial;
@@ -93,39 +87,12 @@ public class UnitManager : MonoBehaviour
     /// <summary>Call this when a new unit spawns in the scene.</summary>
     public void RegisterUnit(UnitBase unit)
     {
-        if (unit != null && !_allUnits.Contains(unit))
-        {
-            _allUnits.Add(unit);
-        }
+        if (unit != null) _allUnits.Add(unit);     // HashSet.Add ignores duplicates
     }
+
 
     /// <summary>Call this when a unit dies and is destroyed.</summary>
-    public void UnregisterUnit(UnitBase unit)
-    {
-        _allUnits.Remove(unit);
-    }
-
-    /*public UnitBase FindNearestEnemy(UnitBase seeker, float range)
-    {
-        float bestDist = float.MaxValue;
-        UnitBase best = null;
-
-        Vector3 seekerPos = seeker.transform.position;
-
-        foreach (UnitBase u in _allUnits)
-        {
-            if (u.UnitTeam == seeker.UnitTeam || u.CurrentState == UnitState.Dead)
-                continue;
-
-            float dist = Vector3.Distance(seekerPos, u.transform.position);
-            if (dist > range || dist >= bestDist) continue;
-            if (!HasLineOfSight(seekerPos, u.transform.position)) continue;
-
-            bestDist = dist;
-            best = u;
-        }
-        return best;
-    }*/
+    public void UnregisterUnit(UnitBase unit) => _allUnits.Remove(unit);
 
     /// <summary>
     /// Returns true when no obstacle collider exists between the two points.
@@ -143,8 +110,7 @@ public class UnitManager : MonoBehaviour
 
     public void RegisterBuilding(BuildingBase b)
     {
-        if (b != null && !_allBuildings.Contains(b))
-            _allBuildings.Add(b);
+        if (b != null) _allBuildings.Add(b);
     }
 
     public void UnregisterBuilding(BuildingBase b) => _allBuildings.Remove(b);
@@ -162,7 +128,7 @@ public class UnitManager : MonoBehaviour
     private IDamageable FindNearest(
         UnitBase seeker,
         float range,
-        List<IDamageable> list)
+        IEnumerable<IDamageable> list)
     {
         Team seekerTeam = seeker.UnitTeam;
         Vector3 seekerPos = seeker.transform.position;
@@ -224,7 +190,8 @@ public class UnitManager : MonoBehaviour
 
         return closest;
     }
-
-    public IDamageable FindNearestEnemyBuilding(UnitBase seeker, float range) =>
-        FindNearest(seeker, range, _allBuildings.ConvertAll<IDamageable>(b => b));
+    public IDamageable FindNearestEnemyBuilding(UnitBase seeker, float range)
+    {
+        return FindNearest(seeker, range, _allBuildings); 
+    }
 }
