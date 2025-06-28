@@ -171,6 +171,7 @@ public class UnitMovement : MonoBehaviour
             int ty = Mathf.RoundToInt(wp.z / _grid.GridSettings.NodeSize);
             _grid.SetWalkable(tx, ty, false);
             _currentNode = _grid.GetNode(tx, ty); // remember it for later release
+            _unit.RefreshSpatialHashEntry();
             _reservedDest = null;
         }
 

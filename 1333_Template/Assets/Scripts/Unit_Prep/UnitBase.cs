@@ -48,6 +48,9 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
 
     private HealthBarUI _hpBar;
 
+    // Hash
+    private Vector2Int _lastHash;
+
     // ---------- MonoBehaviour ----------
     protected virtual void Awake()
     {
@@ -67,6 +70,25 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
         if (Input.GetKeyDown(KeyCode.H) && _state != UnitState.Dead)
             Die();
     }
+
+    #region Spatial Hash Hooks
+
+    /// <summary>
+    /// Call this when the unit has moved far enough to cross a cell boundary.
+    /// Cheaper than removing/adding every frame.
+    /// </summary>
+    public void RefreshSpatialHashEntry()
+    {
+        if (_unitManager == null) return;
+
+        Vector2Int newHash = _unitManager.Spatial.GetHashFast(transform.position);
+        if (newHash == _lastHash) return;             // same bucket -> skip
+
+        _unitManager.Spatial.Remove(this);
+        _unitManager.Spatial.Add(this);
+        _lastHash = newHash;
+    }
+    #endregion
 
     // ---------- Initialization ----------
     /// <summary>
@@ -99,6 +121,10 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
         Material teamMat = unitType.GetArmyMaterial(team);
         if (teamMat != null && TryGetComponent<UnitVisualController>(out var vc))
             vc.ApplyTeamMaterial(teamMat, unitType.IsMounted);
+
+        // --- NEW: register to SpatialHash once dependencies are ready ------------
+        if (_unitManager != null)
+            _unitManager.Spatial.Add(this);
     }
 
     // ---------- Public API ----------
@@ -165,6 +191,11 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
 
         OnDeselected();
         DisableSelectable();
+
+        // NEW: remove from SpatialHash
+        if (_unitManager != null)
+            _unitManager.Spatial.Remove(this);
+
         UnitDestroyed?.Invoke(this);
         // free the tile this unit was occupying
         _movement?.ReleaseOccupiedNode();
@@ -183,6 +214,10 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
 
     private void OnDestroy()
     {
+        // fail-safe removal in case Die() wasn’t called
+        if (_unitManager != null)
+            _unitManager.Spatial.Remove(this);
+
         UnitDestroyed?.Invoke(this);
     }
 

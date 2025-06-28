@@ -22,6 +22,10 @@ public class UnitManager : MonoBehaviour
     /// <summary>Read-only view of all currently registered buildings.</summary>
     public IReadOnlyList<IDamageable> AllBuildings => _allBuildings;
 
+    [SerializeField] private float _spatialCellSize = 1.5f;  
+    private SpatialHash _spatial;
+    public SpatialHash Spatial => _spatial;
+
     // ---------------------------------------------------------------------
     // DEBUG SETTINGS
     // ---------------------------------------------------------------------
@@ -38,6 +42,10 @@ public class UnitManager : MonoBehaviour
     // ---------------------------------------------------------------------
     // MonoBehaviour
     // ---------------------------------------------------------------------
+    private void Awake()
+    {
+        _spatial = new SpatialHash(_spatialCellSize); // SpatialHash generate
+    }
 
     private void Update()
     {
@@ -183,8 +191,39 @@ public class UnitManager : MonoBehaviour
         return pick;
     }
 
-    public IDamageable FindNearestEnemyUnit(UnitBase seeker, float range) =>
-    FindNearest(seeker, range, _allUnits.ConvertAll<IDamageable>(u => u));
+    /// <summary>
+    /// Returns nearest hostile unit inside 'range' using SpatialHash query.
+    /// </summary>
+    public UnitBase FindNearestEnemyUnit(UnitBase seeker, float range)
+    {
+        if (_spatial == null) return null;
+
+        UnitBase closest = null;
+        float bestSqr = range * range;
+        Vector3 seekerPos = seeker.transform.position;
+
+        foreach (UnitBase target in _spatial.Query(seekerPos, range))
+        {
+            // Same team / dead / self skip
+            if (target == null || target == seeker || target.Team == seeker.Team || !target.IsAlive)
+                continue;
+
+            float sqr = (target.transform.position - seekerPos).sqrMagnitude;
+            if (sqr < bestSqr)
+            {
+                // Optional: line-of-sight check only for final candidates
+                if (!Physics.Linecast(seekerPos + Vector3.up * 0.5f,
+                                      target.transform.position + Vector3.up * 0.5f,
+                                      _visionBlockMask))
+                {
+                    bestSqr = sqr;
+                    closest = target;
+                }
+            }
+        }
+
+        return closest;
+    }
 
     public IDamageable FindNearestEnemyBuilding(UnitBase seeker, float range) =>
         FindNearest(seeker, range, _allBuildings.ConvertAll<IDamageable>(b => b));
