@@ -101,8 +101,22 @@ public class SpatialHash
     public void Remove(UnitBase u)
     {
         Vector2Int h = GetHashFast(u.transform.position);
-        if (_buckets.TryGetValue(h, out var list)) list.Remove(u);
+        if (_buckets.TryGetValue(h, out var list))
+        {
+            list.Remove(u);
+            if (list.Count == 0) _buckets.Remove(h);  
+        }
     }
+
+    public void Remove(UnitBase u, Vector2Int bucketKey)
+    {
+        if (_buckets.TryGetValue(bucketKey, out var list))
+        {
+            list.Remove(u);
+            if (list.Count == 0) _buckets.Remove(bucketKey); 
+        }
+    }
+
 
     /// <summary>
     /// Rough box query: returns every unit roughly inside range.

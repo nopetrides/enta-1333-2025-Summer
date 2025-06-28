@@ -177,7 +177,7 @@ MonoBehaviour:
   - {fileID: 5571267775635868410, guid: 1de8be98494695643bdd4302877eb2eb, type: 3}
   _visualRoot: {fileID: 1436479152}
   UseGridMap: 1
-  UseSimpleTexture: 1
+  UseSimpleTexture: 0
 --- !u!4 &98548993
 Transform:
   m_ObjectHideFlags: 0

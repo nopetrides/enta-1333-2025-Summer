@@ -82,10 +82,15 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
         if (_unitManager == null) return;
 
         Vector2Int newHash = _unitManager.Spatial.GetHashFast(transform.position);
-        if (newHash == _lastHash) return;             // same bucket -> skip
+        if (newHash == _lastHash) return;  // same bucket
 
-        _unitManager.Spatial.Remove(this);
+        // 1) remove from old bucket (safe)
+        _unitManager.Spatial.Remove(this, _lastHash);
+
+        // 2) add to new bucket
         _unitManager.Spatial.Add(this);
+
+        // 3) cache new key
         _lastHash = newHash;
     }
     #endregion
@@ -125,6 +130,7 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
         // --- NEW: register to SpatialHash once dependencies are ready ------------
         if (_unitManager != null)
             _unitManager.Spatial.Add(this);
+        _lastHash = _unitManager.Spatial.GetHashFast(transform.position);
     }
 
     // ---------- Public API ----------
@@ -186,6 +192,10 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     protected virtual void Die()
     {
         if (_state == UnitState.Dead) return;
+
+        // remove with cached key
+        if (_unitManager != null)
+            _unitManager.Spatial.Remove(this, _lastHash);
 
         InternalChangeState(UnitState.Dead);
 
