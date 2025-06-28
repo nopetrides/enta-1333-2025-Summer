@@ -11,45 +11,50 @@ using UnityEngine;
 /// </summary>
 public class GridManager : MonoBehaviour
 {
+    // =========================== Inspector Fields ==============================
+
     [Header("Grid Settings")]
-    [SerializeField] private GridSettings _gridSettings = null;
+    [SerializeField] private GridSettings _gridSettings = null; // Grid configuration asset
 
     [Header("Terrain Types (index-matching)")]
     [Tooltip("0 Grass, 1 Sand, 2 Water, 3 Road, 4 Forest, 5 Rock, 6 Lava")]
-    [SerializeField] private TerrainType[] _terrainTypes = null;
+    [SerializeField] private TerrainType[] _terrainTypes = null; // List of all possible terrain types
 
     [Header("Optional map texture (painted in Aseprite)")]
-    [SerializeField] private Texture2D _mapTexture = null;
+    [SerializeField] private Texture2D _mapTexture = null; // Optional map image for pixel-to-terrain mapping
 
     [Tooltip("Exact colours in the same order as _terrainTypes")]
-    [SerializeField] private List<Color32> _colorTable = new();   // size = 7
+    [SerializeField] private List<Color32> _colorTable = new();   // Colour mapping table, order matches _terrainTypes
 
     [Header("Visual Prefabs")]
     [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
-    [SerializeField] private GameObject[] _terrainPrefabs = null;
+    [SerializeField] private GameObject[] _terrainPrefabs = null; // Prefab for rendering terrain tiles
 
     [Header("Visual Prefabs")]
     [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
-    [SerializeField] private GameObject[] _simpleTerrainPrefabs = null;
+    [SerializeField] private GameObject[] _simpleTerrainPrefabs = null; // Alternative simple visuals
 
     [Tooltip("Optional parent to keep the hierarchy tidy.")]
-    [SerializeField] private Transform _visualRoot = null;
+    [SerializeField] private Transform _visualRoot = null; // Parent for organizing tile visuals in hierarchy
 
-    public bool UseGridMap = true; // Debug bool
-    public bool UseSimpleTexture = false; // Debug bool
+    // =========================== Debug/Config Flags ============================
 
+    public bool UseGridMap = true; // If true, uses map texture for grid creation
+    public bool UseSimpleTexture = false; // If true, uses alternative visuals
+
+    /// <summary>
     /// Exposes grid-wide settings (node size, grid size, plane).
+    /// </summary>
     public GridSettings GridSettings => _gridSettings;
 
-    /* -------- runtime data ---------------------------------- */
-    private GridNode[,] _gridNodes;
-    private readonly HashSet<GridNode> _reservedNodes = new();
-    private bool _showGizmos = false;
-    public bool isInitialized { get; private set; }
+    // =========================== Runtime Fields ================================
 
-    /* ======================================================== */
-    /*  Unity lifecycle                                         */
-    /* ======================================================== */
+    private GridNode[,] _gridNodes; // 2D array of all grid nodes
+    private readonly HashSet<GridNode> _reservedNodes = new(); // Nodes reserved by units or buildings
+    private bool _showGizmos = false; // If true, shows grid debug visualization
+    public bool isInitialized { get; private set; } // If true, grid is ready to use
+
+    // =========================== Unity Lifecycle ===============================
 
     private void Awake()
     {
@@ -66,8 +71,9 @@ public class GridManager : MonoBehaviour
             }
         }
 #endif
-        PopulateDefaultColors();
-        InitializeGrid();
+
+        PopulateDefaultColors(); // Load default color mapping
+        InitializeGrid(); // Create grid (from texture or random)
 
         isInitialized = true;
         if (UseGridMap)
@@ -86,13 +92,15 @@ public class GridManager : MonoBehaviour
 
     private void Update()
     {
+        // Toggle debug gizmos when pressing X key
         if (Input.GetKeyDown(KeyCode.X)) _showGizmos = !_showGizmos;
     }
 
-    /* ======================================================== */
-    /*  Grid creation                                           */
-    /* ======================================================== */
+    // =========================== Grid Creation ================================
 
+    /// <summary>
+    /// Initializes the grid either from map texture or randomly.
+    /// </summary>
     public void InitializeGrid()
     {
         if (UseGridMap) InitializeGridFromTexture();
@@ -100,8 +108,8 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Fills the grid by reading each pixel of _mapTexture.
-    /// One pixel equals one tile.
+    /// Creates the grid by reading pixel data from _mapTexture.
+    /// Each pixel color is mapped to a terrain type via _colorTable.
     /// </summary>
     private void InitializeGridFromTexture()
     {
@@ -158,6 +166,9 @@ public class GridManager : MonoBehaviour
         isInitialized = true;
     }
 
+    /// <summary>
+    /// Fills the color table with default colors for each terrain type.
+    /// </summary>
     private void PopulateDefaultColors()
     {
         _colorTable = new List<Color32>
@@ -173,8 +184,7 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Instantiates one 1×1 prefab on every tile,
-    /// choosing the prefab that matches the tile’s TerrainType.
+    /// Instantiates terrain visual prefabs for each tile using _terrainPrefabs.
     /// </summary>
     private void SpawnTerrainVisuals()
     {
@@ -207,6 +217,9 @@ public class GridManager : MonoBehaviour
             }
     }
 
+    /// <summary>
+    /// Instantiates alternative simple visuals using _simpleTerrainPrefabs.
+    /// </summary>
     private void SpawnSimpleTerrainVisuals()
     {
         if (_simpleTerrainPrefabs == null || _simpleTerrainPrefabs.Length == 0) return;
@@ -240,7 +253,8 @@ public class GridManager : MonoBehaviour
 
 
     /// <summary>
-    /// Legacy fallback: randomly assigns each node a terrain from _terrainTypes.
+    /// Fallback method that fills the grid with random walkable terrain types.
+    /// Only walkable types are considered.
     /// </summary>
     private void InitializeRandomGrid()
     {
@@ -273,28 +287,34 @@ public class GridManager : MonoBehaviour
             }
     }
 
-    /* ======================================================== */
-    /*  Reservation system                                      */
-    /* ======================================================== */
+    // =========================== Reservation System ============================
 
+    /// <summary>
+    /// Marks a node as reserved (for units/buildings, prevents pathing).
+    /// </summary>
     public void ReserveNode(GridNode n)
     {
         if (n != null) _reservedNodes.Add(n);
     }
-
+    /// <summary>
+    /// Removes a node from the reserved set.
+    /// </summary>
     public void UnreserveNode(GridNode n)
     {
         if (n != null) _reservedNodes.Remove(n);
     }
-
+    /// <summary>
+    /// Checks if a node is currently reserved.
+    /// </summary>
     public bool IsNodeReserved(GridNode n) => _reservedNodes.Contains(n);
 
     public void ClearAllReservations() => _reservedNodes.Clear();
 
-    /* ======================================================== */
-    /*  Node helpers                                            */
-    /* ======================================================== */
+    // =========================== Node Utilities ================================
 
+    /// <summary>
+    /// Gets the node at a specific grid coordinate.
+    /// </summary>
     public GridNode GetNode(int x, int y)
     {
         if (!isInitialized) InitializeGrid();
@@ -303,6 +323,9 @@ public class GridManager : MonoBehaviour
         return _gridNodes[x, y];
     }
 
+    /// <summary>
+    /// Returns the node closest to a given world-space position.
+    /// </summary>
     public GridNode GetNodeFromWorldPosition(Vector3 pos)
     {
         float s = _gridSettings.NodeSize;
@@ -312,6 +335,9 @@ public class GridManager : MonoBehaviour
                        Mathf.Clamp(y, 0, _gridSettings.GridSizeY - 1));
     }
 
+    /// <summary>
+    /// Sets the walkability of the specified node.
+    /// </summary>
     public void SetWalkable(int x, int y, bool walk)
     {
         if (!isInitialized) InitializeGrid();
@@ -320,6 +346,9 @@ public class GridManager : MonoBehaviour
         _gridNodes[x, y].walkable = walk;
     }
 
+    /// <summary>
+    /// Gets all 4 orthogonal neighbor nodes (up, down, left, right).
+    /// </summary>
     public IEnumerable<GridNode> GetNeighbors(GridNode node)
     {
         int x = Mathf.RoundToInt(node.worldPosition.x / _gridSettings.NodeSize);
@@ -332,6 +361,10 @@ public class GridManager : MonoBehaviour
         if (x - 1 >= 0) yield return GetNode(x - 1, y);
     }
 
+    /// <summary>
+    /// Finds the nearest available (walkable and unreserved) nodes around the center node.
+    /// Returns up to the requested count.
+    /// </summary>
     public List<GridNode> FindNearestFreeNodes(GridNode center, int count)
     {
         List<GridNode> result = new List<GridNode>();
@@ -353,9 +386,7 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Converts a grid index to a world-space position.
-    /// If <paramref name="center"/> is true, returns the cell centre;
-    /// otherwise returns the bottom-left (XZ) or bottom-left-front (XY) corner.
+    /// Converts a grid coordinate to a world position (optionally centered).
     /// </summary>
     public Vector3 IdxToWorld(Vector2Int idx, bool center = false)
     {
@@ -374,15 +405,15 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Overload that takes separate x, y indices.
+    /// Overload for direct x, y grid coordinates.
     /// </summary>
     public Vector3 IdxToWorld(int x, int y, bool center = false) =>
         IdxToWorld(new Vector2Int(x, y), center);
 
-    /* ======================================================== */
-    /*  Gizmos                                                  */
-    /* ======================================================== */
-
+    // =========================== Gizmos (Debug Visualization) ==================
+    /// <summary>
+    /// Draws colored gizmos in the editor for each node to show walkable/unwalkable cells.
+    /// </summary>
     private void OnDrawGizmos()
     {
         if (!_showGizmos || !isInitialized || _gridNodes == null) return;
