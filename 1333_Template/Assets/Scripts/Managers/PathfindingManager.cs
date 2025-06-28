@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(GridManager))]
@@ -142,3 +142,4 @@ public class PathfindingManager : MonoBehaviour
         }
     }
 }
+*/
