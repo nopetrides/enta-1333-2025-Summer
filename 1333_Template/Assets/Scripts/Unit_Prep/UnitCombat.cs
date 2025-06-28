@@ -10,7 +10,7 @@ using UnityEngine;
 public class UnitCombat : MonoBehaviour
 {
     [Header("Timing")]
-    [SerializeField] private float _scanInterval = 0.2f;      // seconds between scans
+    [SerializeField] private float _scanInterval = 0.2f;      // Kept only for reference; no longer used by the central scanner
     [SerializeField] private float _repositionDelay = 0.05f;  // small wait before attack
     [SerializeField] private int _repositionTriesMax = 3;     // safety cap
 
@@ -67,7 +67,7 @@ public class UnitCombat : MonoBehaviour
         ApplyMultiplier();
 
         _isInitialized = true;
-        StartCoroutine(ScanLoop());
+        //StartCoroutine(ScanLoop()); // Scanning is now driven by CombatScanner.Update
     }
 
     private void Awake()
@@ -76,6 +76,9 @@ public class UnitCombat : MonoBehaviour
         _movement = GetComponent<UnitMovement>();
     }
 
+    private void OnEnable() => CombatScanner.Instance?.Register(this);
+    private void OnDisable() => CombatScanner.Instance?.Unregister(this);
+
     private void Update()
     {
         if (_cooldownTimer > 0f)
@@ -83,7 +86,7 @@ public class UnitCombat : MonoBehaviour
     }
 
     // ---------- Scan loop ------------------------------------
-    private IEnumerator ScanLoop()
+    /*private IEnumerator ScanLoop()
     {
         while (!_isInitialized) yield return null;
 
@@ -94,12 +97,19 @@ public class UnitCombat : MonoBehaviour
 
             yield return new WaitForSeconds(_scanInterval);
         }
+    }*/
+
+    public void ScanOnce()
+    {
+        if (!_isInitialized) return;
+        if (_core.CurrentState == UnitState.Dead) return;
+        AcquireOrUpdateTarget();
     }
 
-    // ---------------------------------------------------------
-    //  Targeting & attack
-    // ---------------------------------------------------------
-    private void AcquireOrUpdateTarget()
+// ---------------------------------------------------------
+//  Targeting & attack
+// ---------------------------------------------------------
+private void AcquireOrUpdateTarget()
     {
         if (_unitManager == null) return;
 
@@ -119,7 +129,6 @@ public class UnitCombat : MonoBehaviour
 
             if (_currentTarget != null)
             {
-                Log($"Target acquired → {_currentTarget.Tr.name}");
                 OnAttackStarted();
             }
         }
@@ -153,7 +162,6 @@ public class UnitCombat : MonoBehaviour
     private void PerformAttack()
     {
         _cooldownTimer = _cooldown;
-        Log($"Attack → {_currentTarget.Tr.name} for {_attackDamage}");
 
         // Face target
         Vector3 dir = TargetPos(_currentTarget) - transform.position;
@@ -177,7 +185,6 @@ public class UnitCombat : MonoBehaviour
     private IEnumerator RepositionThenAttack()
     {
         _isRepositioning = true;
-        Log("Reposition start");
 
         int tries = 0;
         GridManager gm = _movement.Grid;
@@ -205,7 +212,6 @@ public class UnitCombat : MonoBehaviour
             // 3) no candidate → direct chase
             if (nodes.Count == 0)
             {
-                Log("No node but still far → direct chase");
                 GridNode tgtNode = gm.GetNodeFromWorldPosition(tgtPos);
                 _movement.PlanAndReserveDestination(tgtNode);
                 _movement.MoveTo(tgtNode);
@@ -220,7 +226,6 @@ public class UnitCombat : MonoBehaviour
             GridNode pick = nodes[0];
             _movement.PlanAndReserveDestination(pick);
             _movement.MoveTo(pick);
-            Log($"Moving to better spot {pick.worldPosition}");
 
             // 5) wait until movement done
             while (_core.CurrentState == UnitState.Moving && IsRepositionContextValid())

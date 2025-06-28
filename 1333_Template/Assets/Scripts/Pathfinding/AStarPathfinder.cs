@@ -9,6 +9,13 @@ public class AStarPathfinder
 {
     private GridManager gridManager;
 
+    // ---------------------------------------------------------------------
+    //  Reusable containers (no per-call allocation)
+    // ---------------------------------------------------------------------
+    private readonly MinHeap<GridNode> _open = new MinHeap<GridNode>();
+    private readonly Dictionary<GridNode, int> _gCost = new Dictionary<GridNode, int>();
+    private readonly Dictionary<GridNode, GridNode> _cameFrom = new Dictionary<GridNode, GridNode>();
+
     /// <summary>
     /// Constructor: Stores a reference to the GridManager for node queries.
     /// </summary>
@@ -37,103 +44,86 @@ public class AStarPathfinder
     }
 
     /// <summary>
-    /// Runs the A* algorithm between two GridNodes, then converts the resulting node path
-    /// into a List<Vector2Int> of grid coordinates.
+    /// Core A* search. Uses the reusable containers declared at class scope,
+    /// so no new allocations are made per call (GC-free).
+    /// The optional width/height parameters let you reuse this for multi-tile units
+    /// even if they are not used right now.
     /// </summary>
-    /// <param name="start">The starting GridNode.</param>
-    /// <param name="end">The target GridNode.</param>
-    /// <param name="unitWidth">Width of the unit in grid cells.</param>
-    /// <param name="unitHeight">Height of the unit in grid cells.</param>
-    /// <returns>A list of Vector2Int coordinates representing the path, or an empty list if no path is found.</returns>
-    public List<Vector2Int> FindPathWithNodes(GridNode start, GridNode end, int unitWidth, int unitHeight)
+    public List<Vector2Int> FindPathWithNodes(
+        GridNode start,
+        GridNode end,
+        int unitWidth = 1,
+        int unitHeight = 1)
     {
-        // Initialize the open set (priority queue) and dictionaries to track costs and path.
-        SimplePriorityQueue<GridNode> openSet = new SimplePriorityQueue<GridNode>();
-        Dictionary<GridNode, int> costSoFar = new Dictionary<GridNode, int>();
-        Dictionary<GridNode, GridNode> cameFrom = new Dictionary<GridNode, GridNode>();
+        // ----- clear reusable containers -----------------------------------
+        _open.Clear();
+        _gCost.Clear();
+        _cameFrom.Clear();
 
-        // Start with the start node: zero cost, priority zero.
-        openSet.Enqueue(start, 0);
-        costSoFar[start] = 0;
-        cameFrom[start] = start;
+        // ----- initialise ---------------------------------------------------
+        _open.Enqueue(start, 0f);   // F-cost = 0
+        _gCost[start] = 0;
+        _cameFrom[start] = start;   // root sentinel
 
-        // Loop until there are no more nodes to explore.
-        while (openSet.Count > 0)
+        // ----- main loop ----------------------------------------------------
+        while (_open.Count > 0)
         {
-            // Dequeue the node with the lowest priority (estimated total cost).
-            GridNode current = openSet.Dequeue();
+            GridNode current = _open.Dequeue();
+            if (current == end) break;
 
-            // If we have reached the end node, exit the loop.
-            if (current.Equals(end))
-                break;
-
-            // Explore each neighbor of the current node.
-            foreach (GridNode neighbor in GetNeighbors(gridManager, current))
+            foreach (GridNode neighbor in GetNeighbors(current))
             {
-                // Skip neighbor if the area is not fully walkable for the given unit size.
-                if (!IsAreaWalkable(gridManager, neighbor, unitWidth, unitHeight))
-                    continue;
+                if (!neighbor.walkable) continue;                // wall
+                                                                 // if (!IsAreaWalkable(neighbor, unitWidth, unitHeight)) continue;
 
-                // Calculate new cost to reach this neighbor.
-                int newCost = costSoFar[current] + neighbor.weight;
-
-                // If this neighbor is not in costSoFar or we found a cheaper path to it, update.
-                if (!costSoFar.ContainsKey(neighbor) || newCost < costSoFar[neighbor])
+                int newCost = _gCost[current] + neighbor.weight;
+                if (!_gCost.ContainsKey(neighbor) || newCost < _gCost[neighbor])
                 {
-                    costSoFar[neighbor] = newCost;
-                    int priority = newCost + Heuristic(neighbor, end);
-                    openSet.Enqueue(neighbor, priority);
-                    cameFrom[neighbor] = current;
+                    _gCost[neighbor] = newCost;
+                    float priority = newCost + Heuristic(neighbor, end);
+                    _open.Enqueue(neighbor, priority);
+                    _cameFrom[neighbor] = current;
                 }
             }
         }
 
-        // If the end node was never reached, return an empty path.
-        if (!cameFrom.ContainsKey(end))
-            return new List<Vector2Int>();
+        // ----- reconstruct path --------------------------------------------
+        if (!_cameFrom.ContainsKey(end))
+            return new List<Vector2Int>();   // no path found
 
-        // Reconstruct the path by walking backwards from end to start.
-        List<GridNode> nodePath = new List<GridNode>();
-        GridNode pathNode = end;
-        while (!pathNode.Equals(start))
-        {
-            nodePath.Add(pathNode);
-            pathNode = cameFrom[pathNode];
-        }
-        nodePath.Add(start);
-        nodePath.Reverse(); // Reverse to get start-to-end order.
-
-        // Convert nodePath (GridNode instances) into Vector2Int coordinates.
         List<Vector2Int> path = new List<Vector2Int>();
         float nodeSize = gridManager.GridSettings.NodeSize;
-        foreach (GridNode node in nodePath)
-        {
-            int x = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
-            int y = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
-            path.Add(new Vector2Int(x, y));
-        }
+        GridNode node = end;
 
+        // back-track from end -> start
+        while (node != start)
+        {
+            int gx = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
+            int gy = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
+            path.Add(new Vector2Int(gx, gy));
+            node = _cameFrom[node];
+        }
+        path.Reverse();
         return path;
     }
 
     /// <summary>
-    /// Returns the four direct neighbors (up, down, left, right) of a given node.
-    /// Does not include diagonal neighbors.
+    /// Returns the four orthogonal neighbours of a node.
+    /// Uses the GridManager instance stored in this pathfinder.
     /// </summary>
-    /// <param name="gm">The GridManager for bounds and node retrieval.</param>
-    /// <param name="node">The current GridNode to find neighbors for.</param>
-    /// <returns>An enumerable of neighboring GridNode instances.</returns>
-    private IEnumerable<GridNode> GetNeighbors(GridManager gm, GridNode node)
+    private IEnumerable<GridNode> GetNeighbors(GridNode node)
     {
-        // Convert node's world position into grid indices.
-        int x = Mathf.RoundToInt(node.worldPosition.x / gm.GridSettings.NodeSize);
-        int y = Mathf.RoundToInt(node.worldPosition.z / gm.GridSettings.NodeSize);
+        float nodeSize = gridManager.GridSettings.NodeSize;
+        int x = Mathf.RoundToInt(node.worldPosition.x / nodeSize);
+        int y = Mathf.RoundToInt(node.worldPosition.z / nodeSize);
 
-        // Check each direction and yield the neighbor if it is within grid bounds.
-        if (y + 1 < gm.GridSettings.GridSizeY) yield return gm.GetNode(x, y + 1);
-        if (y - 1 >= 0) yield return gm.GetNode(x, y - 1);
-        if (x + 1 < gm.GridSettings.GridSizeX) yield return gm.GetNode(x + 1, y);
-        if (x - 1 >= 0) yield return gm.GetNode(x - 1, y);
+        int maxX = gridManager.GridSettings.GridSizeX;
+        int maxY = gridManager.GridSettings.GridSizeY;
+
+        if (y + 1 < maxY) yield return gridManager.GetNode(x, y + 1);
+        if (y - 1 >= 0) yield return gridManager.GetNode(x, y - 1);
+        if (x + 1 < maxX) yield return gridManager.GetNode(x + 1, y);
+        if (x - 1 >= 0) yield return gridManager.GetNode(x - 1, y);
     }
 
     /// <summary>

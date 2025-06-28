@@ -79,10 +79,12 @@ public class UnitMovement : MonoBehaviour
 
     // ---------- Movement start ----------
     /// <summary>
-    /// Starts movement toward a target node.  
-    /// If the destination is already reserved by THIS unit, the node is temporarily
-    /// un-reserved during pathfinding so A* sees it as walkable, then re-reserved
-    /// after the path is found.
+    /// Starts movement toward <paramref name="targetNode"/>.  
+    /// If the path cannot be found, the method rolls back every temporary
+    /// change and keeps the unit in a valid Idle state while re-claiming
+    /// the tile it is currently standing on.  
+    /// This guarantees that a unit is never left in Moving state without
+    /// a path and that its grid cell is always blocked for others.
     /// </summary>
     public void MoveTo(GridNode targetNode)
     {
@@ -90,33 +92,40 @@ public class UnitMovement : MonoBehaviour
 
         _currentNode = null;
 
-        // --- 0) Reject if someone else has already reserved this node -------------
+        // 0) someone else already reserved this node -> bail out
         if (_grid.IsNodeReserved(targetNode) && _reservedDest != targetNode)
             return;
 
-        // --- 1) Temporarily open the destination while we search ------------------
         bool reservedByMe = (_reservedDest == targetNode);
         if (reservedByMe)
-            _grid.UnreserveNode(targetNode); // make it walkable for A*
+            _grid.UnreserveNode(targetNode);          // open it for A*
 
-        // --- 2) Free our current tile so others can include it in their planning --
+        // 1) free the tile we are on so A* can plan through it
         GridNode start = _grid.GetNodeFromWorldPosition(transform.position);
         int sx = Mathf.RoundToInt(start.worldPosition.x / _grid.GridSettings.NodeSize);
         int sy = Mathf.RoundToInt(start.worldPosition.z / _grid.GridSettings.NodeSize);
         _grid.SetWalkable(sx, sy, true);
         _grid.UnreserveNode(start);
 
-        // --- 3) Run A* ------------------------------------------------------------
+        // 2) run A*
         _path = _pathfinder.FindPathWithNodes(start, targetNode, _unit.Width, _unit.Height);
 
-        // --- 4) Fail-safe: restore reservation if pathfinding failed --------------
+        // 3) path failed -> roll back everything and stay idle
         if (_path == null || _path.Count == 0)
         {
-            if (reservedByMe) _grid.ReserveNode(targetNode);
+            if (reservedByMe) _grid.ReserveNode(targetNode); // restore
+
+            // re-block the tile we are standing on
+            _grid.SetWalkable(sx, sy, false);
+            _grid.ReserveNode(start);
+            _currentNode = start;
+
+            _path = null;
+            _unit.InternalChangeState(UnitState.Idle);
             return;
         }
 
-        // --- 5) Path found → firmly reserve the destination -----------------------
+        // 4) success -> reserve destination and start moving
         _grid.ReserveNode(targetNode);
         _reservedDest = targetNode;
 
