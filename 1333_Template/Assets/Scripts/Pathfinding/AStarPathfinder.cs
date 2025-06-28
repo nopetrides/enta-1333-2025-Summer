@@ -13,6 +13,7 @@ public class AStarPathfinder
     //  Reusable containers (no per-call allocation)
     // ---------------------------------------------------------------------
     private readonly MinHeap<GridNode> _open = new MinHeap<GridNode>();
+    private HashSet<GridNode> _closed = new HashSet<GridNode>();
     private readonly Dictionary<GridNode, int> _gCost = new Dictionary<GridNode, int>();
     private readonly Dictionary<GridNode, GridNode> _cameFrom = new Dictionary<GridNode, GridNode>();
 
@@ -59,6 +60,7 @@ public class AStarPathfinder
         _open.Clear();
         _gCost.Clear();
         _cameFrom.Clear();
+        _closed.Clear();
 
         // ----- initialise ---------------------------------------------------
         _open.Enqueue(start, 0f);   // F-cost = 0
@@ -69,6 +71,10 @@ public class AStarPathfinder
         while (_open.Count > 0)
         {
             GridNode current = _open.Dequeue();
+
+            if (!_closed.Add(current))
+                continue;
+
             if (current == end) break;
 
             foreach (GridNode neighbor in GetNeighbors(current))
@@ -77,11 +83,18 @@ public class AStarPathfinder
                                                                  // if (!IsAreaWalkable(neighbor, unitWidth, unitHeight)) continue;
 
                 int newCost = _gCost[current] + neighbor.weight;
-                if (!_gCost.ContainsKey(neighbor) || newCost < _gCost[neighbor])
+                if (!_gCost.ContainsKey(neighbor))
                 {
                     _gCost[neighbor] = newCost;
                     float priority = newCost + Heuristic(neighbor, end);
                     _open.Enqueue(neighbor, priority);
+                    _cameFrom[neighbor] = current;
+                }
+                else if (newCost < _gCost[neighbor])
+                {
+                    _gCost[neighbor] = newCost;
+                    float priority = newCost + Heuristic(neighbor, end);
+                    _open.DecreaseKey(neighbor, priority);
                     _cameFrom[neighbor] = current;
                 }
             }
