@@ -212,7 +212,7 @@ public class GridManager : MonoBehaviour
                 GameObject prefab = _terrainPrefabs[id];
                 if (prefab == null) continue;
 
-                Vector3 pos = _gridNodes[x, y].worldPosition + Vector3.down;
+                Vector3 pos = _gridNodes[x, y].worldPosition + Vector3.down * 0.5f;
                 Instantiate(prefab, pos, Quaternion.identity, _visualRoot);
             }
     }
