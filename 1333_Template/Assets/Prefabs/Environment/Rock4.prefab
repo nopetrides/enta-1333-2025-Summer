@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5659879622171934553}
   - component: {fileID: 4734202909829522489}
   - component: {fileID: -7623513934631399514}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Rock4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -100,3 +100,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _width: 2
   _height: 2
+  _rock: {fileID: 11400000, guid: d15fd4d44e1fd9d41a1c22a8d926715b, type: 2}
+  _maxHp: 60

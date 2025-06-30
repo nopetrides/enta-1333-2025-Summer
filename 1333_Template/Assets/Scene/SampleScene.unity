@@ -3045,6 +3045,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 660840eecb657c2468ff8b75cc3e6e62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _unitManager: {fileID: 1274391301}
+  _resourceManager: {fileID: 1204304710}
   _gridManager: {fileID: 98548992}
   _forestTerrainType: {fileID: 11400000, guid: 2c235f89ce1f2f240b9b60ff2a791a79, type: 2}
   _rockTerrainType: {fileID: 11400000, guid: eb7446ab2de06f347a1a637724fde7ca, type: 2}

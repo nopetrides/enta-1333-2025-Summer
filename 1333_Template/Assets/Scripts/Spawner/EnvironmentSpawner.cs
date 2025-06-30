@@ -2,11 +2,16 @@ using UnityEngine;
 
 /// <summary>
 /// Spawns environment prefabs (trees, rocks) on designated terrain types at random density,
-/// enforces a specified cell buffer around each instance, and supports multi-cell footprints
-/// via Tree and Rock components defining Width/Height.
+/// enforces a specified cell buffer around each instance, supports multi-cell footprints,
+/// and injects UnitManager dependency into spawned EnvTree/EnvRock instances.
 /// </summary>
 public class EnvironmentSpawner : MonoBehaviour
 {
+    [Header("Dependencies")]
+    [Tooltip("Reference to the UnitManager for DI into resources.")]
+    [SerializeField] private UnitManager _unitManager = null;
+    [SerializeField] private ResourceManager _resourceManager = null;
+
     [Header("Grid Manager")]
     [SerializeField] private GridManager _gridManager = null;
 
@@ -15,23 +20,18 @@ public class EnvironmentSpawner : MonoBehaviour
     [SerializeField] private TerrainType _rockTerrainType = null;
 
     [Header("Tree Prefabs")]
-    [Tooltip("List of tree prefabs; each prefab should have a Tree component specifying its width/height.")]
+    [Tooltip("List of EnvTree prefabs; each prefab must have EnvTree component with Width/Height and Initialize(UnitManager).")]
     [SerializeField] private GameObject[] _treePrefabs = null;
 
     [Header("Rock Prefabs")]
-    [Tooltip("List of rock prefabs; each prefab should have a Rock component specifying its width/height.")]
+    [Tooltip("List of EnvRock prefabs; each prefab must have EnvRock component with Width/Height and Initialize(UnitManager).")]
     [SerializeField] private GameObject[] _rockPrefabs = null;
 
-    [Header("Spawn Settings")]
-    [Tooltip("Enable or disable tree spawning.")]
+    [Header("Spawn Toggles & Probabilities")]
     [SerializeField] private bool _enableTreeSpawning = true;
-    [Tooltip("Chance to spawn a tree on a forest tile.")]
     [Range(0f, 1f)]
     [SerializeField] private float _treeSpawnProbability = 0.5f;
-
-    [Tooltip("Enable or disable rock spawning.")]
     [SerializeField] private bool _enableRockSpawning = true;
-    [Tooltip("Chance to spawn a rock on a rock tile.")]
     [Range(0f, 1f)]
     [SerializeField] private float _rockSpawnProbability = 0.5f;
 
@@ -46,6 +46,9 @@ public class EnvironmentSpawner : MonoBehaviour
 
     private void Awake()
     {
+        // Validate dependencies
+        if (_unitManager == null)
+            Debug.LogError("EnvironmentSpawner: UnitManager not assigned.");
         if (_gridManager == null)
             Debug.LogError("EnvironmentSpawner: GridManager not assigned.");
         if (_forestTerrainType == null)
@@ -53,6 +56,7 @@ public class EnvironmentSpawner : MonoBehaviour
         if (_rockTerrainType == null)
             Debug.LogError("EnvironmentSpawner: Rock TerrainType not assigned.");
 
+        // Cache cell size for footprint calculations
         _cellSize = _gridManager.GridSettings.NodeSize;
     }
 
@@ -61,6 +65,10 @@ public class EnvironmentSpawner : MonoBehaviour
         SpawnEnvironment();
     }
 
+    /// <summary>
+    /// Iterate grid nodes, randomly spawn trees/rocks with buffer enforcement,
+    /// and inject UnitManager into each spawned EnvTree/EnvRock.
+    /// </summary>
     private void SpawnEnvironment()
     {
         int sizeX = _gridManager.GridSettings.GridSizeX;
@@ -68,27 +76,24 @@ public class EnvironmentSpawner : MonoBehaviour
         bool[,] occupied = new bool[sizeX, sizeY];
 
         for (int x = 0; x < sizeX; x++)
+        {
             for (int y = 0; y < sizeY; y++)
             {
                 var node = _gridManager.GetNode(x, y);
                 if (node == null) continue;
 
-                bool spawnTree = _enableTreeSpawning
-                                 && node.terrainType == _forestTerrainType
-                                 && _treePrefabs.Length > 0
-                                 && Random.value <= _treeSpawnProbability;
+                bool spawnTree = _enableTreeSpawning && node.terrainType == _forestTerrainType
+                                 && _treePrefabs.Length > 0 && Random.value <= _treeSpawnProbability;
 
-                bool spawnRock = _enableRockSpawning
-                                 && node.terrainType == _rockTerrainType
-                                 && _rockPrefabs.Length > 0
-                                 && Random.value <= _rockSpawnProbability;
+                bool spawnRock = _enableRockSpawning && node.terrainType == _rockTerrainType
+                                 && _rockPrefabs.Length > 0 && Random.value <= _rockSpawnProbability;
 
                 if (!spawnTree && !spawnRock) continue;
 
                 var source = spawnTree ? _treePrefabs : _rockPrefabs;
                 var prefab = source[Random.Range(0, source.Length)];
 
-                // Determine footprint from Tree or Rock component
+                // Get footprint dimensions from component
                 int w = 1, h = 1;
                 if (spawnTree)
                 {
@@ -109,16 +114,18 @@ public class EnvironmentSpawner : MonoBehaviour
                     }
                 }
 
-                // Skip if footprint would go out-of-bounds
+                // Skip out-of-bounds or overlapping buffer
                 if (x + w > sizeX || y + h > sizeY) continue;
-
-                // Skip if buffer region overlaps existing occupied cells
                 if (HasBufferedNeighbor(occupied, x, y, w, h, _bufferDistance)) continue;
 
                 SpawnAt(x, y, w, h, prefab, occupied);
             }
+        }
     }
 
+    /// <summary>
+    /// Returns true if any occupied cell exists within the footprint extended by buffer distance.
+    /// </summary>
     private bool HasBufferedNeighbor(bool[,] occupied, int startX, int startY, int w, int h, int buffer)
     {
         int minX = Mathf.Max(0, startX - buffer);
@@ -130,30 +137,31 @@ public class EnvironmentSpawner : MonoBehaviour
             for (int yy = minY; yy <= maxY; yy++)
                 if (occupied[xx, yy])
                     return true;
+
         return false;
     }
 
     /// <summary>
-    /// Instantiates the prefab centered over its footprint and marks the cells as non-walkable.
+    /// Instantiate the prefab centered over its footprint, mark grid cells, and inject UnitManager.
     /// </summary>
     private void SpawnAt(int startX, int startY, int w, int h, GameObject prefab, bool[,] occupied)
     {
-        // Calculate ground y from bottom-left cell
-        Vector3 bottomLeftWorld = new Vector3(startX * _cellSize, 0f, startY * _cellSize);
-        float y = _gridManager.GetNodeFromWorldPosition(bottomLeftWorld).worldPosition.y;
+        // Compute ground Y from bottom-left cell center
+        Vector3 bottomLeft = new Vector3(startX * _cellSize, 0f, startY * _cellSize);
+        float groundY = _gridManager.GetNodeFromWorldPosition(bottomLeft).worldPosition.y;
 
-        // Compute world-space width and depth
+        // Compute world-space footprint size
         float worldW = w * _cellSize;
         float worldH = h * _cellSize;
 
-        // Align center using building placement logic
+        // Center position calculation
         float xPos = startX * _cellSize + (worldW - _cellSize) * 0.5f;
         float zPos = startY * _cellSize + (worldH - _cellSize) * 0.5f;
-        Vector3 pos = new Vector3(xPos, y, zPos);
+        Vector3 spawnPos = new Vector3(xPos, groundY, zPos);
 
-        var instance = Instantiate(prefab, pos, Quaternion.identity, _environmentRoot);
+        var instance = Instantiate(prefab, spawnPos, Quaternion.identity, _environmentRoot);
 
-        // Mark footprint cells as non-walkable and occupied
+        // Mark cells as non-walkable and occupied
         for (int dx = 0; dx < w; dx++)
             for (int dy = 0; dy < h; dy++)
             {
@@ -162,5 +170,17 @@ public class EnvironmentSpawner : MonoBehaviour
                 _gridManager.SetWalkable(gx, gy, false);
                 occupied[gx, gy] = true;
             }
+
+        // dependency injection and grid info setup
+        if (instance.TryGetComponent<EnvTree>(out var treeComp))
+        {
+            treeComp.Initialize(_unitManager, _resourceManager);
+            treeComp.SetGridInfo(_gridManager, startX, startY);
+        }
+        else if (instance.TryGetComponent<EnvRock>(out var rockComp))
+        {
+            rockComp.Initialize(_unitManager, _resourceManager);
+            rockComp.SetGridInfo(_gridManager, startX, startY);
+        }
     }
 }

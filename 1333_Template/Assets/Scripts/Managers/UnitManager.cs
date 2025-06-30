@@ -30,6 +30,9 @@ public class UnitManager : MonoBehaviour
     private SpatialHash _spatial;
     public SpatialHash Spatial => _spatial;
 
+    // ---------- Spatial Hash for Resources ----------
+    private ResourceSpatialHash _resourceSpatial;
+
     // DEBUG SETTINGS
     [Header("Debug")]
     [Tooltip("When true, the registry is printed every frame in Update.")]
@@ -46,6 +49,9 @@ public class UnitManager : MonoBehaviour
     {
         // Create the spatial hash with the specified cell size.
         _spatial = new SpatialHash(_spatialCellSize);
+
+        // Initialize resource hash with same cell size
+        _resourceSpatial = new ResourceSpatialHash(_spatialCellSize);
     }
 
     // MonoBehaviour Update is called once per frame.
@@ -222,5 +228,38 @@ public class UnitManager : MonoBehaviour
     {
         // Use the generic FindNearest method on the buildings set.
         return FindNearest(seeker, range, _allBuildings);
+    }
+
+    // ---------- Resource Registration ----------
+    public void RegisterResource(IDamageable resource)
+    {
+        _resourceSpatial.Add(resource);
+    }
+
+    public void UnregisterResource(IDamageable resource)
+    {
+        _resourceSpatial.Remove(resource);
+    }
+
+    /// <summary>
+    /// Finds the nearest alive resource within the given range.
+    /// Returns null if none found.
+    /// </summary>
+    public IDamageable FindNearestResource(Vector3 from, float range)
+    {
+        IDamageable best = null;
+        float bestSqr = range * range;
+
+        foreach (var r in _resourceSpatial.Query(from, range))
+        {
+            if (!r.IsAlive) continue;
+            float d2 = (r.Tr.position - from).sqrMagnitude;
+            if (d2 < bestSqr)
+            {
+                bestSqr = d2;
+                best = r;
+            }
+        }
+        return best;
     }
 }

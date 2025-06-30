@@ -36,6 +36,8 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
     // Reference to the global unit manager.
     protected UnitManager _unitManager;
 
+    protected WorkerResourceGather _wRG;
+
     // Invoked when any unit dies.
     public static event System.Action<UnitBase> UnitDestroyed;
 
@@ -168,6 +170,12 @@ public abstract class UnitBase : MonoBehaviour, ISelectable, IDamageable
         if (_unitManager != null)
             _unitManager.Spatial.Add(this);
         _lastHash = _unitManager.Spatial.GetHashFast(transform.position);
+
+        if (_wRG == null && TryGetComponent<WorkerResourceGather>(out _wRG))
+        {
+            _wRG.Initialize(unitManager);
+            Debug.Log("UnitBase: WRG is set in base and initialized");
+        }
     }
 
     // ---------- Public API ----------

@@ -200,7 +200,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70cab208ce084be40a21926adcb1e6fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _scanInterval: 0.2
   _repositionDelay: 0.05
   _repositionTriesMax: 3
   _repositionCandidates: 8
@@ -297,6 +296,10 @@ PrefabInstance:
     - target: {fileID: 7288658948587702618, guid: e3a14ff12fa38034090e6c2652e20be3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8177392506805709630, guid: e3a14ff12fa38034090e6c2652e20be3, type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
