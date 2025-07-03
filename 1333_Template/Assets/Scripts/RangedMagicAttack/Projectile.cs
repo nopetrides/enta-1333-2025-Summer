@@ -12,8 +12,13 @@ public abstract class Projectile : MonoBehaviour
     [SerializeField] private float _hitThreshold = 0.25f;
 
     private int _damage;
-    private IDamageable _target;
+    private IDamageable _target;        // Original interface ref
+    private MonoBehaviour _targetMb;    // Cached MonoBehaviour for Unity-null check
     private Action<Projectile> _onDespawn;
+
+    /* ===================================================================== */
+    /*  Public API                                                           */
+    /* ===================================================================== */
 
     /// <summary>
     /// Initializes and activates the projectile.
@@ -25,38 +30,58 @@ public abstract class Projectile : MonoBehaviour
     {
         transform.position = startPos;
         _target = target;
+        _targetMb = target as MonoBehaviour;   // cache once
         _damage = damage;
         _onDespawn = onDespawn;
         gameObject.SetActive(true);
     }
 
+    /* ===================================================================== */
+    /*  MonoBehaviour                                                        */
+    /* ===================================================================== */
+
     private void Update()
     {
-        if (_target == null)
+        if (!IsTargetValid())
         {
             Despawn();
             return;
         }
 
-        Vector3 targetPos = ((MonoBehaviour)_target).transform.position;
+        Vector3 targetPos = _targetMb.transform.position;
 
         Vector3 dir = (targetPos - transform.position).normalized;
         if (dir.sqrMagnitude > 0.0001f)
-        {
-            // LookRotation(forward, up)
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-        }
 
         transform.position = Vector3.MoveTowards(transform.position,
                                                  targetPos,
                                                  _speed * Time.deltaTime);
 
-        if (Vector3.SqrMagnitude(transform.position - targetPos) <=
-            _hitThreshold * _hitThreshold)
+        if ((transform.position - targetPos).sqrMagnitude <= _hitThreshold * _hitThreshold)
         {
             _target.TakeDamage(_damage);
             Despawn();
         }
+    }
+
+    /* ===================================================================== */
+    /*  Helpers                                                              */
+    /* ===================================================================== */
+
+    /// <summary>
+    /// Unity friendly target validity check (destroyed, null, dead).
+    /// </summary>
+    private bool IsTargetValid()
+    {
+        // Interface reference null?
+        if (_target == null) return false;
+
+        // Underlying Unity object destroyed?
+        if (_targetMb == null) return false;
+
+        // Custom alive flag
+        return _target.IsAlive;
     }
 
     /// <summary>
@@ -65,6 +90,7 @@ public abstract class Projectile : MonoBehaviour
     private void Despawn()
     {
         _target = null;
+        _targetMb = null;
         _onDespawn?.Invoke(this);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using IdleAI = IdleReturnToCenter;
 
 /// <summary>
 /// Identifiers for each army composition asset.
@@ -17,7 +18,12 @@ public enum ArmyType
     HighMage,
     MountedHighMage,
     Commander,
-    Worker
+    Worker,
+    Wave1,
+    Wave2,
+    Wave3,
+    Wave4,
+    Wave5
 }
 
 /// <summary>
@@ -74,7 +80,7 @@ public class ArmyManager : MonoBehaviour
     {
         if (!_enableHotkeySpawn || _gridManager == null) return;
 
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetKeyDown(KeyCode.Alpha6))
             SpawnEnemyArmyAtRandomNode();
     }
 
@@ -141,6 +147,9 @@ public class ArmyManager : MonoBehaviour
                         _unitManager,
                         _pathfinder,
                         team);
+
+                    if (team == Team.Enemy && unit.GetComponent<IdleAI>() == null)
+                        unit.gameObject.AddComponent<IdleAI>();
 
                     outUnits.Add(unit);
                 }
@@ -210,6 +219,9 @@ public class ArmyManager : MonoBehaviour
                         _unitManager,
                         _pathfinder,
                         team);
+
+                    if (team == Team.Enemy && unitComp.GetComponent<IdleAI>() == null)
+                        unitComp.gameObject.AddComponent<IdleAI>();
                 }
                 else
                 {
@@ -270,7 +282,7 @@ public class ArmyManager : MonoBehaviour
             return;
         }
 
-        // Spawn delay = 0.1f 예시
+        // Spawn delay = 0.1f
         SpawnArmyByType(ArmyType.Spearman, _enemyTeam, node.worldPosition, 0.1f);
 
         Debug.Log($"[ArmyManager] Hot-key spawn EnemyArmy at ({node.worldPosition.x}, {node.worldPosition.y})");
@@ -285,8 +297,8 @@ public class ArmyManager : MonoBehaviour
         if (_gridManager == null || !_gridManager.isInitialized)
             return null;
 
-        int maxX = _gridManager.GridSettings.GridSizeX;   // ← 변경
-        int maxY = _gridManager.GridSettings.GridSizeY;   // ← 변경
+        int maxX = _gridManager.GridSettings.GridSizeX;   
+        int maxY = _gridManager.GridSettings.GridSizeY;   
 
         for (int i = 0; i < maxAttempts; i++)
         {
