@@ -38,22 +38,40 @@ public class BuildingWall : BuildingBase
     /// <summary>Returns true if a unit is already on the wall.</summary>
     public bool HasGarrison => _garrisoned != null;
 
-    /// <summary>Returns a read-only list of ranged units in scan radius.</summary>
+    /// <summary>
+    /// Returns nearby ranged units that are not already garrisoned.
+    /// </summary>
+    /// <param name="manager">Reference to the UnitManager that owns all units</param>
     public List<UnitBase> GetNearbyRangedUnits(UnitManager manager)
     {
+        var list = new List<UnitBase>();
 
-        List<UnitBase> list = new List<UnitBase>();
+        // Null-safety for manager or its collection
+        if (manager == null || manager.AllUnits == null)
+            return list;
+
         foreach (UnitBase u in manager.AllUnits)
         {
-            if (u == null || u.Team != team) continue;
-            if (u.GetComponent<UnitCombat>().IsGarrisoned) continue;
-            if (u.UnitType.AttackType != AttackType.Ranged) continue;
+            if (u == null || u.Team != team)
+                continue;
 
-            float d = Vector3.Distance(transform.position, u.transform.position);
-            if (d <= _scanRadius) list.Add(u);
+            // Skip units that have no combat component or are already garrisoned
+            UnitCombat combat = u.GetComponent<UnitCombat>();
+            if (combat != null && combat.IsGarrisoned)
+                continue;
+
+            // Skip non-ranged units (also safe if UnitType is null)
+            if (u.UnitType == null || u.UnitType.AttackType != AttackType.Ranged)
+                continue;
+
+            // Distance check
+            if (Vector3.Distance(transform.position, u.transform.position) <= _scanRadius)
+                list.Add(u);
         }
+
         return list;
     }
+
 
     /// <summary>Garrisons the given unit on top of the wall.</summary>
     public void Garrison(UnitBase unit)
