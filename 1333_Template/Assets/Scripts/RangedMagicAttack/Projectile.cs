@@ -39,6 +39,14 @@ public abstract class Projectile : MonoBehaviour
         }
 
         Vector3 targetPos = ((MonoBehaviour)_target).transform.position;
+
+        Vector3 dir = (targetPos - transform.position).normalized;
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            // LookRotation(forward, up)
+            transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        }
+
         transform.position = Vector3.MoveTowards(transform.position,
                                                  targetPos,
                                                  _speed * Time.deltaTime);

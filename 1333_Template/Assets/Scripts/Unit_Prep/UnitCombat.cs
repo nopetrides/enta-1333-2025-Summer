@@ -19,33 +19,42 @@ public class UnitCombat : MonoBehaviour
     [SerializeField] private int _repositionCandidates = 8;   // How many nodes to sample for each reposition check
     [SerializeField] private float _minDistanceGain = 0.25f;  // Minimum required improvement in distance to target
 
+    [Header("Combat Data (Prefab)")]
+    [Tooltip("Spawn point for arrows / magic. If null, uses transform.")]
+    [SerializeField] private Transform _firePoint = null;
+
     [SerializeField] private bool _enableDebug = true;        // Debug logging toggle
 
-    // ======= Cached components & state =======
+    // ======= Cached references =======
     private UnitBase _core;           // Reference to main unit script
     private UnitMovement _movement;   // Handles pathfinding and movement
     private UnitManager _unitManager; // Global unit manager
 
+    // ======= Combat stats (cached from UnitTypeSO) =======
+    private AttackType _attackType = AttackType.Melee;
     private float _attackRange;       // Effective attack range (may be modified by multiplier)
     private float _visionRange;       // Effective vision range (may be modified by multiplier)
     private float _baseAttackRange;   // Base attack range from UnitTypeSO (never modified)
     private float _baseVisionRange;   // Base vision range from UnitTypeSO (never modified)
-
-    private float _rangeMul = 1f;     // Range multiplier for attack/vision (used by walls, upgrades)
     private int _attackDamage;        // Damage dealt per attack
     private float _cooldown;          // Attack cooldown duration
-    private float _cooldownTimer;     // Current cooldown timer
 
+    // ======= Runtime state =======
+    private float _cooldownTimer;     // Current cooldown timer
     private IDamageable _currentTarget;    // Current attack target (unit or building)
+    private float _rangeMul = 1f;     // Range multiplier for attack/vision (used by walls, upgrades)
     private bool _isInitialized = false;   // Has Init() been called?
     private bool _isRepositioning = false; // Is the unit currently trying to move closer before attack?
-
     private bool _anchored = false;        // If true, unit cannot move (e.g., on wall/garrisoned)
     private bool _isGarrisoned = false;    // True if the unit is stationed on a wall/building
 
-    /// <summary>
-    /// Returns true if this unit is currently garrisoned (stationed on a wall).
-    /// </summary>
+    // ======= Public accessors =======
+    public AttackType AttackType => _attackType;
+    public int Damage => _attackDamage;
+    public float AttackCooldown => _cooldown;
+    public float AttackRange => _attackRange;
+    public float VisionRange => _visionRange;
+    public Transform FirePoint => _firePoint != null ? _firePoint : transform;
     public bool IsGarrisoned => _isGarrisoned;
 
     // ======= Debug helper =======
@@ -66,10 +75,13 @@ public class UnitCombat : MonoBehaviour
     public void Init(UnitManager um, UnitTypeSO type)
     {
         _unitManager = um;
-        _baseAttackRange = type.AttackRange;   // Cache base values
-        _baseVisionRange = type.VisionRange;
+
+        // Cache all combat-related values from the ScriptableObject
+        _attackType = type.AttackType;
         _attackDamage = type.Damage;
         _cooldown = type.AttackCooldown;
+        _baseAttackRange = type.AttackRange;
+        _baseVisionRange = type.VisionRange;
 
         ApplyMultiplier();  // Compute effective ranges
 
@@ -177,7 +189,21 @@ public class UnitCombat : MonoBehaviour
         if (dir.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
 
-        _currentTarget.TakeDamage(_attackDamage);
+        switch (_attackType)
+        {
+            case AttackType.Melee:
+                _currentTarget.TakeDamage(_attackDamage);
+                break;
+
+            case AttackType.Ranged:
+                FireArrow();
+                break;
+
+            case AttackType.Magic:
+                SpawnMagicImpact();
+                break;
+        }
+
         _core.InternalChangeState(UnitState.Attacking);
     }
 
@@ -258,6 +284,28 @@ public class UnitCombat : MonoBehaviour
         // If the reposition context is no longer valid (target dead/out of range), lose target
         if (!IsRepositionContextValid())
             LoseTarget();
+    }
+
+    // ======= Projectile helpers =======
+    private void FireArrow()
+    {
+        ArrowProjectile arrow = ObjectPool.Instance.RentArrow();
+        if (arrow == null) return;
+
+        arrow.Launch(FirePoint.position,
+                     _currentTarget,
+                     _attackDamage,
+                     ObjectPool.Instance.ReturnToPool);
+    }
+
+    private void SpawnMagicImpact()
+    {
+        MagicImpactEffect impact = ObjectPool.Instance.RentMagic();
+        if (impact == null) return;
+
+        Vector3 hitPos = TargetPos(_currentTarget);
+        impact.Spawn(hitPos, ObjectPool.Instance.ReturnToPool);
+        _currentTarget.TakeDamage(_attackDamage);
     }
 
     // ======= Helper Methods =======
