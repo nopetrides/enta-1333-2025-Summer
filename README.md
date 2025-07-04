@@ -1,108 +1,76 @@
-# Grid base pathfinding with units DEMO
+# How to Play
 
-# Key features
+In this game, you build a base, manage units, and defend against enemy waves.
 
-- Camera pan/zoom over a 2D/3D grid
+---
 
-- A* algorithm for unit navigation
+## Building Types
 
-- ScriptableObjects for unit types
+- **Barracks**  
+  Spawn player units. New units automatically move to the banner.  
+  You can take control by selecting them and right-clicking on the map.
 
-- Army grouping (player vs. enemy) with distinct materials
+- **Resource Buildings** (e.g., Lumber Mill, Quarry)  
+  Generate resources automatically. No interaction required.
 
-- Point(Drag)-and-click selection and movement commands
+- **Walls**  
+  Deploy ranged units on top. Units gain double attack range.
 
-- Debug toggles (path visualization)
+- **Gates**  
+  Can be opened or closed manually.
 
-- Runtime unit spawning via hotkeys
+---
 
-# Controls & Interactions
-1. Camera Controls
-Pan:
-W / A / S / D keys or Middle mouse button and drag
+## Enemy Spawning (Hotkeys)
 
-Zoom:
-Mouse scroll wheel (scroll up to zoom in, scroll down to zoom out)
+- **1–5**: Spawn preset enemy waves.
+- **6**: Spawn random enemy units.
 
-Vetical Zoom:
-F / R Keys
+> All enemy units move toward the center of the map and fight anything nearby.
 
-Rotate:
-Q / E Keys
+---
 
-2. Unit Selection & Movement
-Select Unit:
-Left-click or drag on units that belongs to your army
+## Combat System (Basic)
 
-Move Command:
-Right-click on a target grid cell → selected unit computes a path and moves along it
+- Units automatically scan for nearby enemies and attack.
+- If the target is out of range, they try to move closer.
+- Units use different attack types: Melee, Ranged, or Magic.
+- Ranged and magic units shoot projectiles or effects.
+- Units on walls can't move but have extended range.
 
-Cancel Selection:
+---
 
-Left click on empty space (or other units)
+## Movement and Attack Flow
 
-3. Debug Toggles
+1. **Find Target** – Scan for nearby enemies.
+2. **Check Distance** – Attack if in range, move closer if not.
+3. **Reposition** – Try up to 3 times to get closer.
+4. **Attack** – Deal damage with melee, arrow, or magic.
+5. **Lose Target** – If dead or out of range, stop and idle.
 
-Press X to show/hide full A* pathfinding visualization(Default is hided)
-Press H to kill all units in game scene
+---
 
-4. Runtime Spawning
-BackQuote (`)
-Spawn all enemy units (uses _enemyArmySO, Team = Enemy)
+## Defensive Structure
 
-1 (Alpha1)
-Spawn all player units (uses _playerArmySO, Team = Player)
+Walls act as defensive positions when ranged units are deployed.
 
-2 (Alpha2)
-Spawn Player Spearman army (uses _spearManArmySO, Team = Player)
+---
 
-3 (Alpha3)
-Spawn Player Mounted Knight army (uses _mountedKnightArmySO, Team = Player)
+## Future Features
 
-4 (Alpha4)
-Spawn Player Worker army (uses _workerArmySO, Team = Player)
+- Wave system
+- Resource system
+- Win/Lose game logic
+- UI (Main Menu, Pause Menu)
+- Combat optimization
 
-5 (Alpha5)
-Spawn Player Mounted High Mage army (uses _mountedHighMageArmySO, Team = Player)
+---
 
-6 (Alpha6)
-Spawn Player Archer army (uses _archerArmySO, Team = Player)
+## Credits
 
-7 (Alpha7)
-Spawn Player Crossbowman army (uses _crossbowManArmySO, Team = Player)
-
-8 (Alpha8)
-Spawn Player Commander army (uses _commanderArmySO, Team = Player)
-
-9 (Alpha9)
-Spawn Player Mage army (uses _mageArmySO, Team = Player)
-
-0 (Alpha0)
-Spawn Player High Mage army (uses _highMageArmySO, Team = Player)
-
-# ScriptableObjects
-1. ArmyComposition
-
-- AC_Archer
-- AC_Commander
-- AC_CrossbowMan
-- AC_Enemy
-- AC_HighMage
-- AC_Mage
-- AC_MountedHighMage
-- AC_MountedKnight
-- AC_Player
-- AC_SpearMan
-- AC_Worker
-
-2. UnitTypes
-
-- Archer
-- Commander
-- CrossbowMan
-- HighMage
-- Mage
-- Mounted_HighMage
-- Mounted_Knight
-- SpearMan
-- Worker
+- **Simple Particles FX**  
+  https://assetstore.unity.com/packages/vfx/particles/simple-particles-fx-toon-effects-244171  
+- **Fantasy Weapons Pack**  
+  https://assetstore.unity.com/packages/3d/props/weapons/free-low-poly-weapons-pack-fantasy-dream-320869  
+- **Rock/Tree/Texture Packs**  
+  See full links in original credits section
