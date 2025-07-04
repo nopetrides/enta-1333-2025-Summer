@@ -53,11 +53,6 @@ public class UnitAnimHandler : MonoBehaviour
                 _animator.SetTrigger(AttackTriggerHash);
                 break;
 
-            case UnitState.Patrolling:
-                // Future: use same moving animation or a separate patrol animation
-                _animator.SetBool(IsMovingHash, true);
-                break;
-
             default:
                 break;
         }

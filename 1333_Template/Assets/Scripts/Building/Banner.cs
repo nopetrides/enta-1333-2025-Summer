@@ -45,7 +45,7 @@ public class Banner : MonoBehaviour, ISelectable
     private void Start()
     {
         // Occupy the cell we start in
-        GridNode startNode = _gridManager.getNodeFromWorldPosition(transform.position);
+        GridNode startNode = _gridManager.GetNodeFromWorldPosition(transform.position);
         OccupyNode(startNode);
     }
 
@@ -81,7 +81,7 @@ public class Banner : MonoBehaviour, ISelectable
         if (_groundPlane.Raycast(ray, out float enter))
         {
             Vector3 hitPoint = ray.GetPoint(enter);
-            GridNode node = _gridManager.getNodeFromWorldPosition(hitPoint);
+            GridNode node = _gridManager.GetNodeFromWorldPosition(hitPoint);
             if (node != null && node.walkable)
             {
                 transform.position = node.worldPosition;
@@ -96,7 +96,7 @@ public class Banner : MonoBehaviour, ISelectable
         if (_groundPlane.Raycast(ray, out float enter))
         {
             Vector3 hitPoint = ray.GetPoint(enter);
-            GridNode node = _gridManager.getNodeFromWorldPosition(hitPoint);
+            GridNode node = _gridManager.GetNodeFromWorldPosition(hitPoint);
             if (node != null && node.walkable)
             {
                 transform.position = node.worldPosition;

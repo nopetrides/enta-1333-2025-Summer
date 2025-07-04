@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd9377bf4873d7b4e8f694bc36f01f3b, type: 3}
+  m_Name: AC_Wave1
+  m_EditorClassIdentifier: 
+  armyName: Wave1
+  unitEntries:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: 5d9452b30d2d0214d93a048225072758, type: 2}
+      unitPrefab: {fileID: 8673963469282243158, guid: 6adf3926c761796489e36c8e61d94576, type: 3}
+    count: 4
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: ed6d14886be13a54588d502b58a95fa3, type: 2}
+      unitPrefab: {fileID: 5929047711669387220, guid: 44478e378409b5a469654ca0453aa1b3, type: 3}
+    count: 4
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: ec5ecacaf7fa0ee44a6b5823f3cd6743, type: 2}
+      unitPrefab: {fileID: 1173969504950306958, guid: 18b2dfd3d580faf4193d97b567b81646, type: 3}
+    count: 2

@@ -13,10 +13,16 @@ public class ResourceManager : MonoBehaviour
     [Tooltip("List of ResourceTypeSO assets to initialize resource entries.")]
     [SerializeField] private List<ResourceTypeSO> _resourceTypeSOs = new();
 
+    [Header("Resource Panel UI")]
+    [Tooltip("Panel which shows all resources icon and number")]
+    [SerializeField] private ResourcePanelUI _resourcePanelUI;
+
     // Internal dictionary mapping each ResourceDataSO to its current count.
     private Dictionary<ResourceDataSO, int> _resources;
     // Lookup map from enum value to ResourceDataSO asset for enum-based methods.
     private Dictionary<ResourceList, ResourceDataSO> _enumLookup;
+
+    public event System.Action<ResourceList, int> OnResourceChanged;  
 
 #if UNITY_EDITOR
     [Header("Debug: Resource Dictionary")]
@@ -52,9 +58,17 @@ public class ResourceManager : MonoBehaviour
             }
         }
 
+        _resourcePanelUI.RefreshAll();
+
 #if UNITY_EDITOR
         UpdateDebugList();
 #endif
+    }
+
+    // helper
+    private void FireChanged(ResourceList type, int newValue)
+    {
+        OnResourceChanged?.Invoke(type, newValue);
     }
 
     /// <summary>
@@ -71,7 +85,9 @@ public class ResourceManager : MonoBehaviour
             _resources[data] = 0;
 
         _resources[data] += amount;
-        Debug.Log($"ResourceManager: Added {amount}x {data.DisplayName}. New total: {_resources[data]}");
+        FireChanged(data.ResourceType, _resources[data]);
+        _resourcePanelUI.RefreshAll();
+        //Debug.Log($"ResourceManager: Added {amount}x {data.DisplayName}. New total: {_resources[data]}");
 
 #if UNITY_EDITOR
         UpdateDebugList();
@@ -102,6 +118,8 @@ public class ResourceManager : MonoBehaviour
             return false;
 
         _resources[data] -= amount;
+        FireChanged(data.ResourceType, _resources[data]);
+        _resourcePanelUI.RefreshAll();
         Debug.Log($"ResourceManager: Spent {amount}x {data.DisplayName}. Remaining: {_resources[data]}");
 
 #if UNITY_EDITOR

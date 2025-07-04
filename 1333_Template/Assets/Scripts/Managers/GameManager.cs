@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
 
         // Resources & Building placement DI
         _resourceManager.Initialize();
-        _buildingPlacementManager.Initialize(_resourceManager, _armyManager, _gridManager);
+        _buildingPlacementManager.Initialize(_resourceManager, _armyManager, _gridManager, _unitManager);
     }
 
     public void StartGame(string name)

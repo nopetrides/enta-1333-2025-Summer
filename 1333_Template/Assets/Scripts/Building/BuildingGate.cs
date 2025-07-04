@@ -157,10 +157,10 @@ public class BuildingGate : BuildingBase
     /// </summary>
     public override void OnSelected()
     {
+        ShowHpBar();
         foreach (var smr in _skinnedRenderers)
             if (smr != null)
                 smr.material.color = Color.gray;
-        // TODO: Pop up UI screen
     }
 
     /// <summary>
@@ -168,6 +168,7 @@ public class BuildingGate : BuildingBase
     /// </summary>
     public override void OnDeselected()
     {
+        HideHpBar();
         ApplyTeamMaterial();
     }
 }

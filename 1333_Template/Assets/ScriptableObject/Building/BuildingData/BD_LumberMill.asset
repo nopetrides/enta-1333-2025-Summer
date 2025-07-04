@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _buildingName: LumberMill
   _buttonImage: {fileID: 21300000, guid: e83a04643b10fbc4aa6238ebfdad19ac, type: 3}
-  _description: Example description
+  _description: Buzzing saws and sturdy axes turn nearby forests into stacks of wood
+    every 10 seconds.
   _buildingPrefab: {fileID: 6809940844390332904, guid: 1639110581d01e34eb2ec3e2de7688a3, type: 3}
   _buildingModel: {fileID: 6809940844390332904, guid: 50fd36706e590924e8567d3fd2c145bd, type: 3}
   _health: 100

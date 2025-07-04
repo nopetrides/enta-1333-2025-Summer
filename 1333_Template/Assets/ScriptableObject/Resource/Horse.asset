@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _resourceType: 6
   _displayName: Horse
-  _icon: {fileID: 21300000, guid: d1546f8db185caf4dafcfa58efa3ba2c, type: 3}
+  _icon: {fileID: 21300000, guid: b7a43fc2df036484bbd69bf617d3b8bd, type: 3}
   _description: For upgrade units(Mounted_HighMage, Mounted_Knight)

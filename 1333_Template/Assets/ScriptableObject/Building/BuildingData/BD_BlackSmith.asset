@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _buildingName: BlackSmith
   _buttonImage: {fileID: 21300000, guid: 614447bd20e3bfa43bb751fe8976fcad, type: 3}
-  _description: Example description
+  _description: Roaring forges smelt ore into gleaming iron ingots every 15 seconds.
   _buildingPrefab: {fileID: 124789148671233775, guid: bf1844ae5159226498ea6804f2c8180c, type: 3}
   _buildingModel: {fileID: 124789148671233775, guid: 3558bda85f268c2478c2a8476c865885, type: 3}
   _health: 100

@@ -21,6 +21,10 @@ public class BuildingResource : BuildingBase
     private ResourceManager _resourceManager;
     private float _productionTimer;
 
+    public ResourceDataSO ResourceType => _resourceType;
+    public int ProductionAmount => _productionAmount;
+    public float ProductionInterval => _productionInterval;
+
     protected override void Awake()
     {
         base.Awake();
@@ -52,6 +56,7 @@ public class BuildingResource : BuildingBase
 
     public override void OnSelected()
     {
+        ShowHpBar();
         foreach (var r in _selectionRenderers)
             if (r != null)
                 r.material.color = Color.gray;
@@ -59,6 +64,7 @@ public class BuildingResource : BuildingBase
 
     public override void OnDeselected()
     {
+        HideHpBar();
         ApplyTeamMaterial();
     }
 }
