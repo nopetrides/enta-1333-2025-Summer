@@ -37,16 +37,18 @@ public class Banner : MonoBehaviour, ISelectable
         _mainCamera = Camera.main;
         _originalRotation = transform.rotation;
         _groundPlane = new Plane(Vector3.up, Vector3.zero);
-
-        if (_gridManager == null)
-            Debug.LogError("Banner: GridManager is not assigned.");
     }
 
-    private void Start()
+    public void Initialize(GridManager gridManager)
     {
-        // Occupy the cell we start in
-        GridNode startNode = _gridManager.GetNodeFromWorldPosition(transform.position);
-        OccupyNode(startNode);
+        _gridManager = gridManager;
+
+        // First-time occupy after DI
+        if (_occupiedNode == null && _gridManager != null)
+        {
+            GridNode startNode = _gridManager.GetNodeFromWorldPosition(transform.position);
+            OccupyNode(startNode);
+        }
     }
 
     private void OnMouseDown()

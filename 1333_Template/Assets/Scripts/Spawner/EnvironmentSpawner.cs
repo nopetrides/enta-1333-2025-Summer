@@ -12,6 +12,13 @@ public class EnvironmentSpawner : MonoBehaviour
     [SerializeField] private UnitManager _unitManager = null;
     [SerializeField] private ResourceManager _resourceManager = null;
 
+    [Header("Banner Spawn")]
+    [SerializeField] private bool _spawnBanner = true;
+    [Tooltip("Banner prefab with Banner component.")]
+    [SerializeField] private GameObject _bannerPrefab = null;
+    [Tooltip("Grid coordinates to place the banner (-1 = auto-center).")]
+    [SerializeField] private Vector2Int _bannerGridPos = new Vector2Int(-1, -1);
+
     [Header("Grid Manager")]
     [SerializeField] private GridManager _gridManager = null;
 
@@ -60,9 +67,51 @@ public class EnvironmentSpawner : MonoBehaviour
         _cellSize = _gridManager.GridSettings.NodeSize;
     }
 
-    private void Start()
+    public void InitializeEnvironment()
     {
         SpawnEnvironment();
+        if (_spawnBanner) SpawnBanner();
+    }
+
+    private void SpawnBanner()
+    {
+        if (_bannerPrefab == null)
+        {
+            Debug.LogWarning("EnvironmentSpawner: Banner prefab not assigned.");
+            return;
+        }
+
+        int gx = _bannerGridPos.x >= 0
+                 ? _bannerGridPos.x
+                 : _gridManager.GridSettings.GridSizeX / 2;
+        int gy = _bannerGridPos.y >= 0
+                 ? _bannerGridPos.y
+                 : _gridManager.GridSettings.GridSizeY / 2;
+
+        GridNode node = _gridManager.GetNode(gx, gy);
+        if (node == null || !node.walkable)
+        {
+            Debug.LogWarning($"EnvironmentSpawner: Invalid banner node ({gx},{gy}).");
+            return;
+        }
+
+        var bannerGO = Instantiate(_bannerPrefab,
+                                   node.worldPosition,
+                                   Quaternion.Euler(0f, 180f, 0f),
+                                   _environmentRoot);
+
+        if (bannerGO.TryGetComponent<Banner>(out var banner))
+        {
+            // DI
+            banner.Initialize(_gridManager);
+        }
+        else
+        {
+            Debug.LogError("EnvironmentSpawner: Banner prefab missing Banner component.");
+        }
+
+        // Mark that grid cell as non-walkable immediately
+        _gridManager.SetWalkable(gx, gy, false);
     }
 
     /// <summary>

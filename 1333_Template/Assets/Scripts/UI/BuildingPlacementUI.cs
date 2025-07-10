@@ -10,10 +10,7 @@ public class BuildingPlacementUI : MonoBehaviour
     [SerializeField] private BuildingTypeSO _buildingType;
     [SerializeField] private BuildingPlacementManager _placementManager;
 
-    /// <summary>
-    /// Called when the script starts. Displays building placement UI.
-    /// </summary>
-    private void Start()
+    public void InitializeBuildingPlacementUI()
     {
         ShowBuildingPlacementUI();
     }

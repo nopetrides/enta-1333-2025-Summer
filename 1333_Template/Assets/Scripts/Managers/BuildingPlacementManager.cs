@@ -11,6 +11,8 @@ using System.Collections.Generic;
 /// </summary>
 public class BuildingPlacementManager : MonoBehaviour
 {
+    [Header("BuildingPlacementUI")]
+    [SerializeField] private BuildingPlacementUI _bpUI;
     // ======= Ghost Preview Materials =======
     [Header("Ghost Preview Materials")]
     [Tooltip("Semi-transparent green material for valid placement")]
@@ -44,13 +46,14 @@ public class BuildingPlacementManager : MonoBehaviour
     /// Dependency injection for resource, army, grid, and unit managers.
     /// Called at game start by the GameManager.
     /// </summary>
-    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager, UnitManager unitManager)
+    public void Initialize(ResourceManager resourceManager, ArmyManager armyManager, GridManager gridManager, UnitManager unitManager, Camera camera)
     {
         _resourceManager = resourceManager;
         _armyManager = armyManager;
         _gridManager = gridManager;
         _unitManager = unitManager;
-
+        _mainCamera = camera;
+        _bpUI.InitializeBuildingPlacementUI();
         // Error logs for missing dependencies
         if (_gridManager == null)
             Debug.LogError("BuildingPlacementManager: GridManager is not assigned.");
@@ -60,16 +63,18 @@ public class BuildingPlacementManager : MonoBehaviour
             Debug.LogError("BuildingPlacementManager: ResourceManager is not assigned.");
         if (_unitManager == null)
             Debug.LogError("BuildingPlacementManager: UnitManager is not assigned.");
+        if (_mainCamera == null)
+            Debug.LogError("BuildingPlacementManager: MainCamera not found.");
     }
 
     /// <summary>
-    /// Finds and caches the main camera at startup.
+    /// Shows or hides the entire Building-Placement UI.
+    /// Call this from scene-load callbacks.
     /// </summary>
-    private void Awake()
+    public void ToggleUI(bool visible)
     {
-        _mainCamera = Camera.main;
-        if (_mainCamera == null)
-            Debug.LogError("BuildingPlacementManager: MainCamera not found.");
+        if (_bpUI != null)
+            _bpUI.gameObject.SetActive(visible);
     }
 
     /// <summary>

@@ -16,6 +16,9 @@ public class GridManager : MonoBehaviour
     [Header("Grid Settings")]
     [SerializeField] private GridSettings _gridSettings = null; // Grid configuration asset
 
+    [Header("Environment")]
+    [SerializeField] private EnvironmentSpawner _spawner = null; // Environment spawner
+
     [Header("Terrain Types (index-matching)")]
     [Tooltip("0 Grass, 1 Sand, 2 Water, 3 Road, 4 Forest, 5 Rock, 6 Lava")]
     [SerializeField] private TerrainType[] _terrainTypes = null; // List of all possible terrain types
@@ -59,35 +62,28 @@ public class GridManager : MonoBehaviour
     private void Awake()
     {
 #if UNITY_EDITOR
-        // Editor-only sanity check: warn if the texture's sRGB flag is still on
-        if (_mapTexture != null)
-        {
-            string path = AssetDatabase.GetAssetPath(_mapTexture);
-            if (AssetImporter.GetAtPath(path) is TextureImporter ti && ti.sRGBTexture)
-            {
-                Debug.LogWarning(
-                    $"[GridManager] Map texture \"{_mapTexture.name}\" has “sRGB (Color Texture)” enabled. " +
-                    "Disable it in the Inspector for exact colour matching.");
-            }
-        }
+        ValidateTextureSRGB();
 #endif
+        // Defer actual grid construction to InitializeGrid()
+    }
 
-        PopulateDefaultColors(); // Load default color mapping
-        InitializeGrid(); // Create grid (from texture or random)
+#if UNITY_EDITOR
+    /// <summary>
+    /// Warns in editor if the terrain texture is still in sRGB mode.
+    /// </summary>
+    private void ValidateTextureSRGB()
+    {
+        if (_mapTexture == null) return;
 
-        isInitialized = true;
-        if (UseGridMap)
+        string path = AssetDatabase.GetAssetPath(_mapTexture);
+        if (AssetImporter.GetAtPath(path) is TextureImporter ti && ti.sRGBTexture)
         {
-            if (UseSimpleTexture) 
-            {
-                SpawnSimpleTerrainVisuals();
-            }
-            else
-            {
-                SpawnTerrainVisuals();
-            }
+            Debug.LogWarning(
+                $"[GridManager] Map texture \"{_mapTexture.name}\" has “sRGB (Color Texture)” enabled. " +
+                "Disable it in the Inspector for exact colour matching.");
         }
     }
+#endif
 
 
     private void Update()
@@ -99,12 +95,48 @@ public class GridManager : MonoBehaviour
     // =========================== Grid Creation ================================
 
     /// <summary>
-    /// Initializes the grid either from map texture or randomly.
+    /// Builds the grid, spawns terrain visuals and marks the manager as initialized.
+    /// Safe to call multiple times; subsequent calls are ignored.
     /// </summary>
     public void InitializeGrid()
     {
-        if (UseGridMap) InitializeGridFromTexture();
-        else InitializeRandomGrid();
+        if (isInitialized) return;
+
+        PopulateDefaultColors();
+        BuildGridNodes();
+
+        if (UseGridMap)
+        {
+            if (UseSimpleTexture)
+            {
+                SpawnSimpleTerrainVisuals();
+            }
+            else
+            {
+                SpawnTerrainVisuals();
+            }
+        }
+
+        isInitialized = true;
+
+        _spawner.InitializeEnvironment();
+    }
+
+    /// <summary>
+    /// Chooses the correct generation path (texture vs. random) and
+    /// fills the _gridNodes array accordingly.
+    /// </summary>
+    private void BuildGridNodes()
+    {
+        // Using map texture?
+        if (UseGridMap && _mapTexture != null)
+        {
+            InitializeGridFromTexture();   
+        }
+        else
+        {
+            InitializeRandomGrid();        
+        }
     }
 
     /// <summary>
