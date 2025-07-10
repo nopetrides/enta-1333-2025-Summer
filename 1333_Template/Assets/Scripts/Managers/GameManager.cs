@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         _uiManager.ShowScreen(UIScreenType.MainMenu);
+        AudioManager.Instance.PlayMusic(FMODEvents.Instance.MenuMusic);
     }
 
     private void Update()
