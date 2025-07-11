@@ -348,7 +348,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc61bf745a5ca942b05efa8ef262c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 10
+  attackRange: 1.5
   attackCooldown: 1
   attackDamage: 2
 --- !u!4 &5700302952391367993 stripped
