@@ -44,7 +44,7 @@ public sealed class SfxPlayer
         _instance = RuntimeManager.CreateInstance(reference);
 
         _follow = follow;
-        _lastPos = follow ? follow.position : position;
+        _lastPos = follow != null ? follow.position : position;
         _isSpatial = true;
         _priority = priority;
         _startTime = Time.time;
@@ -106,5 +106,6 @@ public sealed class SfxPlayer
         _instance.release();
         _instance.clearHandle();
         _isPlaying = false;
+        _follow = null;
     }
 }
