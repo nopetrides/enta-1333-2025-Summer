@@ -277,9 +277,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1161391204}
   - component: {fileID: 1161391203}
-  - component: {fileID: 1161391202}
   - component: {fileID: 1161391205}
   - component: {fileID: 1161391206}
+  - component: {fileID: 1161391207}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -287,14 +287,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1161391202
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1161391201}
-  m_Enabled: 1
 --- !u!20 &1161391203
 Camera:
   m_ObjectHideFlags: 0
@@ -428,6 +420,20 @@ MonoBehaviour:
   useKeyboardRotate: 1
   initialFocusDistance: 10
   rotateSpeed: 100
+--- !u!114 &1161391207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161391201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c6556701af9e04380698b89f691b6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nonRigidbodyVelocity: 0
+  attenuationObject: {fileID: 1161391201}
 --- !u!1 &1433302145
 GameObject:
   m_ObjectHideFlags: 0

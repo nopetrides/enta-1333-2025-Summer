@@ -44,6 +44,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGame(string name)
     {
+        AudioManager.Instance.StopMusic();
         _pendingGameName = name;
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;

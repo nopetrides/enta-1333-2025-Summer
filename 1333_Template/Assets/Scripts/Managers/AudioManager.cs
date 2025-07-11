@@ -1,186 +1,146 @@
 using UnityEngine;
 using FMODUnity;
 using FMOD.Studio;
-using System.Collections.Generic;
+using static SfxPlayerPool;
 
 /// <summary>
-/// AudioManager is a Singleton that manages all FMOD audio in the game.
-/// It handles music, ambience, sound effects, and event instances.
-/// Area-related enums and triggers have been removed for simplicity.
+/// Central facade that exposes high-level audio API
+/// and delegates SFX voice allocation to SfxPlayerPool.
 /// </summary>
 public class AudioManager : Singleton<AudioManager>
 {
-    // Active FMOD event instances for cleanup
-    private readonly List<EventInstance> _eventInstances = new List<EventInstance>();
-    // StudioEventEmitters for cleanup
-    private readonly List<StudioEventEmitter> _eventEmitters = new List<StudioEventEmitter>();
-    // Optional 3D attachment
-    private readonly Dictionary<EventInstance, Transform> _eventInstancePositions = new Dictionary<EventInstance, Transform>();
+    /* ------------------------------------------------------------------ */
+    /*  Inspector                                                         */
+    /* ------------------------------------------------------------------ */
 
-    private EventInstance _musicInstance;
-    private EventInstance _ambienceInstance;
-
-    [Header("Volume Settings")]
+    [Header("Volume")]
     [Range(0, 1)] public float masterVolume = 1f;
     [Range(0, 1)] public float musicVolume = 1f;
     [Range(0, 1)] public float ambienceVolume = 1f;
     [Range(0, 1)] public float sfxVolume = 1f;
 
-    private Bus _masterBus;
-    private Bus _musicBus;
-    private Bus _ambienceBus;
-    private Bus _sfxBus;
+    [Header("Dependencies")]
+    [SerializeField] private SfxPlayerPool _sfxPool;   // assign from Inspector
 
-    /// <summary>
-    /// Initialize FMOD buses and internal collections.
-    /// </summary>
+    /* ------------------------------------------------------------------ */
+    /*  Internal                                                          */
+    /* ------------------------------------------------------------------ */
+
+    private Bus _busMaster, _busMusic, _busAmb, _busSfx;
+
+    private EventInstance _music;
+    private EventInstance _ambience;
+
+    private float _prevMaster, _prevMusic, _prevAmb, _prevSfx;
+
+    /* ============================ Awake ============================== */
     private void Awake()
     {
-        _masterBus = RuntimeManager.GetBus("bus:/");
-        _musicBus = RuntimeManager.GetBus("bus:/Music");
-        _ambienceBus = RuntimeManager.GetBus("bus:/Ambience");
-        _sfxBus = RuntimeManager.GetBus("bus:/SFX");
+        // auto-find pool if inspector not set
+        if (_sfxPool == null)
+            Debug.LogWarning("AudioManager: sfx pool is not assigned");
+
+        _busMaster = GetBusChecked("bus:/");
+        _busMusic = GetBusChecked("bus:/Music");
+        _busAmb = GetBusChecked("bus:/Ambience");
+        _busSfx = GetBusChecked("bus:/SFX");
     }
 
-    /// <summary>
-    /// Update volumes and 3D positions each frame.
-    /// </summary>
+    /* ============================ Update ============================= */
     private void Update()
     {
-        _masterBus.setVolume(masterVolume);
-        _musicBus.setVolume(musicVolume);
-        _ambienceBus.setVolume(ambienceVolume);
-        _sfxBus.setVolume(sfxVolume);
-
-        if (_eventInstancePositions.Count > 0)
-        {
-            foreach (var kvp in _eventInstancePositions)
-            {
-                var inst = kvp.Key;
-                var trans = kvp.Value;
-                if (inst.isValid() && trans != null)
-                    inst.set3DAttributes(RuntimeUtils.To3DAttributes(trans.position));
-            }
-        }
+        UpdateVolumesIfDirty();
     }
 
-    /// <summary>
-    /// Play a one-shot sound effect at the given world position.
-    /// </summary>
-    public void PlayOneShot(EventReference sound, Vector3 position)
+    /* ============================ Public API ========================= */
+    public SfxHandle PlaySfx(Vector3 pos,
+                             EventReference ev,
+                             SfxPriority pr = SfxPriority.Medium)
     {
-        RuntimeManager.PlayOneShot(sound, position);
+        if (_sfxPool == null) return SfxHandle.Invalid;
+        return _sfxPool.TryPlay3D(ev, pos, pr);
     }
 
-    /// <summary>
-    /// Create an FMOD event instance, optionally attached to a Transform for 3D.
-    /// </summary>
-    public EventInstance CreateEventInstance(EventReference reference, Transform attachTo = null)
+    public SfxHandle PlaySfxAttached(Transform t,
+                                     EventReference ev,
+                                     SfxPriority pr = SfxPriority.Medium)
     {
-        var inst = RuntimeManager.CreateInstance(reference);
-        _eventInstances.Add(inst);
-
-        if (attachTo != null)
-        {
-            _eventInstancePositions[inst] = attachTo;
-            inst.set3DAttributes(RuntimeUtils.To3DAttributes(attachTo.position));
-        }
-
-        return inst;
+        if (_sfxPool == null) return SfxHandle.Invalid;
+        return _sfxPool.TryPlayAttached(ev, t, pr);
     }
 
-    /// <summary>
-    /// Initialize and start background music.
-    /// </summary>
-    public void PlayMusic(EventReference musicRef)
+    public SfxHandle PlaySfx2D(EventReference ev,
+                               SfxPriority pr = SfxPriority.Medium)
     {
-        StopMusic(true);
-        _musicInstance = CreateEventInstance(musicRef);
-        _musicInstance.start();
+        if (_sfxPool == null) return SfxHandle.Invalid;
+        return _sfxPool.TryPlay2D(ev, pr);
     }
 
-    /// <summary>
-    /// Stop current music playback.
-    /// </summary>
-    public void StopMusic(bool immediate = false)
+    /* ---------- Stop specific handle ---------- */
+
+    public void StopSfx(SfxHandle handle, bool immediate = false)
     {
-        if (_musicInstance.isValid())
-        {
-            _musicInstance.stop(immediate ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT);
-            _musicInstance.release();
-            _musicInstance.clearHandle();
-        }
+        _sfxPool?.Stop(handle, immediate);
     }
 
-    /// <summary>
-    /// Set a parameter on the music event instance.
-    /// </summary>
-    public void SetMusicParameter(string name, float value)
+    /// <summary>Cross-fade to new music track.</summary>
+    public void PlayMusic(EventReference musicRef, float fadeOut = 0.5f)
     {
-        if (_musicInstance.isValid())
-            _musicInstance.setParameterByName(name, value);
+        StopInstance(_music, fadeOut);
+        _music = RuntimeManager.CreateInstance(musicRef);
+        _music.start();
     }
 
-    /// <summary>
-    /// Initialize and start ambience.
-    /// </summary>
-    public void PlayAmbience(EventReference ambienceRef)
+    public void StopMusic(float fade = 0.5f) => StopInstance(_music, fade);
+
+    public void PlayAmbience(EventReference ambRef, float fadeOut = 0.5f)
     {
-        StopAmbience(true);
-        _ambienceInstance = CreateEventInstance(ambienceRef);
-        _ambienceInstance.start();
+        StopInstance(_ambience, fadeOut);
+        _ambience = RuntimeManager.CreateInstance(ambRef);
+        _ambience.start();
     }
 
-    /// <summary>
-    /// Stop current ambience playback.
-    /// </summary>
-    public void StopAmbience(bool immediate = false)
-    {
-        if (_ambienceInstance.isValid())
-        {
-            _ambienceInstance.stop(immediate ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT);
-            _ambienceInstance.release();
-            _ambienceInstance.clearHandle();
-        }
-    }
+    public void StopAmbience(float fade = 0.5f) => StopInstance(_ambience, fade);
 
-    /// <summary>
-    /// Initialize or attach a StudioEventEmitter on a GameObject.
-    /// </summary>
-    public StudioEventEmitter InitializeEventEmitter(EventReference reference, GameObject go)
-    {
-        var emitter = go.GetComponent<StudioEventEmitter>() ?? go.AddComponent<StudioEventEmitter>();
-        emitter.EventReference = reference;
-        _eventEmitters.Add(emitter);
-        return emitter;
-    }
-
-    /// <summary>
-    /// Cleanup all FMOD instances and emitters.
-    /// </summary>
-    private void CleanUp()
-    {
-        foreach (var inst in _eventInstances)
-        {
-            if (inst.isValid())
-            {
-                inst.stop(STOP_MODE.IMMEDIATE);
-                inst.release();
-            }
-        }
-        _eventInstances.Clear();
-        _eventInstancePositions.Clear();
-
-        foreach (var emitter in _eventEmitters)
-            emitter?.Stop();
-        _eventEmitters.Clear();
-
-        StopMusic(true);
-        StopAmbience(true);
-    }
-
+    /* ============================ Cleanup ============================ */
     private void OnDestroy()
     {
-        CleanUp();
+        StopInstance(_music, 0);
+        StopInstance(_ambience, 0);
+        _sfxPool?.Shutdown();           // pool handles its players
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Helpers                                                           */
+    /* ------------------------------------------------------------------ */
+
+    private void UpdateVolumesIfDirty()
+    {
+        if (!Mathf.Approximately(masterVolume, _prevMaster))
+        { _busMaster.setVolume(masterVolume); _prevMaster = masterVolume; }
+
+        if (!Mathf.Approximately(musicVolume, _prevMusic))
+        { _busMusic.setVolume(musicVolume); _prevMusic = musicVolume; }
+
+        if (!Mathf.Approximately(ambienceVolume, _prevAmb))
+        { _busAmb.setVolume(ambienceVolume); _prevAmb = ambienceVolume; }
+
+        if (!Mathf.Approximately(sfxVolume, _prevSfx))
+        { _busSfx.setVolume(sfxVolume); _prevSfx = sfxVolume; }
+    }
+
+    private static Bus GetBusChecked(string path)
+    {
+        var bus = RuntimeManager.GetBus(path);
+        if (!bus.isValid())
+            Debug.LogError($"FMOD bus not found: {path}");
+        return bus;
+    }
+
+    private static void StopInstance(EventInstance inst, float fade)
+    {
+        if (!inst.isValid()) return;
+        inst.stop(fade <= 0 ? STOP_MODE.IMMEDIATE : STOP_MODE.ALLOWFADEOUT);
+        inst.release();
     }
 }
