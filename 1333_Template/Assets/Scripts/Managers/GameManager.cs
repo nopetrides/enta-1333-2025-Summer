@@ -1,6 +1,12 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
+/// <summary>
+/// Central controller for menu flow, fade transitions,
+/// asynchronous scene loading, pause handling, and runtime manager
+/// initialization. Designed for a single “InGame” scene.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     [Header("Managers")]
@@ -13,8 +19,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UIManager _uiManager;
 
     private Camera _camera;
-    private string _pendingGameName;
-    private bool _isPaused = false;
+    private bool _isPaused;
+
+    /* ================================================================== */
+    /*  Unity lifecycle                                                   */
+    /* ================================================================== */
 
     private void Start()
     {
@@ -24,66 +33,101 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (SceneManager.GetActiveScene().name != "InGame")
-            return;
+        if (SceneManager.GetActiveScene().name != "InGame") return;
 
         if (Input.GetKeyDown(KeyCode.Tab))
             TogglePause();
     }
 
+    /* ================================================================== */
+    /*  Public entry points                                               */
+    /* ================================================================== */
+
+    /// <summary>Begin the transition from main menu to gameplay.</summary>
+    public void StartGame() => StartCoroutine(StartGameRoutine());
+
+    public void OpenHowToPlay() => _uiManager.ShowScreen(UIScreenType.HowToPlay);
+    public void OpenSettings() => _uiManager.ShowScreen(UIScreenType.Settings);
+
+    public void OpenPause()
+    {
+        _uiManager.ShowScreen(UIScreenType.Pause);
+        Time.timeScale = 0f;
+    }
+
+    public void ResumeGame()
+    {
+        _uiManager.ShowScreen(UIScreenType.None);
+        Time.timeScale = 1f;
+    }
+
+    public void GetMainCamera(Camera cam) => _camera = cam;
+
+    /* ================================================================== */
+    /*  Private helpers                                                   */
+    /* ================================================================== */
+
+    /// <summary>Toggles the pause state via Tab key.</summary>
     private void TogglePause()
     {
         _isPaused = !_isPaused;
         Time.timeScale = _isPaused ? 0f : 1f;
-
-        if (_isPaused)
-            _uiManager.ShowScreen(UIScreenType.Pause);
-        else
-            _uiManager.ShowScreen(UIScreenType.None);
+        _uiManager.ShowScreen(_isPaused ? UIScreenType.Pause : UIScreenType.None);
     }
 
-    public void StartGame(string name)
+    /// <summary>
+    /// Fade out, load the “InGame” scene asynchronously, initialize managers
+    /// over multiple frames, then fade-in.
+    /// </summary>
+    private IEnumerator StartGameRoutine()
     {
+        /* 1. Fade to black */
+        yield return ScreenFader.Instance.Fade(0f, 1f, 0.5f);
+
+        /* 2. Stop menu music (fade out handled inside AudioManager) */
         AudioManager.Instance.StopMusic();
-        _pendingGameName = name;
-        SceneManager.sceneLoaded -= HandleSceneLoaded;
-        SceneManager.sceneLoaded += HandleSceneLoaded;
-        SceneManager.LoadScene("InGame", LoadSceneMode.Single);
+
+        /* 3. Load scene in background */
+        AsyncOperation op = SceneManager.LoadSceneAsync("InGame");
+        op.allowSceneActivation = false;
+        while (op.progress < 0.9f)                      // “almost done”
+            yield return null;
+
+        op.allowSceneActivation = true;                 // perform switch
+        yield return null;                              // wait one frame
+
+        /* 4. Initialize runtime managers */
+        yield return InitializeManagersAsync();
+
+        /* 5. Fade back to gameplay */
+        yield return ScreenFader.Instance.Fade(1f, 0f, 0.5f);
     }
 
-    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    /// <summary>
+    /// Initializes heavy systems one per frame to avoid a single frame spike.
+    /// </summary>
+    private IEnumerator InitializeManagersAsync()
     {
-        if (scene.name != "InGame") return;
-        SceneManager.sceneLoaded -= HandleSceneLoaded;
-
-        Debug.Log($"Starting game: {_pendingGameName}");
         _camera = Camera.main;
 
         _gridManager.InitializeGrid();
+        yield return null;
+
         _armyManager.Initialize(_gridManager, _unitManager);
+        yield return null;
+
         _unitSelectionManager.Initialize(_camera, _gridManager, _unitManager);
+        yield return null;
+
         _resourceManager.Initialize();
-        _buildingPlacementManager.Initialize(_resourceManager, _armyManager, _gridManager, _unitManager, _camera);
+        yield return null;
+
+        _buildingPlacementManager.Initialize(
+            _resourceManager, _armyManager, _gridManager, _unitManager, _camera);
+        yield return null;
 
         _isPaused = false;
         Time.timeScale = 1f;
-
         _uiManager.ShowScreen(UIScreenType.None);
-    }
-
-    public void GetMainCamera(Camera camera) => _camera = camera;
-
-    // UI public methods
-    public void OpenHowToPlay() => _uiManager.ShowScreen(UIScreenType.HowToPlay);
-    public void OpenSettings() => _uiManager.ShowScreen(UIScreenType.Settings);
-    public void OpenPause() 
-    { 
-        _uiManager.ShowScreen(UIScreenType.Pause);
-        Time.timeScale = 0f;
-    }
-    public void ResumeGame() 
-    { 
-        _uiManager.ShowScreen(UIScreenType.None);
-        Time.timeScale = 1f;
     }
 }
