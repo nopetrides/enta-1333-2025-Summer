@@ -55,11 +55,12 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void HideAll()
     {
+        if (_screenMap == null)
+            return;
+
         foreach (var kvp in _screenMap)
-        {
             if (kvp.Value != null)
                 kvp.Value.SetActive(false);
-        }
     }
 
     /// <summary>

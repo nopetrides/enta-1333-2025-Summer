@@ -82,6 +82,26 @@ public class EnvironmentSpawner : MonoBehaviour
     /* ------------------------------------------------------------------ */
     private float _cellSize;
 
+    /// <summary>
+    /// Destroys all environment objects (castle, banner, trees, rocks)
+    /// so that InitializeEnvironment can run again on a clean slate.
+    /// </summary>
+    public void ResetEnvironment()
+    {
+        if (_environmentRoot != null)
+        {
+            for (int i = _environmentRoot.childCount - 1; i >= 0; i--)
+            {
+                var go = _environmentRoot.GetChild(i).gameObject;
+#if UNITY_EDITOR
+                DestroyImmediate(go);
+#else
+                Destroy(go);
+#endif
+            }
+        }
+    }
+
     private void Awake()
     {
         // Validate dependencies
@@ -142,7 +162,7 @@ public class EnvironmentSpawner : MonoBehaviour
         }
 
         // Instantiate with prefab's default rotation
-        GameObject castleGO = Instantiate(_castleData.BuildingPrefab);
+        GameObject castleGO = Instantiate(_castleData.BuildingPrefab, _environmentRoot);
         BuildingBase castleBase = castleGO.GetComponent<BuildingBase>();
         if (castleBase == null)
         {

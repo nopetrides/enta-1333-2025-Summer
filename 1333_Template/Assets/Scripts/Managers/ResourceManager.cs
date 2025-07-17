@@ -168,6 +168,28 @@ public class ResourceManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Clears all resource counts, lookup maps, UI and event subscriptions
+    /// so that Initialize() can be called again for a fresh start.
+    /// </summary>
+    public void ResetResources()
+    {
+        // 1) Clear existing resource data
+        _resources.Clear();
+        _enumLookup.Clear();
+
+        // 2) Remove all listeners to avoid duplicate callbacks
+        OnResourceChanged = null;
+
+        // 3) Update UI to reflect cleared state
+        _resourcePanelUI.RefreshAll();
+
+#if UNITY_EDITOR
+        // 4) Clear debug list in the Inspector
+        _debugResourceList.Clear();
+#endif
+    }
+
+    /// <summary>
     /// Provides a read-only view of all resource counts keyed by ResourceDataSO.
     /// </summary>
     public IReadOnlyDictionary<ResourceDataSO, int> GetAllResources() => _resources;

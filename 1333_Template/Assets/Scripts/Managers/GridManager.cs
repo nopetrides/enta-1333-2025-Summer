@@ -442,6 +442,39 @@ public class GridManager : MonoBehaviour
     public Vector3 IdxToWorld(int x, int y, bool center = false) =>
         IdxToWorld(new Vector2Int(x, y), center);
 
+    /// <summary>
+    /// Clears current grid data and visuals so that InitializeGrid() can run again.
+    /// </summary>
+    public void ResetGrid()
+    {
+        // 1) Destroy all environment objects while grid is still valid
+        if (_spawner != null)
+            _spawner.ResetEnvironment();
+
+        // 2) Destroy all visual tile GameObjects under _visualRoot
+        if (_visualRoot != null)
+        {
+            for (int i = _visualRoot.childCount - 1; i >= 0; i--)
+            {
+                var child = _visualRoot.GetChild(i).gameObject;
+#if UNITY_EDITOR
+                DestroyImmediate(child);
+#else
+            Destroy(child);
+#endif
+            }
+        }
+
+        // 3) Clear reservation state
+        _reservedNodes.Clear();
+
+        // 4) Now clear the underlying grid data
+        _gridNodes = null;
+
+        // 5) Allow InitializeGrid() to rebuild everything
+        isInitialized = false;
+    }
+
     // =========================== Gizmos (Debug Visualization) ==================
     /// <summary>
     /// Draws colored gizmos in the editor for each node to show walkable/unwalkable cells.

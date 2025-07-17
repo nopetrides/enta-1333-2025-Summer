@@ -20,10 +20,17 @@ public class BuildingPlacementUI : MonoBehaviour
     /// </summary>
     private void ShowBuildingPlacementUI()
     {
+        // Clear existing buttons
+        for (int i = _layoutGroupParent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(_layoutGroupParent.GetChild(i).gameObject);
+        }
+
+        // Instantiate new buttons
         foreach (var data in _buildingType.Buildings)
         {
-            var buttonPrefab = Instantiate(_buttonPrefab, _layoutGroupParent);
-            var button = buttonPrefab.GetComponent<BuildingButton>();
+            var buttonObj = Instantiate(_buttonPrefab, _layoutGroupParent);
+            var button = buttonObj.GetComponent<BuildingButton>();
             button.Initialize(data, _placementManager);
         }
     }

@@ -331,4 +331,28 @@ public class BuildingPlacementManager : MonoBehaviour
             for (int y = 0; y < fp.y; y++)
                 _gridManager.SetWalkable(idx.x + x, idx.y + y, walkable);
     }
+
+    /// <summary>
+    /// Cancels any in-progress placement, hides the placement UI,
+    /// and clears injected references so Initialize() can run again.
+    /// </summary>
+    public void ResetPlacement()
+    {
+        // 1) Cancel any active ghost preview
+        if (_previewInstance != null)
+            Destroy(_previewInstance);
+        _previewInstance = null;
+        _currentBuildingData = null;
+        _currentYRotation = 0;
+
+        // 2) Hide placement UI
+        ToggleUI(false);
+
+        // 3) Clear injected manager and camera references
+        _mainCamera = null;
+        _gridManager = null;
+        _unitManager = null;
+        _armyManager = null;
+        _resourceManager = null;
+    }
 }

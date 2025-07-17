@@ -207,6 +207,25 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Resets internal state so that Initialize() can be called again.
+    /// Clears any current selection and removes injected references.
+    /// </summary>
+    public void ResetSelection()
+    {
+        // 1) Clear all selections and hide UI panels
+        ClearSelection();
+
+        // 2) Reset injected dependencies so Initialize can re-inject
+        _mainCamera = null;
+        _gridManager = null;
+        _unitManager = null;
+
+        // 3) Ensure selection box is not dragging (optional safety)
+        if (_unitSelectionBox.IsDragging)
+            _unitSelectionBox.EndDrag(_unitSelectionBox.DragEnd);
+    }
+
     private void OnEnable()
     {
         UnitBase.UnitDestroyed += HandleSelectableDestroyed;
