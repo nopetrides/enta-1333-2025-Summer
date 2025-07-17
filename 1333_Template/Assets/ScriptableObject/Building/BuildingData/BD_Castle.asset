@@ -18,5 +18,5 @@ MonoBehaviour:
   _buildingPrefab: {fileID: 5749487885418382731, guid: 8500698ee8568af46b45208403bf8844, type: 3}
   _buildingModel: {fileID: 5749487885418382731, guid: 768d938560824984bbf0bb1ed517bcc5, type: 3}
   _health: 1000
-  _sizeX: 10
-  _sizeZ: 10
+  _sizeX: 9
+  _sizeZ: 9

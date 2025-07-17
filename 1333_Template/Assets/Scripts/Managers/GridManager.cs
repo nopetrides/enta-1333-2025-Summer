@@ -30,11 +30,11 @@ public class GridManager : MonoBehaviour
     [SerializeField] private List<Color32> _colorTable = new();   // Colour mapping table, order matches _terrainTypes
 
     [Header("Visual Prefabs")]
-    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
+    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1? unit.")]
     [SerializeField] private GameObject[] _terrainPrefabs = null; // Prefab for rendering terrain tiles
 
     [Header("Visual Prefabs")]
-    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1×1 unit.")]
+    [Tooltip("One prefab per TerrainType index (0-6). Size must be 1? unit.")]
     [SerializeField] private GameObject[] _simpleTerrainPrefabs = null; // Alternative simple visuals
 
     [Tooltip("Optional parent to keep the hierarchy tidy.")]
@@ -79,7 +79,7 @@ public class GridManager : MonoBehaviour
         if (AssetImporter.GetAtPath(path) is TextureImporter ti && ti.sRGBTexture)
         {
             Debug.LogWarning(
-                $"[GridManager] Map texture \"{_mapTexture.name}\" has “sRGB (Color Texture)” enabled. " +
+                $"[GridManager] Map texture \"{_mapTexture.name}\" has “sRGB (Color Texture)?enabled. " +
                 "Disable it in the Inspector for exact colour matching.");
         }
     }
@@ -153,7 +153,7 @@ public class GridManager : MonoBehaviour
         int texWidth = _mapTexture.width;
         int texHeight = _mapTexture.height;
 
-        // helper that ignores alpha and allows ±1 RGB difference
+        // helper that ignores alpha and allows ? RGB difference
         bool Matches(Color32 a, Color32 b) =>
             Mathf.Abs(a.r - b.r) <= 1 &&
             Mathf.Abs(a.g - b.g) <= 1 &&

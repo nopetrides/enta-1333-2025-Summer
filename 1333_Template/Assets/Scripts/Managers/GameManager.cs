@@ -5,7 +5,7 @@ using System.Collections;
 /// <summary>
 /// Central controller for menu flow, fade transitions,
 /// asynchronous scene loading, pause handling, and runtime manager
-/// initialization. Designed for a single “InGame” scene.
+/// initialization. Designed for a single “InGame?scene.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -17,6 +17,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BuildingPlacementManager _buildingPlacementManager;
     [SerializeField] private ResourceManager _resourceManager;
     [SerializeField] private UIManager _uiManager;
+
+    [Header("Enemy Waves")]
+    [SerializeField] private EnemyWaveSpawner _enemyWaveSpawner;
 
     private Camera _camera;
     private bool _isPaused;
@@ -76,7 +79,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Fade out, load the “InGame” scene asynchronously, initialize managers
+    /// Fade out, load the “InGame?scene asynchronously, initialize managers
     /// over multiple frames, then fade-in.
     /// </summary>
     private IEnumerator StartGameRoutine()
@@ -90,7 +93,7 @@ public class GameManager : MonoBehaviour
         /* 3. Load scene in background */
         AsyncOperation op = SceneManager.LoadSceneAsync("InGame");
         op.allowSceneActivation = false;
-        while (op.progress < 0.9f)                      // “almost done”
+        while (op.progress < 0.9f)                      // almost done?
             yield return null;
 
         op.allowSceneActivation = true;                 // perform switch
@@ -124,6 +127,12 @@ public class GameManager : MonoBehaviour
 
         _buildingPlacementManager.Initialize(
             _resourceManager, _armyManager, _gridManager, _unitManager, _camera);
+        yield return null;
+
+        if (_enemyWaveSpawner != null)
+            _enemyWaveSpawner.StartAutoWaves();
+        else
+            Debug.LogWarning("GameManager: EnemyWaveSpawner not assigned.");
         yield return null;
 
         _isPaused = false;

@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
+using System.Collections;
 public enum UIScreenType
 {
     None,
@@ -25,6 +27,12 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject _buildingPlacementManagerGO;
     [SerializeField] private GameObject _selectionManagerGO;
     [SerializeField] private GameObject _resourcePanelUI;
+
+    [Header("Wave Popup")]
+    [SerializeField] private GameObject _wavePopupGO;   // root object (Image + TMP)
+    [SerializeField] private TMP_Text _wavePopupText;   // TMP component for message
+    [SerializeField] private float _popupDuration = 2f; // seconds shown
+    private Coroutine _wavePopupRoutine;
 
     private Dictionary<UIScreenType, GameObject> _screenMap;
 
@@ -91,5 +99,23 @@ public class UIManager : MonoBehaviour
     public bool IsVisible(UIScreenType type)
     {
         return _screenMap.TryGetValue(type, out var screen) && screen.activeSelf;
+    }
+
+    public void ShowWavePopup(int waveNumber)
+    {
+        if (_wavePopupRoutine != null)
+            StopCoroutine(_wavePopupRoutine);
+        _wavePopupRoutine = StartCoroutine(WavePopupRoutine(waveNumber));
+    }
+
+    private IEnumerator WavePopupRoutine(int waveNumber)
+    {
+        if (_wavePopupGO == null || _wavePopupText == null)
+            yield break;
+
+        _wavePopupText.text = $"Wave {waveNumber} is coming!";
+        _wavePopupGO.SetActive(true);
+        yield return new WaitForSeconds(_popupDuration);
+        _wavePopupGO.SetActive(false);
     }
 }
