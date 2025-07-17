@@ -22,6 +22,13 @@ public class SelectionManager : MonoBehaviour
     // Track any ISelectable
     private readonly List<ISelectable> _selected = new List<ISelectable>();
 
+    private void Awake()
+    {
+        _unitSelectionBox = GetComponent<UnitSelectionBox>();
+        if (_unitSelectionBox == null)
+            Debug.LogError("SelectionManager: UnitSelectionBox component missing.");
+    }
+
     /// <summary>
     /// Initializes the SelectionManager with required dependencies.
     /// </summary>
@@ -30,7 +37,6 @@ public class SelectionManager : MonoBehaviour
         _mainCamera = cam;
         _gridManager = gm;
         _unitManager = um;
-        _unitSelectionBox = GetComponent<UnitSelectionBox>();
         _unitSelectionBox.minDragSize = _minDragSize;
 
         //Ensure All selectedUI panels are hided

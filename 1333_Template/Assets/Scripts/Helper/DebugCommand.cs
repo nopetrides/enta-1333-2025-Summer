@@ -8,7 +8,7 @@ public class DebugCommand : MonoBehaviour
     {
         DebugLogConsole.AddCommand("HelloWorld", "Test command", HelloWorld);
 
-        DebugLogConsole.AddCommand<string>("StartGame", "Print name", StartGame);
+        //DebugLogConsole.AddCommand<string>("StartGame", "Print name", StartGame);
     }
 
     private void OnDisable()
@@ -23,8 +23,8 @@ public class DebugCommand : MonoBehaviour
         Debug.Log("Hello world!!!");
     }
 
-    private void StartGame(string name)
+    /*private void StartGame(string name)
     {
         _gameManager.StartGame(name);
-    }
+    }*/
 }
