@@ -2,6 +2,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 /// <summary>
 /// Central controller for menu flow, fade transitions,
 /// asynchronous scene loading, pause handling, and runtime manager
@@ -66,6 +70,26 @@ public class GameManager : MonoBehaviour
     {
         _uiManager.ShowScreen(UIScreenType.None);
         Time.timeScale = 1f;
+    }
+
+    /// <summary>
+    /// Show the Main Menu UI.
+    /// </summary>
+    public void OpenMainMenu()
+    {
+        _uiManager.ShowScreen(UIScreenType.MainMenu);
+    }
+
+    /// <summary>
+    /// Quit the application (in Editor: stop play mode).
+    /// </summary>
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+    EditorApplication.isPlaying = false;
+#else
+    Application.Quit();
+#endif
     }
 
     public void GetMainCamera(Camera cam) => _camera = cam;
