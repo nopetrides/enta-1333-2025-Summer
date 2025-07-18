@@ -20,3 +20,6 @@ MonoBehaviour:
   _health: 600
   _sizeX: 6
   _sizeZ: 3
+  _costs:
+  - ResourceType: 4
+    Amount: 10

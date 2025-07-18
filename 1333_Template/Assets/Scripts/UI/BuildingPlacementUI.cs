@@ -9,6 +9,7 @@ public class BuildingPlacementUI : MonoBehaviour
     [SerializeField] private GameObject _buttonPrefab;
     [SerializeField] private BuildingTypeSO _buildingType;
     [SerializeField] private BuildingPlacementManager _placementManager;
+    [SerializeField] private ResourceManager _resourceManager;
 
     public void InitializeBuildingPlacementUI()
     {
@@ -31,7 +32,7 @@ public class BuildingPlacementUI : MonoBehaviour
         {
             var buttonObj = Instantiate(_buttonPrefab, _layoutGroupParent);
             var button = buttonObj.GetComponent<BuildingButton>();
-            button.Initialize(data, _placementManager);
+            button.Initialize(data, _placementManager, _resourceManager);
         }
     }
 }

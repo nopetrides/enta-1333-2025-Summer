@@ -28,6 +28,26 @@ public class ResourceManager : MonoBehaviour
     [Header("Debug: Resource Dictionary")]
     [Tooltip("Read-only list of resources and their counts for debugging.")]
     [SerializeField] private List<string> _debugResourceList = new List<string>();
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha0))
+            AddDebugResources();
+    }
+
+    /// <summary>
+    /// Debug: add 999 of each resource when pressing 0 key.
+    /// </summary>
+    private void AddDebugResources()
+    {
+        // Copy keys to avoid modifying collection during iteration
+        var dataList = new List<ResourceDataSO>(_resources.Keys);
+
+        foreach (var data in dataList)
+            AddResource(data, 999);
+
+        Debug.Log("ResourceManager: Debug added 999 to all resources");
+    }
 #endif
 
     /// <summary>
@@ -69,6 +89,33 @@ public class ResourceManager : MonoBehaviour
     private void FireChanged(ResourceList type, int newValue)
     {
         OnResourceChanged?.Invoke(type, newValue);
+    }
+
+    /// <summary>
+    /// Returns true if all costs can be affordable.
+    /// </summary>
+    public bool CanAffordCosts(List<ResourceCost> costs)
+    {
+        foreach (var cost in costs)
+        {
+            if (TryGetResourceCount(cost.ResourceType) < cost.Amount)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// If the cost is sufficient, deduct all of it and return true; if insufficient, return false. 
+    /// </summary>
+    public bool SpendCosts(List<ResourceCost> costs)
+    {
+        if (!CanAffordCosts(costs))
+            return false;
+
+        foreach (var cost in costs)
+            TrySpendResource(cost.ResourceType, cost.Amount);
+
+        return true;
     }
 
     /// <summary>

@@ -359,6 +359,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2118729950273087945, guid: e423d2cd2f600494380ae4d062337d19, type: 3}
+      propertyPath: _resourceManager
+      value: 
+      objectReference: {fileID: 1867307387}
     - target: {fileID: 2131635731645774112, guid: e423d2cd2f600494380ae4d062337d19, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -525,6 +529,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1867307387 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 437666601331111434, guid: e423d2cd2f600494380ae4d062337d19, type: 3}
+  m_PrefabInstance: {fileID: 903681515}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f36a1fb4a31e0b44ba91fc5f2256a3c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2139921828
 GameObject:
   m_ObjectHideFlags: 0

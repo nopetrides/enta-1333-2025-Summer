@@ -53,6 +53,13 @@ public class ResourceBuildingSelectedUI : MonoBehaviour
             buildingData == null ||
             _building.ResourceType == null)
         {
+            // it is castle and it is fine.
+            if (buildingData.BuildingName == "Castle")
+            {
+                Debug.Log("Castle");
+                return;
+            }
+            // Missing reference
             Debug.LogError("ResourceBuildingSelectedUI: Missing references.");
             return;
         }

@@ -149,6 +149,13 @@ public class BuildingPlacementManager : MonoBehaviour
     /// </summary>
     private void PlaceRealBuilding(Vector3 worldPosition)
     {
+        if (!_resourceManager.SpendCosts(_currentBuildingData.Costs))
+        {
+            Debug.Log("Not enough resources to build " + _currentBuildingData.BuildingName);
+            CancelPlacement(); 
+            return;
+        }
+
         var realGO = Instantiate(_currentBuildingData.BuildingPrefab);
         var realBase = realGO.GetComponent<BuildingBase>();
         realBase.buildingData = _currentBuildingData;

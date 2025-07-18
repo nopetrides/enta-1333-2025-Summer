@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Burst.Intrinsics;
 
 /// <summary>
 /// UI button for a building type that initiates placement mode when clicked.
@@ -14,6 +15,7 @@ public class BuildingButton : MonoBehaviour
     private BuildingDataSO _buildingData;
     private BuildingPlacementManager _placementManager;
     private Button _button;
+    private ResourceManager _rm;
 
     /// <summary>
     /// Initializes this button with its data and the placement manager.
@@ -21,18 +23,39 @@ public class BuildingButton : MonoBehaviour
     /// </summary>
     /// <param name="data">ScriptableObject containing building data.</param>
     /// <param name="placementManager">Reference to the BuildingPlacementManager.</param>
-    public void Initialize(BuildingDataSO data, BuildingPlacementManager placementManager)
+    public void Initialize(BuildingDataSO data, BuildingPlacementManager placementManager, ResourceManager rm)
     {
         _buildingData = data;
         _placementManager = placementManager;
+        _rm = rm;
 
         iconImage.sprite = data.ButtonImage;
         nameText.text = data.BuildingName;
 
-        // Cache the Button component and wire up the click handler
         _button = GetComponent<Button>();
         _button.onClick.RemoveAllListeners();
         _button.onClick.AddListener(OnPlaceButtonClicked);
+
+        // subscribe to resource changes
+        _rm.OnResourceChanged += HandleResourceChanged;
+        // set initial interactable state
+        UpdateInteractableState();
+    }
+    /// <summary>
+    /// Update the button's interactable based on current resources.
+    /// </summary>
+    private void UpdateInteractableState()
+    {
+        _button.interactable = _rm.CanAffordCosts(_buildingData.Costs);
+    }
+
+    /// <summary>
+    /// Called whenever any resource amount changes.
+    /// </summary>
+    private void HandleResourceChanged(ResourceList type, int newValue)
+    {
+        // simply refresh state whenever resources change
+        UpdateInteractableState();
     }
 
     /// <summary>
@@ -48,5 +71,12 @@ public class BuildingButton : MonoBehaviour
         }
 
         _placementManager.StartPlacement(_buildingData);
+    }
+
+    private void OnDestroy()
+    {
+        // unsubscribe to avoid memory leaks
+        if (_rm != null)
+            _rm.OnResourceChanged -= HandleResourceChanged;
     }
 }
