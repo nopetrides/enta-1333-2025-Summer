@@ -32,6 +32,7 @@ public class UnitCombat : MonoBehaviour
 
            
             if (animator) animator.SetBool("isAttacking", false);    // stop the  attack animation and return to idle if no valid target
+       
         }
 
         if (currentTarget != null && currentTarget.IsAlive)
@@ -47,6 +48,7 @@ public class UnitCombat : MonoBehaviour
                     if (animator) animator.SetBool("isAttacking", true);
                     currentTarget.TakeDamage(attackDamage);
                     lastAttackTime = Time.time;
+                    AudioManager.Instance.PlayUnitAttack();    // add attack sound 
                 }
             }
             else

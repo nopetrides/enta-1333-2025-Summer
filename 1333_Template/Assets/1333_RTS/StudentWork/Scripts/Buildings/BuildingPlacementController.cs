@@ -57,6 +57,8 @@ public class BuildingPlacementController : MonoBehaviour   // handles  placement
 
                 GameObject obj = Instantiate(currentToPlace.prefab, placePos, currentToPlace.prefab.transform.rotation); // instantiating with -90 on x to place accordingly
 
+                AudioManager.Instance.PlayBuildingPlaced();  //building placement sfx
+
                 var instance = obj.GetComponent<BuildingInstance>();
                 if (instance)
                 {

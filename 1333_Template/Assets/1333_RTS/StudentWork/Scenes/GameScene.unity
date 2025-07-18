@@ -1328,10 +1328,10 @@ MonoBehaviour:
   sfxSource: {fileID: 1324286512}
   musicSource: {fileID: 1324286513}
   buttonClick: {fileID: 0}
-  unitAttack: {fileID: 0}
-  unitHit: {fileID: 0}
-  buildingPlaced: {fileID: 0}
-  buildingSelected: {fileID: 0}
+  unitAttack: {fileID: 8300000, guid: 8b7bbd78198d19344b3822cfdc4f6f7d, type: 3}
+  unitHit: {fileID: 8300000, guid: dc962608c256c8e4692ecb44ffb68c58, type: 3}
+  buildingPlaced: {fileID: 8300000, guid: 185baef49e5197e479a19bec9698f5a5, type: 3}
+  buildingSelected: {fileID: 8300000, guid: 3f4932553ac7f2f4180e0425c17e5bcc, type: 3}
   menuMusic: {fileID: 0}
   gameAmbience: {fileID: 0}
 --- !u!82 &1324286512
@@ -1344,8 +1344,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 8370108075905385499, guid: a4a6463562b200f4da952bde9fb72a42, type: 2}
-  m_audioClip: {fileID: 8300000, guid: 7077b43791b3ba447a03f08feb246aad, type: 3}
-  m_Resource: {fileID: 8300000, guid: 7077b43791b3ba447a03f08feb246aad, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -1887,7 +1887,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1669483118
 RectTransform:
   m_ObjectHideFlags: 0

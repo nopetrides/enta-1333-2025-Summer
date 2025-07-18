@@ -43,6 +43,8 @@ public class UnitInstance : UnitBase, IDamageable   // represents a spawned, act
     public void TakeDamage(int amount) // damage function
     {
         currentHealth -= amount;
+
+       
         if (currentHealth <= 0)
         {
             Die();
