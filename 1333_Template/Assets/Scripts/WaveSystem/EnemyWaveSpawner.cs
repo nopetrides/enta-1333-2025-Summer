@@ -201,4 +201,20 @@ public class EnemyWaveSpawner : MonoBehaviour
 
         Debug.Log($"[EnemyWaveSpawner] Wave #{_currentWaveIdx + 1} ({waveType}) – {spawned.Count} units marching to center.");
     }
+
+    /// <summary>
+    /// Resets wave spawner state so that waves can start fresh.
+    /// Stops auto loop and any in-progress spawn coroutines, and resets the wave index.
+    /// </summary>
+    public void ResetWaves()
+    {
+        // 1) Stop auto wave loop (also clears _autoRoutine)
+        StopAutoWaves();
+
+        // 2) Stop any manual or auto spawn coroutines
+        StopAllCoroutines();
+
+        // 3) Reset index so next wave is #1
+        _currentWaveIdx = -1;
+    }
 }

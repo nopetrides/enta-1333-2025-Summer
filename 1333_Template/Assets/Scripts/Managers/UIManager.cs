@@ -35,6 +35,10 @@ public class UIManager : MonoBehaviour
     private Coroutine _wavePopupRoutine;
 
     private Dictionary<UIScreenType, GameObject> _screenMap;
+    // navigation history stack
+    private Stack<UIScreenType> _history = new Stack<UIScreenType>();
+    // currently active screen
+    private UIScreenType _currentScreen = UIScreenType.None;
 
     private void Awake()
     {
@@ -55,24 +59,32 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void HideAll()
     {
+        if (_screenMap == null)
+            return;
+
         foreach (var kvp in _screenMap)
-        {
             if (kvp.Value != null)
                 kvp.Value.SetActive(false);
-        }
     }
 
     /// <summary>
-    /// Shows only the specified UI screen.
-    /// Automatically hides others.
+    /// Show only the specified UI screen.
+    /// If recordHistory is true, pushes the previous screen onto history.
     /// </summary>
-    public void ShowScreen(UIScreenType type)
+    public void ShowScreen(UIScreenType type, bool recordHistory = true)
     {
+        if (recordHistory)
+            _history.Push(_currentScreen);
+
+        _currentScreen = type;
+
         HideAll();
 
+        // UI screen activation
         if (_screenMap.TryGetValue(type, out var screen) && screen != null)
             screen.SetActive(true);
 
+        // Game play object management
         HandleGameplayObjectsVisibility(type);
     }
 
@@ -91,6 +103,17 @@ public class UIManager : MonoBehaviour
 
         if (_resourcePanelUI != null)
             _resourcePanelUI.SetActive(enable);
+    }
+
+    /// <summary>
+    /// Go back to the previous screen, or MainMenu if none.
+    /// </summary>
+    public void GoBack()
+    {
+        if (_history.Count > 0)
+            ShowScreen(_history.Pop(), false);
+        else
+            ShowScreen(UIScreenType.MainMenu, false);
     }
 
     /// <summary>

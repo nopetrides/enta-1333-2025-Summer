@@ -311,5 +311,24 @@ public class ArmyManager : MonoBehaviour
         }
         return null;
     }
+
+    /// <summary>
+    /// Resets internal state so that Initialize() can be called again for a new game.
+    /// Stops any ongoing spawn coroutines, clears injected dependencies, and
+    /// removes any UnitSpawned subscribers.
+    /// </summary>
+    public void ResetArmy()
+    {
+        // 1) Stop any in-progress spawning coroutines
+        StopAllCoroutines();
+
+        // 2) Clear injected dependencies
+        _gridManager = null;
+        _unitManager = null;
+        _pathfinder = null;
+
+        // 3) Clear event subscriptions to avoid duplicate callbacks
+        UnitSpawned = null;
+    }
 }
 

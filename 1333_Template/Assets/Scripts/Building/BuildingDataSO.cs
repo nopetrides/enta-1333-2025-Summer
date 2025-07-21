@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "BuildingData", menuName = "Game/Building Data")]
@@ -19,6 +20,12 @@ public class BuildingDataSO : ScriptableObject
     [SerializeField] private int _sizeX;                // Width in grid cells
     [SerializeField] private int _sizeZ;                  // Height in grid cells
 
+    [Header("Cost to Build")]
+    [Tooltip("List of resource types and amounts needed.")]
+    [SerializeField] private List<ResourceCost> _costs = new List<ResourceCost>();
+
+    /// <summary>Costs required to place this building.</summary>
+    public List<ResourceCost> Costs => _costs;
 
     /// <summary>
     /// Gets the building's display name.
