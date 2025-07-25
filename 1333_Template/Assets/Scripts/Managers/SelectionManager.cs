@@ -83,6 +83,8 @@ public class SelectionManager : MonoBehaviour
                 Rect selRect = _unitSelectionBox.GetScreenRect(_unitSelectionBox.DragStart, _unitSelectionBox.DragEnd);
                 foreach (var unit in _unitManager.AllUnits)
                 {
+                    if (unit == null)                     
+                        continue;
                     // skip any non-player team units
                     if (unit.UnitTeam != Team.Player)
                         continue;

@@ -219,6 +219,8 @@ public class GameManager : MonoBehaviour
         _buildingPlacementManager.ResetPlacement();
         _resourceManager.ResetResources();
 
+        _unitManager.ResetUnits();
+
         if (_enemyWaveSpawner != null)
             _enemyWaveSpawner.ResetWaves();
 

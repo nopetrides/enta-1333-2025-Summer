@@ -106,6 +106,7 @@ public class UnitManager : MonoBehaviour
     {
         if (unit != null)
             _allUnits.Add(unit); // HashSet.Add ignores duplicates.
+        _spatial.Add(unit);
     }
 
     /// <summary>Call this when a unit dies and is destroyed.</summary>
