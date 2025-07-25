@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -112,9 +113,14 @@ public class UnitManager : MonoBehaviour
     /// <summary>Call this when a unit dies and is destroyed.</summary>
     public void UnregisterUnit(UnitBase unit)
     {
-        Debug.Log($"unregister unit {unit}");
-        if (_allUnits.Remove(unit))          // only invoke if actually removed
+#if UNITY_EDITOR && DEBUG_LOG_UNREGISTER
+    Debug.Log($"Unregister {unit}");
+#endif
+        if (_allUnits.Remove(unit))
+        {
+            _spatial.Remove(unit);
             OnUnitUnregistered?.Invoke(unit);
+        }
     }
 
     /// <summary>
@@ -272,8 +278,11 @@ public class UnitManager : MonoBehaviour
 
     public void ResetUnits()
     {
-        foreach (var u in _allUnits)
+        foreach (var u in _allUnits.ToArray())
             if (u != null) Destroy(u.gameObject);
+
         _allUnits.Clear();
+        _spatial.Clear();
+        _resourceSpatial.Clear();
     }
 }
