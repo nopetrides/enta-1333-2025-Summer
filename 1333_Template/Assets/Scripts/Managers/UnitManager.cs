@@ -268,4 +268,11 @@ public class UnitManager : MonoBehaviour
         }
         return best;
     }
+
+    public void ResetUnits()
+    {
+        foreach (var u in _allUnits)
+            if (u != null) Destroy(u.gameObject);
+        _allUnits.Clear();
+    }
 }

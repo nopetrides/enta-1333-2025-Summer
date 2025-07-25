@@ -221,13 +221,17 @@ public class GameManager : MonoBehaviour
 
         if (_enemyWaveSpawner != null)
             _enemyWaveSpawner.ResetWaves();
-        else
-            Debug.LogWarning("GameManager: EnemyWaveSpawner not assigned for reset.");
+
+        if (_uiManager != null)
+            _uiManager.ResetHUD();
 
         if (_victoryChecker != null)
             _victoryChecker.ResetVictory();
 
         if (_loseChecker != null)            
             _loseChecker.ResetLose();
+
+        if (_unitSelectionManager)
+            _unitSelectionManager.DeselectAll();
     }
 }

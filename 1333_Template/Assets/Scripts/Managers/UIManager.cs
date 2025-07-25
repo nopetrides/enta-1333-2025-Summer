@@ -214,6 +214,11 @@ public class UIManager : MonoBehaviour
         else
             _countdownText.text = $"Next wave in {t:F1}s";
     }
+
+    public void ResetHUD()
+    {
+        _waveInfoText.text = "No wave yet";
+    }
 }
 
 

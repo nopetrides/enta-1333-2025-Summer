@@ -184,6 +184,8 @@ public class SelectionManager : MonoBehaviour
             if (sel is UnitBase unit)
             {
                 if(unit.CurrentState == UnitState.Attacking) continue;
+                if (unit == null)                      
+                    continue;
                 units.Add(unit);
             }
 
@@ -239,4 +241,13 @@ public class SelectionManager : MonoBehaviour
     {
         _selected.Remove(dead);
     }
+
+    /// <summary>
+    /// Deselect every currently selected unit and clear the list.
+    /// </summary>
+    public void DeselectAll()
+    {
+        _selected.Clear();
+    }
+
 }
