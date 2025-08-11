@@ -1,8 +1,8 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-
-public class GameManager : MonoBehaviour     // the main controller that ties together grid, units, pathfinding, and armies.
+public class GameManager : MonoBehaviour // the main controller that ties together grid, units, pathfinding, and armies
 {
     [Header("Main System References")]
     [SerializeField] private GridManager gridManager;
@@ -11,77 +11,165 @@ public class GameManager : MonoBehaviour     // the main controller that ties to
     [SerializeField] private Transform startMarker;
     [SerializeField] private Transform endMarker;
     [SerializeField] private LineRenderer pathLine;
-    [SerializeField] private ArmyPathfindingTester pathfindingTester;
+    [SerializeField] private WaveManager waveManager;
 
     [Header("Marker & Army Settings")]
     [SerializeField] private float markerHeight = 0.5f;
     [SerializeField] private AvailableUnits defaultUnits;
 
-
     [Header("Terrain Settings")]
-    [SerializeField] private List<TerrainType> terrains;
+    [SerializeField] private List<TerrainType> terrains; 
 
-    
+    [Header("Mask Settings")]
+    [SerializeField] private Texture2D pathMask;                   // png mask to create 2d grıd accordıngly
+    [SerializeField] private TerrainType grassTerrainType;       
+    [SerializeField] private TerrainType dangerTerrainType;       
+    [SerializeField] private Color grassColor = new Color(0.8f, 1f, 0.1f); 
+    [SerializeField] private Color dangerColor = new Color(1f, 0f, 0f);  
+    [SerializeField, Range(0, 0.5f)] private float colorTolerance = 0.25f;
 
+    public static GameManager Instance;
 
     private TeamArmies allTeams = new TeamArmies();
+    private bool _initializedForGameplay = false; 
 
- 
-    private void Awake()        // initialize grid and spawn initial units/armies.
+    private void Awake()
     {
-        if (!AreReferencesSet())
+        if (Instance == null) Instance = this;
+        else
         {
-            Debug.LogError("Missing");
-            enabled = false;
+            Destroy(gameObject);
             return;
         }
 
-        gridManager.InitializeGrid();
-        unitManager.SpawnDummyUnit(startMarker);
-        unitManager.SpawnDummyUnit(endMarker);
-        pathfindingTester.Initialize();  // spawn 2 armies on awake one for player one for npc
-        RandomizePathAndMarkers();
-
-       
+        if (!AreReferencesSet())
+        {
+            Debug.LogError("Missing references!");
+            enabled = false;
+            return;
+        }
+        // gamesceneinitializer  calls InitializeForGameplay()
     }
 
    
-
-
-
-    private bool AreReferencesSet()    // bool verifies all required fields are set.
+    // entry point for gameplay setup. called by gamesceneinitializer when game state is playing
+ 
+    public void InitializeForGameplay()
     {
-        return gridManager && unitManager && pathfinder && startMarker && endMarker && pathLine;
+        if (_initializedForGameplay) return;
+        _initializedForGameplay = true;
+
+        gridManager.InitializeGrid();
+        ApplyTerrainMask();
+
+        if (waveManager != null)
+            waveManager.Initialize();
+
+        Debug.Log("GameManager: Gameplay initialized.");
     }
 
-
-    private void RandomizePathAndMarkers() // function to randomize markers and find a new path.
+    private bool AreReferencesSet()
     {
-        if (!gridManager.IsInitialized)
-            gridManager.InitializeGrid();
+        return gridManager && unitManager && pathfinder && startMarker && endMarker && pathLine && waveManager;
+    }
 
-        for (int x = 0; x < gridManager.GridSettings.GridSizeX; x++)
+    public void ApplyTerrainMask()
+    {
+        if (pathMask == null || grassTerrainType == null || dangerTerrainType == null)
         {
-            for (int y = 0; y < gridManager.GridSettings.GridSizeY; y++)
+            Debug.LogError("Assign pathMask, grassTerrainType, and dangerTerrainType in inspector!");
+            return;
+        }
+
+        int width = gridManager.GridSettings.GridSizeX;
+        int height = gridManager.GridSettings.GridSizeY;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
             {
-                TerrainType type = terrains[Random.Range(0, terrains.Count)];
+                
+                int texX = Mathf.Clamp(Mathf.RoundToInt((float)x / (width - 1) * (pathMask.width - 1)), 0, pathMask.width - 1);
+                int texY = Mathf.Clamp(Mathf.RoundToInt((float)y / (height - 1) * (pathMask.height - 1)), 0, pathMask.height - 1);
+
+              
+
+                Color pixel = pathMask.GetPixel(texX, texY);
+
                 GridNode node = gridManager.GetNode(x, y);
-                node.Walkable = type.IsWalkable;
-                node.Weight = type.MovementCost;
-                node.TerrainType = type;
+
+                if (ColorDistance(pixel, grassColor) < colorTolerance)
+                {
+                    node.Walkable = grassTerrainType.IsWalkable;
+                    node.Weight = grassTerrainType.MovementCost;
+                    node.TerrainType = grassTerrainType;
+                }
+                else if (ColorDistance(pixel, dangerColor) < colorTolerance)
+                {
+                    node.Walkable = dangerTerrainType.IsWalkable;
+                    node.Weight = dangerTerrainType.MovementCost;
+                    node.TerrainType = dangerTerrainType;
+                }
+                else
+                {
+                   
+                    node.Walkable = dangerTerrainType.IsWalkable;
+                    node.Weight = dangerTerrainType.MovementCost;
+                    node.TerrainType = dangerTerrainType;
+                }
+
                 gridManager.SetNode(x, y, node);
             }
         }
+        Debug.Log("Applied terrain mask!");
     }
 
-    private void Update() // space key randomizing the grid and terraintpyes
+   
+    float ColorDistance(Color a, Color b)
+    {
+        return Mathf.Sqrt(
+            Mathf.Pow(a.r - b.r, 2) +
+            Mathf.Pow(a.g - b.g, 2) +
+            Mathf.Pow(a.b - b.b, 2)
+        );
+    }
+
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            RandomizePathAndMarkers();
-            
+            ApplyTerrainMask();
+        }
+    }
+
+    public void OnWin()
+    {
+        
+        if (GameStateManager.Instance != null)
+            GameStateManager.Instance.SetState(GameState.Win);
+
+        //UIManager.Instance?.ShowWin();
+    }
+
+    public void OnLose()
+    {
+       
+        if (GameStateManager.Instance != null)
+            GameStateManager.Instance.SetState(GameState.Lose);
+
+        UIManager.Instance?.ShowLosePanel();
+    }
+
+    public void GoToMain()
+    {
+        if (GameBoot.Instance != null)
+        {
+            GameBoot.Instance.ReturnToMenu();
+        }
+        else
+        {
+            SceneManager.LoadScene("MainMenu");
+
         }
     }
 }
-
-

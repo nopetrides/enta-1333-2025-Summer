@@ -119,6 +119,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TT_Spearman Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 123088, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 455156, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -182,6 +186,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 123088, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6186925930275003864}
+    - targetCorrespondingSourceObject: {fileID: 123088, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -4549425504524796144}
   m_SourcePrefab: {fileID: 100100000, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}
 --- !u!1 &2561282132721881764 stripped
 GameObject:
@@ -201,6 +208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitType: {fileID: 11400000, guid: 8bfc14d7677aab24a88ed48e2408cc5a, type: 2}
+  teamId: 1
   healthBarPrefab: {fileID: 7107593655640529885}
   maxHealth: 10
   animator: {fileID: 2561282132729152586}
@@ -348,9 +356,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc61bf745a5ca942b05efa8ef262c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1.5
+  attackRange: 3
   attackCooldown: 1
   attackDamage: 2
+--- !u!114 &-4549425504524796144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2561282132721881764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41a6582c82ce15f4eb3b17b4fb6ea530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingDetectionRange: 100
+  attackDistance: 3
+  retargetInterval: 0.5
 --- !u!4 &2561282132722205568 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 455156, guid: 0755a95e2e1b5f44e8226989fb76f2cf, type: 3}

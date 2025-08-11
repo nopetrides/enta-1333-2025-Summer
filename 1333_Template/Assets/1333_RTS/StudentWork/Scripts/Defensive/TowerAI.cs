@@ -6,15 +6,14 @@ public class TowerAI : MonoBehaviour
     [SerializeField] private float attackRange = 6f;       // tower attack variables, referancing launch point and its prefab
     [SerializeField] private float attackCooldown = 1.0f;
     [SerializeField] private int attackDamage = 4;
-    [SerializeField] private GameObject projectilePrefab;     
-    [SerializeField] private Transform firePoint;             
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform firePoint;
 
     private float lastAttackTime = 0f;
     private IDamageable selfDamageable;
 
     void Awake()
     {
-        
         selfDamageable = GetComponent<IDamageable>();  // cache reference to own IDamageable
     }
 
@@ -55,8 +54,10 @@ public class TowerAI : MonoBehaviour
         {
             if (t == selfDamageable) continue; // avoid self
             if (!t.IsAlive) continue;
-           
 
+          
+            GameObject obj = t.GetTransform().gameObject;    // only attack objects tagged as "enemy"
+            if (!obj.CompareTag("Enemy")) continue;
 
             float dist = Vector3.Distance(transform.position, t.GetTransform().position);
             if (dist < bestDist)

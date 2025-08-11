@@ -119,6 +119,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TT_Light_Cavalry Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 172856, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 492180, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -182,6 +186,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 172856, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5860353701508570266}
+    - targetCorrespondingSourceObject: {fileID: 172856, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5231095839726977069}
   m_SourcePrefab: {fileID: 100100000, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}
 --- !u!1 &5700302952391048341 stripped
 GameObject:
@@ -201,6 +208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitType: {fileID: 11400000, guid: 538fa1253cff646489f22dc94f0ef520, type: 2}
+  teamId: 1
   healthBarPrefab: {fileID: 8666352759469992949}
   maxHealth: 10
   animator: {fileID: 5700302952400644241}
@@ -348,9 +356,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc61bf745a5ca942b05efa8ef262c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1.5
+  attackRange: 3
   attackCooldown: 1
   attackDamage: 2
+--- !u!114 &5231095839726977069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5700302952391048341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41a6582c82ce15f4eb3b17b4fb6ea530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingDetectionRange: 100
+  attackDistance: 3
+  retargetInterval: 0.5
 --- !u!4 &5700302952391367993 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 492180, guid: 4e3c7da5fb6ce5a47a0a7dbc18b843c6, type: 3}

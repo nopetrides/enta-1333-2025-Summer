@@ -43,6 +43,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tower_C
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: c73c37430c8ac1e43831ddacfa77c180, type: 3}
+      propertyPath: m_TagString
+      value: Building
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: c73c37430c8ac1e43831ddacfa77c180, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

@@ -9,7 +9,6 @@ public class SelectionManager : MonoBehaviour
     private Vector2 dragStart, dragEnd;
     private bool isDragging = false;
 
- 
     [SerializeField] private BuildingUnitSpawnerUI buildingSpawnerUI;     // reference to UI panels 
 
     void Update()
@@ -46,9 +45,10 @@ public class SelectionManager : MonoBehaviour
 
             selectedUnits.Clear();
             selectedBuilding = null;
-            buildingSpawnerUI.Hide();
+          //  buildingSpawnerUI.Hide();
 
-            if (unit)
+           
+            if (unit && unit.teamId == 0)   // only select units with teamId == 0 (player units, e.g. King)
             {
                 selectedUnits.Add(unit);
                 Debug.Log("Unit selected");
@@ -57,7 +57,7 @@ public class SelectionManager : MonoBehaviour
             {
                 selectedBuilding = building;
                 Debug.Log("Building selected");
-                buildingSpawnerUI.ShowForBuilding(selectedBuilding); // show ui
+               // buildingSpawnerUI.ShowForBuilding(selectedBuilding); // show ui
             }
         }
     }
@@ -66,12 +66,13 @@ public class SelectionManager : MonoBehaviour
     {
         selectedUnits.Clear();
         selectedBuilding = null;
-        buildingSpawnerUI.Hide();
+      //  buildingSpawnerUI.Hide();
 
         foreach (var unit in FindObjectsOfType<UnitInstance>())
         {
             Vector3 screenPos = Camera.main.WorldToScreenPoint(unit.transform.position);
-            if (IsWithinSelectionBounds(screenPos))
+         
+            if (unit.teamId == 0 && IsWithinSelectionBounds(screenPos))
                 selectedUnits.Add(unit);
         }
 
@@ -80,7 +81,7 @@ public class SelectionManager : MonoBehaviour
 
     bool IsWithinSelectionBounds(Vector3 screenPosition)
     {
-        Rect rect = Utils.GetScreenRect(dragStart, dragEnd); 
+        Rect rect = Utils.GetScreenRect(dragStart, dragEnd);
         return rect.Contains(screenPosition);
     }
 
@@ -88,18 +89,20 @@ public class SelectionManager : MonoBehaviour
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
-        {  
-            foreach (var unit in selectedUnits)
-          
-            unit.SetDestination(hit.point);
+        {
+            foreach (var unit in selectedUnits)     // only move player units (teamId == 0)
+            {
+             
+                if (unit != null && unit.teamId == 0)
+                    unit.SetDestination(hit.point);
+            }
         }
     }
 
-  
     public void DeselectAll()
     {
         selectedUnits.Clear();
         selectedBuilding = null;
-        buildingSpawnerUI.Hide();
+      //  buildingSpawnerUI.Hide();
     }
 }

@@ -1,48 +1,28 @@
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
-
-public abstract class UnitBase : MonoBehaviour   // abstract base class for all units  in the game
+// abstract base class for all units  in the game
+public abstract class UnitBase : MonoBehaviour   
 {
-  
     [SerializeField] protected UnitType unitType;    // what type of unit is this (holds stats, prefab)
 
-    
     public virtual int Width => unitType != null ? unitType.Width : 1;   // how many grid cells this unit occupies horizontally
+    public virtual int Height => unitType != null ? unitType.Height : 1;  // how many grid cells this unit occupies vertically
 
-    
-    public virtual int Height => unitType != null ? unitType.Height : 1;  // Hhw many grid cells this unit occupies vertically
-
-    
     protected AStarPathfinder pathfinder;
 
     
-
-   
     protected List<GridNode> path = new();    // the current path the unit is following
-
-   
     protected int pathIndex = 0;    // index of the next waypoint in the path
-
-   
     protected Vector3? movementTarget = null;
-
-   
     protected bool moving = false;
 
- 
     public bool IsMoving => moving;
-
-   
     public List<GridNode> CurrentPath => path;
 
-  
     protected UnitState state;     // the current state of this unit (movement, attacking)
 
-  
     public abstract void MoveTo(GridNode node);     // function to call unit to move to a grid node
-
 
     public virtual void Tick()
     {
@@ -52,11 +32,9 @@ public abstract class UnitBase : MonoBehaviour   // abstract base class for all 
                 MoveAlongPath();
                 break;
             case UnitState.Attacking:
-             
                 break;
         }
     }
-
 
     public virtual void MoveAlongPath()       // move  unit along its current path
     {

@@ -114,6 +114,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TT_Archer Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 179124, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 494462, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -177,6 +181,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 179124, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6388348907807939687}
+    - targetCorrespondingSourceObject: {fileID: 179124, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7923529487044576464}
   m_SourcePrefab: {fileID: 100100000, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}
 --- !u!1 &2881889305326821688 stripped
 GameObject:
@@ -196,6 +203,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitType: {fileID: 11400000, guid: befe6cd57ccd8734697d8d83522572d2, type: 2}
+  teamId: 1
   healthBarPrefab: {fileID: 8844176651803031281, guid: 2a6f1b208b6506345a2efc5d167c0f59, type: 3}
   maxHealth: 10
   animator: {fileID: 2881889305336477242}
@@ -343,9 +351,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc61bf745a5ca942b05efa8ef262c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1.5
+  attackRange: 3
   attackCooldown: 1
   attackDamage: 2
+--- !u!114 &7923529487044576464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2881889305326821688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41a6582c82ce15f4eb3b17b4fb6ea530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingDetectionRange: 100
+  attackDistance: 3
+  retargetInterval: 0.5
 --- !u!4 &2881889305327145458 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 494462, guid: 04c79b5f6e9ebab48af48fdcf7b6d570, type: 3}

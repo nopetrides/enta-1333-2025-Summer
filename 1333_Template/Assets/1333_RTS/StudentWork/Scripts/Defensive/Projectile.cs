@@ -12,6 +12,7 @@ public class Projectile : MonoBehaviour
 
     public void Launch(Transform target, int dmg)
     {
+        AudioManager.Instance.PlayProjectileLaunch();
         this.target = target;
         this.damage = dmg;
         FaceTarget();

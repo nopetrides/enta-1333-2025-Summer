@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Tower
   m_EditorClassIdentifier: 
   BuildingName: Tower
-  BuildingIcon: {fileID: 0}
+  BuildingIcon: {fileID: 21300000, guid: 1006b4907689eaf499c321c8593d49ea, type: 3}
   width: 3
   height: 3

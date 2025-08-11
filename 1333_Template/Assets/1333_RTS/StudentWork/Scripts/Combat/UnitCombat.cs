@@ -20,19 +20,16 @@ public class UnitCombat : MonoBehaviour
 
     void Update()
     {
-        if (!unit.IsAlive)  // set attack anim false here
+        if (!unit.IsAlive)
         {
-            if (animator) animator.SetBool("isAttacking", false); 
+            if (animator) animator.SetBool("isAttacking", false);
             return;
         }
 
         if (currentTarget == null || !currentTarget.IsAlive)
         {
             currentTarget = FindNearestEnemy();
-
-           
-            if (animator) animator.SetBool("isAttacking", false);    // stop the  attack animation and return to idle if no valid target
-       
+            if (animator) animator.SetBool("isAttacking", false);
         }
 
         if (currentTarget != null && currentTarget.IsAlive)
@@ -42,29 +39,26 @@ public class UnitCombat : MonoBehaviour
             {
                 FaceTarget(currentTarget.GetTransform().position);
 
-               
-                if (Time.time - lastAttackTime >= attackCooldown)   // play attack animation and apply damage if cooldown done
+                if (Time.time - lastAttackTime >= attackCooldown)
                 {
                     if (animator) animator.SetBool("isAttacking", true);
                     currentTarget.TakeDamage(attackDamage);
                     lastAttackTime = Time.time;
-                    AudioManager.Instance.PlayUnitAttack();    // add attack sound 
+                    AudioManager.Instance?.PlayUnitAttack();
                 }
             }
             else
             {
-               
-                if (animator) animator.SetBool("isAttacking", false);   // if not in range stop attacking, play idle
+                if (animator) animator.SetBool("isAttacking", false);
             }
         }
         else
         {
-         
-            if (animator) animator.SetBool("isAttacking", false);     // no target at all, return to idle
+            if (animator) animator.SetBool("isAttacking", false);
         }
     }
 
-    private void FaceTarget(Vector3 targetPos) // function for facing the target when in range
+    private void FaceTarget(Vector3 targetPos)
     {
         Vector3 direction = (targetPos - transform.position).normalized;
         direction.y = 0;
@@ -75,18 +69,24 @@ public class UnitCombat : MonoBehaviour
         }
     }
 
-    IDamageable FindNearestEnemy()
+   public IDamageable FindNearestEnemy()
     {
         var allTargets = FindObjectsOfType<MonoBehaviour>().OfType<IDamageable>();
         IDamageable best = null;
         float bestDist = float.MaxValue;
+
         foreach (var t in allTargets)
         {
             if (t == (IDamageable)unit) continue; // skip self
             if (!t.IsAlive) continue;
-           
-            // later I will add avoid friendly fire
 
+           
+            var otherUnit = t as UnitInstance;
+            if (otherUnit != null && otherUnit.teamId == unit.teamId) continue;
+
+          
+            var building = t as BuildingInstance;
+            if (building != null && building.TeamId == unit.teamId) continue;
 
             float dist = Vector3.Distance(transform.position, t.GetTransform().position);
             if (dist < bestDist)

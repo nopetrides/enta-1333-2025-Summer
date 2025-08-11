@@ -5,11 +5,9 @@ public class AStarPathfinder : MonoBehaviour
 {
     [SerializeField] private GridManager gridManager;
 
-  
     public Dictionary<Vector2Int, bool> VisitedNodes { get; private set; } = new(); //  //for visualization track which nodes were checked
     public Dictionary<Vector2Int, bool> FrontierNodes { get; private set; } = new();
 
-  
     public List<GridNode> FindPath(Vector3 startPos, Vector3 endPos) // main a* pathfinding method
     {
         if (!gridManager.IsInitialized)
@@ -27,7 +25,7 @@ public class AStarPathfinder : MonoBehaviour
         var cameFrom = new Dictionary<Vector2Int, Vector2Int>(); // path trace
         var gScore = new Dictionary<Vector2Int, int>(); // cost from start
         var fScore = new Dictionary<Vector2Int, int>(); // start cost +heuristic
-        var openSet = new Dictionary<Vector2Int, int>(); 
+        var openSet = new Dictionary<Vector2Int, int>();
 
         gScore[start] = 0;
         fScore[start] = Heuristic(start, goal);
@@ -36,7 +34,6 @@ public class AStarPathfinder : MonoBehaviour
 
         while (openSet.Count > 0) // main loop that continues evaluating nodes
         {
-            
             Vector2Int current = GetNodeWithLowestFScore(openSet);
 
             if (current == goal)
@@ -50,9 +47,12 @@ public class AStarPathfinder : MonoBehaviour
             {
                 GridNode node = gridManager.GetNode(neighbor.x, neighbor.y);
 
-                
-                if (!node.Walkable || node.Occupied || node.UnitPresent )  // skip if node is not walkable, is occupied by a building or occupied by a unit
+               
+                if ((!node.Walkable || node.Occupied || node.UnitPresent) && neighbor != goal)
+                {
+                    
                     continue;
+                }
 
                 int tentativeGScore = gScore[current] + node.Weight;
                 if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor])
@@ -69,7 +69,7 @@ public class AStarPathfinder : MonoBehaviour
                 }
             }
         }
-   
+
         return null;
     }
 
@@ -87,7 +87,6 @@ public class AStarPathfinder : MonoBehaviour
         }
         return best;
     }
-
 
     private int Heuristic(Vector2Int a, Vector2Int b)       // manhattan distance for grid
     {
@@ -127,10 +126,10 @@ public class AStarPathfinder : MonoBehaviour
         List<Vector2Int> neighbors = new();
         int[][] deltas = new int[][]
         {
-            new int[] { 0, 1 },  
-            new int[] { 1, 0 },  
-            new int[] { 0, -1 }, 
-            new int[] { -1, 0 }  
+            new int[] { 0, 1 },
+            new int[] { 1, 0 },
+            new int[] { 0, -1 },
+            new int[] { -1, 0 }
         };
         foreach (var d in deltas)
         {

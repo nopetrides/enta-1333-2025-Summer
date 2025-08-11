@@ -1,5 +1,3 @@
-
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "BuildingType", menuName = "Game/BuildingType")]
@@ -12,4 +10,9 @@ public class BuildingType : ScriptableObject
 
     public int Width => width;
     public int Height => height;
+
+    [Header("Resource Costs")]
+    public int GoldCost = 10;
+    public int StoneCost = 5;
+    public int WoodCost = 0;
 }

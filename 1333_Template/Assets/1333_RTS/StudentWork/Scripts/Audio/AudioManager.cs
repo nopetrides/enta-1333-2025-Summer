@@ -18,8 +18,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip unitHit;
     [SerializeField] private AudioClip buildingPlaced;
     [SerializeField] private AudioClip buildingSelected;
-    [SerializeField] private AudioClip menuMusic;
-    [SerializeField] private AudioClip gameAmbience;
+    [SerializeField] public AudioClip menuMusic;
+    [SerializeField] public AudioClip gameAmbience;
+    [SerializeField] private AudioClip menuSelect;
+    [SerializeField] private AudioClip projectileLaunch;
 
     void Awake()
     {
@@ -40,6 +42,10 @@ public class AudioManager : MonoBehaviour
     public void PlayUnitAttack() => PlaySFX(unitAttack);
     public void PlayUnitHit() => PlaySFX(unitHit);
     public void PlayBuildingSelected() => PlaySFX(buildingSelected);
+
+    public void PlayMenuSelect() => PlaySFX(menuSelect);
+
+    public void PlayProjectileLaunch() => PlaySFX(projectileLaunch);
 
 
     public void PlayMusic(AudioClip music, bool loop = true)       // music

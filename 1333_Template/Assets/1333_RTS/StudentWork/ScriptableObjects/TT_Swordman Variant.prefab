@@ -119,6 +119,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TT_Swordman Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 155132, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 438990, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -182,6 +186,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 155132, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3482638018735586843}
+    - targetCorrespondingSourceObject: {fileID: 155132, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5335041769331254186}
   m_SourcePrefab: {fileID: 100100000, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}
 --- !u!95 &3568375972975622893 stripped
 Animator:
@@ -206,6 +213,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitType: {fileID: 11400000, guid: 6126d6f130e671746bcc9c6489bede49, type: 2}
+  teamId: 1
   healthBarPrefab: {fileID: 8600507587202891567}
   maxHealth: 10
   animator: {fileID: 3568375972975622893}
@@ -353,9 +361,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc61bf745a5ca942b05efa8ef262c1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 1.5
+  attackRange: 3
   attackCooldown: 1
   attackDamage: 2
+--- !u!114 &5335041769331254186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3568375972985305939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41a6582c82ce15f4eb3b17b4fb6ea530, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingDetectionRange: 100
+  attackDistance: 3
+  retargetInterval: 0.5
 --- !u!4 &3568375972985508961 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 438990, guid: bcc60fdbd3a37b44cbc0cb99db483477, type: 3}

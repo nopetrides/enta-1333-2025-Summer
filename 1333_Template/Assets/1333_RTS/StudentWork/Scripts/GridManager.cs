@@ -10,7 +10,6 @@ public class GridManager : MonoBehaviour
     private GridNode[,] gridNodes;
 
 #if UNITY_EDITOR
-
     [Header("Debug for editor playmode only")]
     [SerializeField] private List<GridNode> AllNodes = new();
     [SerializeField] private bool showGrid = true;
@@ -18,9 +17,9 @@ public class GridManager : MonoBehaviour
 
     public bool IsInitialized { get; private set; } = false;
 
-    public void InitializeGrid()  // creates the grid with along with gridSettings
+    public void InitializeGrid()
     {
-        gridNodes = new GridNode[gridSettings.GridSizeX, gridSettings.GridSizeY]; // nested loop
+        gridNodes = new GridNode[gridSettings.GridSizeX, gridSettings.GridSizeY];
 
         for (int x = 0; x < gridSettings.GridSizeX; x++)
         {
@@ -44,6 +43,8 @@ public class GridManager : MonoBehaviour
         IsInitialized = true;
     }
 
+   
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
         if (!showGrid || gridNodes == null || gridSettings == null) return;
@@ -62,6 +63,7 @@ public class GridManager : MonoBehaviour
             }
         }
     }
+#endif
 
     public GridNode GetNode(int x, int y)
     {
@@ -86,12 +88,12 @@ public class GridManager : MonoBehaviour
         return gridNodes[x, y];
     }
 
-    public bool IsInBounds(int x, int y)  // checker for unit spawn
+    public bool IsInBounds(int x, int y)
     {
         return x >= 0 && x < gridSettings.GridSizeX && y >= 0 && y < gridSettings.GridSizeY;
     }
 
-    public bool CanPlaceBuildingAt(int startX, int startY, int width, int height) // checker for buildingspawn
+    public bool CanPlaceBuildingAt(int startX, int startY, int width, int height)
     {
         for (int dx = 0; dx < width; dx++)
         {
@@ -102,14 +104,14 @@ public class GridManager : MonoBehaviour
                 if (x < 0 || x >= gridSettings.GridSizeX || y < 0 || y >= gridSettings.GridSizeY)
                     return false;
                 var node = gridNodes[x, y];
-                if (node.Occupied || node.UnitPresent || !node.Walkable) 
+                if (node.Occupied || node.UnitPresent || !node.Walkable)
                     return false;
             }
         }
         return true;
     }
 
-    public void SetBuildingOccupancy(int startX, int startY, int width, int height, bool occupied, BuildingType buildingType) // sets  occupancy for a rectangle of grid nodes
+    public void SetBuildingOccupancy(int startX, int startY, int width, int height, bool occupied, BuildingType buildingType)
     {
         for (int dx = 0; dx < width; dx++)
         {
