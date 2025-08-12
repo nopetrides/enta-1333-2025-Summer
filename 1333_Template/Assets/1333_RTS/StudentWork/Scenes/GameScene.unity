@@ -674,7 +674,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.39222664, y: -0, z: -0, w: 0.91986865}
-  m_LocalPosition: {x: 0, y: 10.9, z: -1.84}
+  m_LocalPosition: {x: 6.5, y: 10.9, z: -3.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4079,6 +4079,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: IngameDebugConsole
       objectReference: {fileID: 0}
+    - target: {fileID: 132536, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 11452418, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
+      propertyPath: startMinimized
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 11452418, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
+      propertyPath: popupVisibility
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 22331464, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_VertexColorAlwaysGammaSpace
       value: 1
@@ -5141,6 +5153,7 @@ MonoBehaviour:
   mainCamera: {fileID: 330585545}
   placeableBuildings:
   - {fileID: 11400000, guid: bad6f61f8323cba42a220674fa82f142, type: 2}
+  overlayMaterial: {fileID: 2100000, guid: e475b645643af9845a26e52e39043881, type: 2}
   validColor: {r: 0, g: 1, b: 0, a: 0.4}
   invalidColor: {r: 1, g: 0, b: 0, a: 0.4}
 --- !u!4 &2057898849

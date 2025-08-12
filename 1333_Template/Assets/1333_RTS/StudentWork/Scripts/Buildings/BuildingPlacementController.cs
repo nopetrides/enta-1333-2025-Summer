@@ -7,62 +7,75 @@ public class BuildingPlacementController : MonoBehaviour   // handles placement,
     [SerializeField] private Camera mainCamera;
     [SerializeField] private BuildingTypePrefab[] placeableBuildings;
 
-    [Header("Overlay Visuals")]
-    [SerializeField] private Color validColor = new Color(0, 1, 0, 0.4f);
-    [SerializeField] private Color invalidColor = new Color(1, 0, 0, 0.4f);
+    [Header("Overlay Visuals (runtime)")]
+    [SerializeField] private Material overlayMaterial;                    
+    [SerializeField] private Color validColor = new Color(0f, 1f, 0f, 0.35f);
+    [SerializeField] private Color invalidColor = new Color(1f, 0f, 0f, 0.35f);
 
     private BuildingTypePrefab currentToPlace;
     private int overlayX, overlayY;
     private bool showOverlay;
     private bool lastValid;
-    private float buildingRotation = 0f; // Degrees (0, 90, 180, 270)
 
-    public void SetBuildingToPlace(BuildingTypePrefab typePrefab)
+    private float buildingRotation = 0f;
+
+    // runtime overlay objects
+    private GameObject overlayGO;          // a single quad  move/scale/rotate
+    private MeshRenderer overlayRenderer;
+
+    public void SetBuildingToPlace(BuildingTypePrefab typePrefab)     // called by UI to select a building for placement
     {
         currentToPlace = typePrefab;
-        buildingRotation = 0f; // Reset rotation on new building selection
+        buildingRotation = 0f; // reset rotation when a new type is chosen
+        EnsureOverlay();
+        SetOverlayActive(true);
     }
 
     void Update()
     {
-        if (currentToPlace == null) { showOverlay = false; return; }
+        if (currentToPlace == null) { SetOverlayActive(false); showOverlay = false; return; }
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             Vector3 gridPos = hit.point;
             var settings = gridManager.GridSettings;
+
             overlayX = Mathf.RoundToInt(gridPos.x / settings.NodeSize);
             overlayY = settings.UseXZPlane
                 ? Mathf.RoundToInt(gridPos.z / settings.NodeSize)
                 : Mathf.RoundToInt(gridPos.y / settings.NodeSize);
 
             showOverlay = true;
+            SetOverlayActive(true);
 
-            lastValid = gridManager.CanPlaceBuildingAt(overlayX, overlayY, currentToPlace.buildingType.Width, currentToPlace.buildingType.Height)
-                && HasAdjacentWalkableCell(overlayX, overlayY, currentToPlace.buildingType.Width, currentToPlace.buildingType.Height);
+            int width = currentToPlace.buildingType.Width;
+            int height = currentToPlace.buildingType.Height;
 
-            // ---- Rotate with right mouse button ----
+            lastValid = gridManager.CanPlaceBuildingAt(overlayX, overlayY, width, height)
+                        && HasAdjacentWalkableCell(overlayX, overlayY, width, height);
+
+            // rotate with right mouse button (90 degree)
             if (Input.GetMouseButtonDown(1))
             {
                 buildingRotation += 90f;
-                if (buildingRotation >= 360f)
-                    buildingRotation = 0f;
+                if (buildingRotation >= 360f) buildingRotation = 0f;
             }
 
-            // ---- Place on left mouse button ----
-            if (lastValid && Input.GetMouseButtonDown(0))
+           
+            UpdateOverlayTransformAndColor(lastValid);
+
+           
+            if (lastValid && Input.GetMouseButtonDown(0))   //  place on left mouse button
             {
                 var type = currentToPlace.buildingType;
                 if (!ResourceManager.Instance.SpendResources(type.GoldCost, type.StoneCost, type.WoodCost))
                 {
-                    // Optionally show UI feedback here
+                    
                     return;
                 }
 
                 float nodeSize = settings.NodeSize;
-                int width = currentToPlace.buildingType.Width;
-                int height = currentToPlace.buildingType.Height;
 
                 Vector3 corner = settings.UseXZPlane
                     ? new Vector3(overlayX, 0, overlayY) * nodeSize
@@ -74,9 +87,10 @@ public class BuildingPlacementController : MonoBehaviour   // handles placement,
 
                 Vector3 placePos = corner + centerOffset - new Vector3(nodeSize, 0, nodeSize) * 0.5f;
 
+                
                 Quaternion rot = settings.UseXZPlane
-                    ? Quaternion.Euler(-90, buildingRotation, 0) // Top-down grid: rotate around Y
-                    : Quaternion.Euler(-90, 0, buildingRotation); // Side-view grid: rotate around Z
+                    ? Quaternion.Euler(currentToPlace.prefab.transform.eulerAngles.x, buildingRotation, currentToPlace.prefab.transform.eulerAngles.z)
+                    : Quaternion.Euler(currentToPlace.prefab.transform.eulerAngles.x, currentToPlace.prefab.transform.eulerAngles.y, buildingRotation);
 
                 GameObject obj = Instantiate(currentToPlace.prefab, placePos, rot);
 
@@ -92,14 +106,17 @@ public class BuildingPlacementController : MonoBehaviour   // handles placement,
 
                 currentToPlace = null;
                 showOverlay = false;
+                SetOverlayActive(false);   // hide overlay after placement
             }
         }
         else
         {
             showOverlay = false;
+            SetOverlayActive(false);
         }
     }
 
+    // helper that checks if there's at least one walkable & unoccupied cell adjacent to the proposed building area
     private bool HasAdjacentWalkableCell(int startX, int startY, int width, int height)
     {
         var settings = gridManager.GridSettings;
@@ -108,6 +125,7 @@ public class BuildingPlacementController : MonoBehaviour   // handles placement,
         {
             for (int dy = -1; dy <= height; dy++)
             {
+                // skip cells that are inside the building area
                 if (dx >= 0 && dx < width && dy >= 0 && dy < height)
                     continue;
 
@@ -118,43 +136,75 @@ public class BuildingPlacementController : MonoBehaviour   // handles placement,
                 {
                     var node = gridManager.GetNode(x, y);
                     if (node.Walkable && !node.Occupied)
-                        return true;
+                        return true; 
                 }
             }
         }
         return false;
     }
 
-    // ---- Only draw overlay if building is being placed! ----
-    private void OnDrawGizmos()
+ 
+    private void EnsureOverlay()
     {
-        if (!showOverlay || currentToPlace == null) return;
+        if (overlayGO != null) return;
+
+     
+        overlayGO = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        overlayGO.name = "[PlacementOverlay]";
+        overlayGO.layer = gameObject.layer; 
+        var col = overlayGO.GetComponent<Collider>();
+        if (col) Destroy(col);
+
+        overlayRenderer = overlayGO.GetComponent<MeshRenderer>();
+        overlayRenderer.sharedMaterial = new Material(overlayMaterial); 
+
+        
+        overlayGO.SetActive(false);
+    }
+
+    private void SetOverlayActive(bool active)
+    {
+        if (overlayGO != null && overlayGO.activeSelf != active)
+            overlayGO.SetActive(active);
+    }
+
+    private void UpdateOverlayTransformAndColor(bool isValid)
+    {
+        if (overlayGO == null) return;
 
         var settings = gridManager.GridSettings;
-        Color c = lastValid ? validColor : invalidColor;
-        Gizmos.color = c;
         float s = settings.NodeSize;
+        int w = currentToPlace.buildingType.Width;
+        int h = currentToPlace.buildingType.Height;
 
-        // --- Visualize overlay rotation in Scene view ---
-        Vector3 overlayCenter = settings.UseXZPlane
-            ? new Vector3(overlayX + currentToPlace.buildingType.Width * 0.5f - 0.5f, 0, overlayY + currentToPlace.buildingType.Height * 0.5f - 0.5f) * s
-            : new Vector3(overlayX + currentToPlace.buildingType.Width * 0.5f - 0.5f, overlayY + currentToPlace.buildingType.Height * 0.5f - 0.5f, 0) * s;
+       
+        Vector3 corner = settings.UseXZPlane
+            ? new Vector3(overlayX, 0, overlayY) * s
+            : new Vector3(overlayX, overlayY, 0) * s;
 
-        Matrix4x4 rotationMatrix = settings.UseXZPlane
-            ? Matrix4x4.TRS(overlayCenter, Quaternion.Euler(0, buildingRotation, 0), Vector3.one)
-            : Matrix4x4.TRS(overlayCenter, Quaternion.Euler(0, 0, buildingRotation), Vector3.one);
+        Vector3 centerOffset = settings.UseXZPlane
+            ? new Vector3(w * 0.5f, 0, h * 0.5f) * s
+            : new Vector3(w * 0.5f, h * 0.5f, 0) * s;
 
-        Gizmos.matrix = rotationMatrix;
+        Vector3 pos = corner + centerOffset - new Vector3(s, 0, s) * 0.5f;
 
-        for (int dx = 0; dx < currentToPlace.buildingType.Width; dx++)
-            for (int dy = 0; dy < currentToPlace.buildingType.Height; dy++)
-            {
-                Vector3 center = settings.UseXZPlane
-                    ? new Vector3(dx - currentToPlace.buildingType.Width * 0.5f + 0.5f, 0, dy - currentToPlace.buildingType.Height * 0.5f + 0.5f) * s
-                    : new Vector3(dx - currentToPlace.buildingType.Width * 0.5f + 0.5f, dy - currentToPlace.buildingType.Height * 0.5f + 0.5f, 0) * s;
-                Gizmos.DrawCube(center, Vector3.one * s * 0.95f);
-            }
+      
+        Vector3 scale = new Vector3(w * s, h * s, 1f);
 
-        Gizmos.matrix = Matrix4x4.identity;
+        
+        Quaternion rot = settings.UseXZPlane
+            ? Quaternion.Euler(90f, buildingRotation, 0f)
+            : Quaternion.Euler(0f, 0f, buildingRotation);
+
+        overlayGO.transform.SetPositionAndRotation(pos, rot);
+        overlayGO.transform.localScale = scale;
+
+       
+        if (overlayRenderer != null)
+        {
+            overlayRenderer.sharedMaterial.color = isValid ? validColor : invalidColor;
+        }
     }
+
+    
 }
