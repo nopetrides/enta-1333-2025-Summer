@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3b9d531eba95354ba4b3849a31542e1, type: 3}
+  m_Name: ArcheryRangePrefab
+  m_EditorClassIdentifier: 
+  buildingType: {fileID: 11400000, guid: 6cbc9af373ce4914ab604d44cb86b855, type: 2}
+  prefab: {fileID: 8399647212434106378, guid: 6f65c714cef73af428dd69ce18c12b9e, type: 3}

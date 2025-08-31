@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d04e6a016381bbd419fdb7d933ed40cc, type: 3}
+  m_Name: Army_NPC
+  m_EditorClassIdentifier: 
+  units:
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: 538fa1253cff646489f22dc94f0ef520, type: 2}
+      prefab: {fileID: 5700302952391048341, guid: aac932ae705f2214b93c80134380934a, type: 3}
+    count: 2
+  - unitTypePrefab:
+      unitType: {fileID: 11400000, guid: befe6cd57ccd8734697d8d83522572d2, type: 2}
+      prefab: {fileID: 2881889305326821688, guid: 982b7d456810b6d4b8aa80e0ef6c11fa, type: 3}
+    count: 2
